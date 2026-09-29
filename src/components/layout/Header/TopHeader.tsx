@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Search, ShoppingCart, User, Home as HouseIcon, Sparkles } from "lucide-react";
+import { Search, ShoppingCart, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { ALL_PRODUCTS } from "@/data/products";
 import { formatPrice } from "@/lib/utils";
@@ -21,25 +21,34 @@ export const TopHeader: React.FC = () => {
     : [];
 
   return (
-    <div className="bg-[#FF5B00] text-white py-2.5 px-4 md:px-8 shadow-xs relative z-40">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-        {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2 group shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#FF5B00] shadow-sm transition-transform group-hover:scale-105">
-            <div className="relative flex items-center justify-center">
-              <HouseIcon className="w-6 h-6 stroke-[2.5]" />
-              <Sparkles className="w-2.5 h-2.5 text-amber-500 absolute -top-1 -right-1" />
+    <div className="bg-white text-gray-900 py-3 px-4 md:px-8 border-b border-gray-100 shadow-2xs relative z-40">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 md:gap-8">
+        
+        {/* Brand Logo matching the screenshot (Cembula with stylized cyan cart mark) */}
+        <Link href="/" className="flex items-center gap-1 group shrink-0 select-none">
+          <div className="flex items-center">
+            {/* Cyan cart 'C' icon */}
+            <div className="relative flex items-center justify-center mr-0.5">
+              <span className="text-3xl md:text-4xl font-black text-[#009cae] leading-none tracking-tighter">
+                C
+              </span>
+              {/* Cart wheels */}
+              <span className="absolute -bottom-1 left-1 w-1.5 h-1.5 rounded-full bg-[#009cae]" />
+              <span className="absolute -bottom-1 right-0.5 w-1.5 h-1.5 rounded-full bg-[#009cae]" />
             </div>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center gap-0.5">
-              Toy House
-            </span>
+            <div className="flex items-baseline">
+              <span className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+                embula
+              </span>
+              <span className="text-[11px] font-semibold text-gray-400 ml-0.5">
+                .com
+              </span>
+            </div>
           </div>
         </Link>
 
-        {/* Search Bar */}
-        <div className="flex-1 max-w-2xl mx-2 md:mx-6 relative">
+        {/* Center Rounded Pill Search Bar (matching screenshot) */}
+        <div className="flex-1 max-w-xl mx-2 md:mx-6 relative">
           <div className="relative flex items-center">
             <input
               type="text"
@@ -47,20 +56,20 @@ export const TopHeader: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-              placeholder="Search product here..."
-              className="w-full h-10 pl-4 pr-11 rounded-lg bg-white text-gray-800 placeholder:text-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 shadow-inner"
+              placeholder="Search for products..."
+              className="w-full h-10 pl-5 pr-11 rounded-full border border-gray-300/90 bg-white text-gray-800 placeholder:text-gray-400 text-sm focus:outline-none focus:border-[#009cae] focus:ring-2 focus:ring-[#009cae]/20 transition-all shadow-2xs"
             />
             <button
               aria-label="Search"
-              className="absolute right-1 top-1 h-8 w-9 rounded-md flex items-center justify-center text-gray-500 hover:text-[#FF5B00] transition-colors"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#009cae] transition-colors"
             >
-              <Search className="w-4 h-4 stroke-[2.5]" />
+              <Search className="w-4 h-4 stroke-[2.2]" />
             </button>
           </div>
 
           {/* Search Live Dropdown Suggestions */}
           {isSearchFocused && searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 overflow-hidden text-gray-800">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 overflow-hidden text-gray-800">
               <div className="px-3 py-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
                 Matching Products
               </div>
@@ -68,12 +77,12 @@ export const TopHeader: React.FC = () => {
                 <div
                   key={product.id}
                   onMouseDown={() => setQuickViewProduct(product)}
-                  className="px-3 py-2 hover:bg-orange-50/70 cursor-pointer flex items-center justify-between text-xs transition-colors border-b last:border-0 border-gray-50"
+                  className="px-3 py-2 hover:bg-teal-50/70 cursor-pointer flex items-center justify-between text-xs transition-colors border-b last:border-0 border-gray-50"
                 >
                   <span className="font-medium text-gray-800 line-clamp-1 flex-1 pr-2">
                     {product.title}
                   </span>
-                  <span className="font-bold text-[#FF5B00] shrink-0">
+                  <span className="font-bold text-[#009cae] shrink-0">
                     {formatPrice(product.price)}
                   </span>
                 </div>
@@ -82,36 +91,33 @@ export const TopHeader: React.FC = () => {
           )}
         </div>
 
-        {/* Right Actions: Cart & Sign In */}
-        <div className="flex items-center gap-3 md:gap-5 shrink-0 text-sm">
+        {/* Right Actions: User Profile & Shopping Cart (matching screenshot) */}
+        <div className="flex items-center gap-4 md:gap-6 shrink-0 text-gray-800">
+          
+          {/* User Profile */}
+          <Link
+            href="/login"
+            className="text-gray-800 hover:text-[#009cae] transition-colors p-1"
+            aria-label="User Account"
+          >
+            <User className="w-6 h-6 stroke-[1.8]" />
+          </Link>
+
           {/* Cart Trigger */}
           <button
             onClick={() => setIsCartOpen(true)}
-            className="flex items-center gap-1 text-white hover:text-orange-100 transition-transform active:scale-95 relative p-1.5"
+            className="text-gray-800 hover:text-[#009cae] transition-transform active:scale-95 relative p-1"
             aria-label="Open Shopping Cart"
           >
-            <div className="relative">
-              <ShoppingCart className="w-5 h-5 md:w-6 md:h-6 stroke-[2.2]" />
-              {totalItems > 0 && (
-                <span className="absolute -top-2 -right-2 bg-emerald-600 text-white text-[11px] font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-xs border-2 border-[#FF5B00]">
-                  {totalItems}
-                </span>
-              )}
-            </div>
+            <ShoppingCart className="w-6 h-6 stroke-[1.8]" />
+            {totalItems > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-[#009cae] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow-xs">
+                {totalItems}
+              </span>
+            )}
           </button>
-
-          {/* Vertical Divider */}
-          <span className="text-white/40 h-5 w-[1px] bg-white/40" />
-
-          {/* User Sign in / up */}
-          <Link
-            href="/login"
-            className="flex items-center gap-1.5 font-semibold text-xs md:text-sm text-white hover:text-orange-100 transition-colors"
-          >
-            <User className="w-4 h-4 md:w-5 md:h-5 stroke-[2.2]" />
-            <span className="hidden sm:inline">Sign in / up</span>
-          </Link>
         </div>
+
       </div>
     </div>
   );

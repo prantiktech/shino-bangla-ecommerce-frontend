@@ -11,10 +11,11 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Toy House Vibrant Orange */
-    --primary: 21 100% 50%;
+    /* Primary Color Schema - #FF5B00 */
+    --primary: 21.4 100% 50%;
+    --primary-hex: #FF5B00;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 21 100% 45%;
+    --primary-hover: 21.4 100% 45%;
     --primary-light: 24 100% 96%;
 
     /* Slate Deep Tone */
@@ -32,11 +33,11 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 21 100% 50%;
+    --ring: 21.4 100% 50%;
 
     --radius: 0.625rem;
 
-    /* Custom Toy House Palette */
+    /* Custom Palette */
     --toy-orange: #FF5B00;
     --toy-orange-hover: #E64E00;
     --toy-orange-soft: #FFF3EB;
@@ -49,6 +50,9 @@
 }
 
 @theme {
+  --color-primary: #FF5B00;
+  --color-primary-hover: #E64E00;
+  --color-primary-light: #FFF3EB;
   --color-toy-orange: var(--toy-orange);
   --color-toy-orange-hover: var(--toy-orange-hover);
   --color-toy-orange-soft: var(--toy-orange-soft);
@@ -58,7 +62,6 @@
   --color-toy-gray-bg: var(--toy-gray-bg);
   --color-toy-card-bg: var(--toy-card-bg);
 
-  --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
@@ -95,6 +98,15 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #FF5B00;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Glassmorphism utility */

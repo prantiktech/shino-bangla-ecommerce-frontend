@@ -72,6 +72,87 @@ export const FILTER_CATEGORIES_TREE: CategoryTreeNode[] = [
 
 export const CATEGORIES_DATA: Category[] = [
   {
+    id: "sensors",
+    name: "Sensors",
+    slug: "sensors",
+    icon: "Radio",
+    subCategories: [
+      { id: "automation-sensors", name: "Automation Sensors", slug: "automation-sensors", icon: "Radio", itemCount: 28 },
+      { id: "proximity-sensors", name: "Proximity Sensors", slug: "proximity-sensors", icon: "Radio", itemCount: 34 },
+      { id: "photoelectric-sensors", name: "Photoelectric Sensors", slug: "photoelectric-sensors", icon: "Sparkles", itemCount: 19 },
+      { id: "temperature-sensors", name: "Temperature Controllers", slug: "temperature-controllers", icon: "Shield", itemCount: 22 }
+    ]
+  },
+  {
+    id: "industrial-electrical",
+    name: "Industrial Electrical",
+    slug: "industrial-electrical",
+    icon: "Layers",
+    subCategories: [
+      { id: "contactors-relays", name: "Magnetic Contactors & Relays", slug: "contactors-relays", icon: "Layers", itemCount: 45 },
+      { id: "circuit-breakers", name: "Molded Case Circuit Breakers", slug: "circuit-breakers", icon: "Shield", itemCount: 31 },
+      { id: "vfd-inverters", name: "Variable Frequency Drives (VFD)", slug: "vfd-inverters", icon: "Radio", itemCount: 18 },
+      { id: "terminal-blocks", name: "Terminal Blocks & Connectors", slug: "terminal-blocks", icon: "Package", itemCount: 52 }
+    ]
+  },
+  {
+    id: "industrial-boiler",
+    name: "Industrial Boiler",
+    slug: "industrial-boiler",
+    icon: "Sparkles",
+    subCategories: [
+      { id: "u-shape-heaters", name: "U-Shaped Heating Elements", slug: "u-shape-heaters", icon: "Sparkles", itemCount: 36 },
+      { id: "flanged-immersion", name: "Flanged Immersion Heaters", slug: "flanged-immersion", icon: "Sparkles", itemCount: 24 },
+      { id: "thermostats-gauges", name: "Boiler Pressure Gauges", slug: "boiler-pressure-gauges", icon: "Shield", itemCount: 15 },
+      { id: "spring-molded-heaters", name: "Runner Spring Coil Heaters", slug: "spring-coil-heaters", icon: "Package", itemCount: 20 }
+    ]
+  },
+  {
+    id: "industrial-automation",
+    name: "Industrial Automation",
+    slug: "industrial-automation",
+    icon: "Gamepad2",
+    subCategories: [
+      { id: "plcs-hmis", name: "PLCs & Touch Screen HMIs", slug: "plcs-hmis", icon: "Gamepad2", itemCount: 17 },
+      { id: "stepper-servo-motors", name: "Stepper & Servo Motors", slug: "stepper-servo-motors", icon: "Car", itemCount: 29 },
+      { id: "limit-switches", name: "Micro Roller Lever Limit Switches", slug: "limit-switches", icon: "Radio", itemCount: 41 },
+      { id: "encoders-counters", name: "Rotary Encoders & Counters", slug: "rotary-encoders", icon: "Layers", itemCount: 14 }
+    ]
+  },
+  {
+    id: "household-electrical",
+    name: "Household Electrical",
+    slug: "household-electrical",
+    icon: "Armchair",
+    subCategories: [
+      { id: "switches-sockets", name: "Modern Wall Switches & Sockets", slug: "switches-sockets", icon: "Armchair", itemCount: 62 },
+      { id: "led-lighting", name: "Energy-Saving LED Fixtures", slug: "led-lighting", icon: "Sparkles", itemCount: 48 },
+      { id: "cables-wires", name: "Heatproof Silicone Insulated Wires", slug: "cables-wires", icon: "Layers", itemCount: 37 }
+    ]
+  },
+  {
+    id: "industrial-machinery",
+    name: "Industrial Machinery",
+    slug: "industrial-machinery",
+    icon: "Package",
+    subCategories: [
+      { id: "pneumatics", name: "Pneumatic Air Cylinders", slug: "pneumatic-cylinders", icon: "Package", itemCount: 26 },
+      { id: "solenoid-valves", name: "High Pressure Solenoid Valves", slug: "solenoid-valves", icon: "Shield", itemCount: 33 },
+      { id: "bearings", name: "Precision Industrial Bearings", slug: "industrial-bearings", icon: "Car", itemCount: 50 }
+    ]
+  },
+  {
+    id: "tools-hardware",
+    name: "Tools & Hardware",
+    slug: "tools-hardware",
+    icon: "Shield",
+    subCategories: [
+      { id: "crimping-tools", name: "Terminal Wire Crimping Pliers", slug: "crimping-pliers", icon: "Shield", itemCount: 21 },
+      { id: "multimeters", name: "Digital Clamp Multimeters", slug: "digital-multimeters", icon: "Radio", itemCount: 19 },
+      { id: "soldering-stations", name: "Adjustable Soldering Stations", slug: "soldering-stations", icon: "Sparkles", itemCount: 16 }
+    ]
+  },
+  {
     id: "ride-on-vehicle",
     name: "Ride-On & Vehicle Toys",
     slug: "ride-on-vehicle-toys",
