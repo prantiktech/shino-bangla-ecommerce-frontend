@@ -13,12 +13,23 @@ import {
   Newspaper,
   Layers
 } from "lucide-react";
-import { CATEGORIES_DATA } from "@/data/categories";
 import { Category, SubCategory } from "@/types";
 import { CategoryIcon } from "@/components/common/CategoryIcon";
+import { getCategoriesAction } from "@/app/(user)/actions/categories";
+import { mapApiCategoryToCategory } from "@/lib/utils/category-mapper";
 
 export const NavBar: React.FC = () => {
   const pathname = usePathname();
+
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    getCategoriesAction().then((res) => {
+      if (res.success && res.data) {
+        setCategories(res.data.map(mapApiCategoryToCategory));
+      }
+    });
+  }, []);
 
   // Reference to main navbar container for positioning calculations
   const navContainerRef = useRef<HTMLDivElement>(null);
@@ -197,16 +208,16 @@ export const NavBar: React.FC = () => {
                     <span>All Categories</span>
                   </div>
                   <span className="text-[11px] text-white/80 font-normal">
-                    {CATEGORIES_DATA.length} items
+                    {categories.length} items
                   </span>
                 </div>
 
                 {/* Categories List (Overflow visible so flyout submenu extends outside seamlessly) */}
                 <div className="py-1.5 overflow-visible">
-                  {CATEGORIES_DATA.map((category, index) => {
+                  {categories.map((category, index) => {
                     const isHovered = activeFlyoutCategory?.id === category.id;
                     const hasSubs = category.subCategories && category.subCategories.length > 0;
-                    const isNearBottom = index >= CATEGORIES_DATA.length - 3;
+                    const isNearBottom = index >= categories.length - 3;
 
                     return (
                       <div
@@ -315,7 +326,7 @@ export const NavBar: React.FC = () => {
               onScroll={checkScrollState}
               className="flex-1 flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1"
             >
-              {CATEGORIES_DATA.map((category) => {
+              {categories.map((category) => {
                 const isActiveHover = hoveredCategory?.id === category.id;
 
                 return (

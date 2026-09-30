@@ -3,12 +3,15 @@
 import React, { useRef, useState } from "react";
 import { ProductCard } from "@/components/common/ProductCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
-import { NEW_ARRIVALS_PRODUCTS } from "@/data/products";
+import { Product } from "@/types";
 import { Sparkles } from "lucide-react";
 
-export const NewArrivals: React.FC = () => {
+interface NewArrivalsProps {
+  products?: Product[];
+}
+
+export const NewArrivals: React.FC<NewArrivalsProps> = ({ products = [] }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [selectedFilter, setSelectedFilter] = useState("all");
 
   const scrollPrev = () => {
     if (containerRef.current) {
@@ -22,15 +25,13 @@ export const NewArrivals: React.FC = () => {
     }
   };
 
-  const filteredProducts =
-    selectedFilter === "all"
-      ? NEW_ARRIVALS_PRODUCTS
-      : NEW_ARRIVALS_PRODUCTS.filter((p) => p.category === selectedFilter);
+  if (!products || products.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-8 pb-16">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
-        {/* Section Header */}
         <SectionHeader
           title={
             <span className="flex items-center gap-2">
@@ -38,44 +39,25 @@ export const NewArrivals: React.FC = () => {
               <span>New Arrivals</span>
             </span>
           }
-          subtitle="Explore the latest trending toys, models, and sensory learning gear"
+          subtitle="Explore the latest additions to our store catalog"
           showArrows={true}
           onPrev={scrollPrev}
           onNext={scrollNext}
-          actionText="See All New"
-          actionHref="/products?filter=new"
+          actionText="See All Products"
+          actionHref="/products"
         />
 
-        {/* Category Pill Filter (Scalable DRY filtering) */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar mb-6 pb-1">
-          {[
-            { label: "All Items", value: "all" },
-            { label: "Outdoor & Blasters", value: "outdoor-physical-play" },
-            { label: "Action Figures & Robots", value: "special-categories" },
-            { label: "Vehicles & Stunts", value: "ride-on-vehicle-toys" },
-            { label: "Montessori & Learning", value: "educational-learning-toys" },
-          ].map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setSelectedFilter(tab.value)}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 ${
-                selectedFilter === tab.value
-                  ? "bg-[#FF5B00] text-white shadow-xs"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Product Cards Grid / Carousel */}
         <div
           ref={containerRef}
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 overflow-x-auto no-scrollbar pb-2"
+          className="flex gap-4 sm:gap-5 overflow-x-auto no-scrollbar scroll-smooth pt-2 pb-6 px-1"
         >
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+          {products.map((product) => (
+            <div
+              key={product.id}
+              className="w-[240px] sm:w-[260px] md:w-[280px] shrink-0"
+            >
+              <ProductCard product={product} />
+            </div>
           ))}
         </div>
       </div>

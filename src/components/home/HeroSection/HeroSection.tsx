@@ -95,7 +95,7 @@ export const HeroSection: React.FC = () => {
               {/* Proximity Sensors Image */}
               <div className="relative w-full h-24 my-auto">
                 <Image
-                  src="https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=500&auto=format&fit=crop&q=80"
+                  src="https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=500&auto=format&fit=crop&q=80"
                   alt="Proximity Sensors"
                   fill
                   className="object-contain group-hover:scale-105 transition-transform duration-500"

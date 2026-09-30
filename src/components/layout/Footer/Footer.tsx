@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { FOOTER_SECTIONS, STORE_INFO } from "@/data/navigation";
 import {
   ShieldCheck,
   Truck,
@@ -10,11 +9,43 @@ import {
   Headphones,
   Mail,
   Send,
-  Home as HouseIcon,
   PhoneCall,
-  MapPin
+  MapPin,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+
+const FOOTER_SECTIONS = [
+  {
+    title: "Categories",
+    links: [
+      { label: "Safety Equipment", href: "/category/safety-equipment" },
+      { label: "Fire Extinguishers", href: "/category/fire-extinguishers" },
+      { label: "Alarms & Detectors", href: "/category/alarms-detectors" },
+      { label: "Hardware & Fasteners", href: "/category/hardware" },
+      { label: "Safety Manuals", href: "/category/safety-manuals" },
+    ],
+  },
+  {
+    title: "Customer Support",
+    links: [
+      { label: "Track Your Order", href: "/track-order" },
+      { label: "All Products", href: "/products" },
+      { label: "All Brands", href: "/brands" },
+      { label: "Staff Portal", href: "/admin/login" },
+      { label: "My Account", href: "/account" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { label: "About Us", href: "/blogs" },
+      { label: "Privacy Policy", href: "#" },
+      { label: "Terms of Service", href: "#" },
+      { label: "Return Policy", href: "#" },
+      { label: "Contact Us", href: "/track-order" },
+    ],
+  },
+];
 
 export const Footer: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -26,7 +57,7 @@ export const Footer: React.FC = () => {
       showToast("Please enter a valid email address.");
       return;
     }
-    showToast("Thank you for subscribing to Toy House newsletter!");
+    showToast("Thank you for subscribing to our newsletter!");
     setEmail("");
   };
 
@@ -50,8 +81,8 @@ export const Footer: React.FC = () => {
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs md:text-sm font-bold text-white">100% Genuine Toys</h4>
-              <p className="text-[11px] text-gray-400">Certified child-safe products</p>
+              <h4 className="text-xs md:text-sm font-bold text-white">100% Genuine Products</h4>
+              <p className="text-[11px] text-gray-400">Certified industrial standards</p>
             </div>
           </div>
 
@@ -60,8 +91,8 @@ export const Footer: React.FC = () => {
               <RefreshCcw className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs md:text-sm font-bold text-white">7 Days Easy Return</h4>
-              <p className="text-[11px] text-gray-400">Hassle-free replacement</p>
+              <h4 className="text-xs md:text-sm font-bold text-white">Easy Exchange</h4>
+              <p className="text-[11px] text-gray-400">7-day hassle free policy</p>
             </div>
           </div>
 
@@ -70,8 +101,8 @@ export const Footer: React.FC = () => {
               <Headphones className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs md:text-sm font-bold text-white">24/7 Dedicated Support</h4>
-              <p className="text-[11px] text-gray-400">Direct helpline & chat</p>
+              <h4 className="text-xs md:text-sm font-bold text-white">Dedicated Support</h4>
+              <p className="text-[11px] text-gray-400">9 AM - 10 PM daily</p>
             </div>
           </div>
         </div>
@@ -79,33 +110,33 @@ export const Footer: React.FC = () => {
 
       {/* Main Footer Links */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-          {/* Brand & Contact */}
-          <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-lg bg-[#FF5B00] flex items-center justify-center text-white">
-                <HouseIcon className="w-5 h-5" />
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 lg:gap-12">
+          {/* Brand Info */}
+          <div className="md:col-span-2 space-y-4">
+            <Link href="/" className="inline-flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl bg-[#009cae] flex items-center justify-center text-white font-extrabold text-base">
+                C
               </div>
-              <span className="text-xl font-black tracking-tight text-white">
-                Toy House
+              <span className="text-xl font-black text-white tracking-tight">
+                Cembula Store
               </span>
             </Link>
             <p className="text-xs text-gray-400 max-w-sm leading-relaxed">
-              Toy House is Bangladesh&apos;s premier destination for safe, creative, and educational toys, electric ride-ons, baby strollers, and maternal essentials.
+              Bangladesh&apos;s premier destination for genuine safety equipment, certified fire extinguishers, industrial hardware, and safety handbooks.
             </p>
 
             <div className="space-y-2 text-xs text-gray-300">
               <div className="flex items-center gap-2">
                 <PhoneCall className="w-3.5 h-3.5 text-[#FF5B00]" />
-                <span>{STORE_INFO.phone}</span>
+                <span>+880 1700-000000</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-3.5 h-3.5 text-[#FF5B00]" />
-                <span>{STORE_INFO.email}</span>
+                <span>shop@example.com</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 text-[#FF5B00]" />
-                <span>{STORE_INFO.address}</span>
+                <span>12/A Motijheel, Dhaka 1000, Bangladesh</span>
               </div>
             </div>
           </div>
@@ -136,10 +167,10 @@ export const Footer: React.FC = () => {
         <div className="mt-10 p-6 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <h4 className="text-sm md:text-base font-bold text-white">
-              Subscribe to Get Exclusive Offers & Coupons
+              Subscribe to Get Exclusive Offers & Product Updates
             </h4>
             <p className="text-xs text-gray-400 mt-0.5">
-              Receive updates on flash sales, new toy arrivals, and parenting tips.
+              Receive updates on new catalog additions and safety equipment promotions.
             </p>
           </div>
           <form onSubmit={handleSubscribe} className="flex w-full md:w-auto max-w-md gap-2">
@@ -152,7 +183,7 @@ export const Footer: React.FC = () => {
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-[#FF5B00] hover:bg-[#E64E00] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors shrink-0"
+              className="px-4 py-2 bg-[#FF5B00] hover:bg-[#E64E00] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer"
             >
               <span>Subscribe</span>
               <Send className="w-3.5 h-3.5" />
@@ -163,7 +194,7 @@ export const Footer: React.FC = () => {
 
       {/* Copyright */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-500 gap-2">
-        <p>© 2026 Toy House Ltd. All rights reserved.</p>
+        <p>© 2026 Demo Safety Store. All rights reserved.</p>
         <p className="flex items-center gap-2">
           <span>Safe & Secure Payments</span>
           <span>•</span>

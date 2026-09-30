@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { Star, ShoppingCart, ShoppingBag, Eye } from "lucide-react";
 import { Product } from "@/types";
@@ -68,9 +69,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
         </button>
 
         {/* Product Image */}
-        <div
-          onClick={handleQuickView}
-          className="relative w-full h-full cursor-pointer transition-transform duration-500 group-hover:scale-105"
+        <Link
+          href={`/products/${product.slug}`}
+          className="relative w-full h-full cursor-pointer transition-transform duration-500 group-hover:scale-105 block"
         >
           <Image
             src={product.image}
@@ -79,7 +80,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             className="object-cover rounded-lg"
           />
-        </div>
+        </Link>
       </div>
 
       {/* Content Section */}
@@ -97,13 +98,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
           </div>
 
           {/* Product Title */}
-          <h3
-            onClick={handleQuickView}
-            className="text-[13px] font-semibold text-gray-800 line-clamp-2 leading-snug cursor-pointer hover:text-[#FF5B00] transition-colors mb-2 min-h-[36px]"
+          <Link
+            href={`/products/${product.slug}`}
+            className="block text-[13px] font-semibold text-gray-800 line-clamp-2 leading-snug cursor-pointer hover:text-[#FF5B00] transition-colors mb-2 min-h-[36px]"
             title={product.title}
           >
             {product.title}
-          </h3>
+          </Link>
 
           {/* Price Container */}
           <div className="flex items-baseline gap-2 mb-3">

@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
-import { Header } from "@/components/layout/Header/Header";
-import { Footer } from "@/components/layout/Footer/Footer";
-import { MobileBottomNav } from "@/components/layout/MobileNav/MobileBottomNav";
-import { FloatingChat } from "@/components/layout/FloatingChat";
-import { QuickViewModal } from "@/components/common/QuickViewModal";
-import { CartDrawer } from "@/components/common/CartDrawer";
-import { ToastNotification } from "@/components/common/ToastNotification";
 
 const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -17,20 +11,9 @@ const fontSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Toy House - Premium Kids Toys, Ride-On Cars & Baby Essentials",
+  title: "Demo Safety Store - Safety Equipment & Hardware Store",
   description:
-    "Discover the finest collection of electric ride-on cars, baby strollers, Montessori educational toys, and maternal essentials with super fast delivery in Bangladesh.",
-  keywords: [
-    "Toy House",
-    "Kids Toys",
-    "Electric Cars for Kids",
-    "Baby Strollers",
-    "Baby Formula",
-    "Educational Toys",
-    "Montessori Toys",
-    "Ride-on Bike",
-    "Bangladesh Online Toy Store",
-  ],
+    "Discover the finest collection of safety equipment, fire extinguishers, hardware, and safety manuals with fast delivery across Bangladesh.",
 };
 
 export default function RootLayout({
@@ -41,16 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={fontSans.variable}>
       <body className="min-h-screen flex flex-col bg-[#FAFAFA] font-sans antialiased text-gray-900 selection:bg-[#FF5B00] selection:text-white">
-        <CartProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-          <MobileBottomNav />
-          <FloatingChat />
-          <QuickViewModal />
-          <CartDrawer />
-          <ToastNotification />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            {children}
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

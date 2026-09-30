@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Product, CartItem } from "@/types";
-import { FLASH_DEALS_PRODUCTS } from "@/data/products";
 
 interface CartContextType {
   cart: CartItem[];
@@ -22,19 +21,8 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const INITIAL_MOCK_CART: CartItem[] = [
-  {
-    product: FLASH_DEALS_PRODUCTS[0], // Turbo Moto 250
-    quantity: 1,
-  },
-  {
-    product: FLASH_DEALS_PRODUCTS[1], // RFL Jim & Jolly
-    quantity: 1,
-  },
-];
-
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>(INITIAL_MOCK_CART);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);

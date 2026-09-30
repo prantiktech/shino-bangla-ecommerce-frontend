@@ -1,24 +1,51 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search, ShoppingCart, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
-import { ALL_PRODUCTS } from "@/data/products";
 import { formatPrice } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { getProductsAction } from "@/app/(user)/actions/products";
+import { mapApiProductToProduct } from "@/lib/utils/product-mapper";
+import { Product } from "@/types";
 
 export const TopHeader: React.FC = () => {
+  const router = useRouter();
   const { totalItems, setIsCartOpen, setQuickViewProduct } = useCart();
+  const { user, isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
 
-  const searchResults = searchQuery.trim()
-    ? ALL_PRODUCTS.filter((p) =>
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.brand?.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5)
-    : [];
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await getProductsAction({ q: searchQuery.trim(), per_page: 5 });
+        if (res.success && res.data.items) {
+          setSearchResults(res.data.items.map(mapApiProductToProduct));
+        }
+      } catch {
+        // ignore
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchFocused(false);
+    }
+  };
 
   return (
     <div className="bg-white text-gray-900 py-3 px-4 md:px-8 border-b border-gray-100 shadow-2xs relative z-40">
@@ -49,7 +76,7 @@ export const TopHeader: React.FC = () => {
 
         {/* Center Rounded Pill Search Bar (matching screenshot) */}
         <div className="flex-1 max-w-xl mx-2 md:mx-6 relative">
-          <div className="relative flex items-center">
+          <form onSubmit={handleSearchSubmit} className="relative flex items-center">
             <input
               type="text"
               value={searchQuery}
@@ -60,12 +87,13 @@ export const TopHeader: React.FC = () => {
               className="w-full h-10 pl-5 pr-11 rounded-full border border-gray-300/90 bg-white text-gray-800 placeholder:text-gray-400 text-sm focus:outline-none focus:border-[#009cae] focus:ring-2 focus:ring-[#009cae]/20 transition-all shadow-2xs"
             />
             <button
+              type="submit"
               aria-label="Search"
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#009cae] transition-colors"
             >
               <Search className="w-4 h-4 stroke-[2.2]" />
             </button>
-          </div>
+          </form>
 
           {/* Search Live Dropdown Suggestions */}
           {isSearchFocused && searchResults.length > 0 && (
@@ -94,14 +122,32 @@ export const TopHeader: React.FC = () => {
         {/* Right Actions: User Profile & Shopping Cart (matching screenshot) */}
         <div className="flex items-center gap-4 md:gap-6 shrink-0 text-gray-800">
           
-          {/* User Profile */}
-          <Link
-            href="/login"
-            className="text-gray-800 hover:text-[#009cae] transition-colors p-1"
-            aria-label="User Account"
-          >
-            <User className="w-6 h-6 stroke-[1.8]" />
-          </Link>
+          {/* User Profile / Sign in */}
+          {isAuthenticated && user ? (
+            <Link
+              href="/account"
+              className="flex items-center gap-1.5 text-gray-800 hover:text-[#009cae] transition-colors p-1"
+              aria-label="My Account"
+            >
+              <div className="w-7 h-7 rounded-full bg-teal-50 border border-teal-200 text-[#009cae] flex items-center justify-center text-xs font-bold">
+                {user.name ? user.name[0].toUpperCase() : "U"}
+              </div>
+              <span className="hidden sm:inline text-xs font-bold text-gray-800 line-clamp-1 max-w-[100px]">
+                {user.name.split(" ")[0]}
+              </span>
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="text-gray-800 hover:text-[#009cae] transition-colors p-1 flex items-center gap-1"
+              aria-label="User Sign In"
+            >
+              <User className="w-6 h-6 stroke-[1.8]" />
+              <span className="hidden md:inline text-xs font-medium text-gray-600 hover:text-[#009cae]">
+                Sign In
+              </span>
+            </Link>
+          )}
 
           {/* Cart Trigger */}
           <button

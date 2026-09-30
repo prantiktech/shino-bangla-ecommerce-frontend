@@ -12,22 +12,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
+import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 
 export const CartDrawer: React.FC = () => {
+  const router = useRouter();
   const { cart, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, subtotal, totalItems } = useCart();
 
   const handleCheckout = () => {
-    try {
-      confetti({
-        particleCount: 80,
-        spread: 80,
-        origin: { y: 0.6 },
-      });
-    } catch {
-      // ignore
-    }
-    alert("Proceeding to secure checkout!");
+    setIsCartOpen(false);
+    router.push("/checkout");
   };
 
   return (
