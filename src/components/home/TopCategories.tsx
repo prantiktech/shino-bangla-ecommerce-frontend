@@ -23,7 +23,7 @@ export const TopCategories: React.FC<TopCategoriesProps> = ({ categories = [] })
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
             Top Categories
           </h2>
-          <div className="w-12 h-1 bg-[#FF5B00] mx-auto mt-2 rounded-full" />
+          <div className="w-12 h-1 bg-primary mx-auto mt-2 rounded-full" />
         </div>
 
         {/* Categories Grid */}
@@ -32,16 +32,16 @@ export const TopCategories: React.FC<TopCategoriesProps> = ({ categories = [] })
             <Link
               key={cat.id}
               href={`/category/${cat.slug}`}
-              className="group flex flex-col items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#FFF9F5] border border-orange-100/80 hover:border-orange-300 hover:shadow-md hover:-translate-y-1 transition-all duration-200 text-center"
+              className="group flex flex-col items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-brand-50 border border-brand-100/80 hover:border-brand-300 hover:shadow-md hover:-translate-y-1 transition-all duration-200 text-center"
             >
               {/* Category Icon Container */}
-              <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 rounded-2xl bg-white shadow-2xs border border-orange-50 flex items-center justify-center group-hover:scale-105 transition-transform text-[#FF5B00]">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 mb-3 rounded-2xl bg-white shadow-2xs border border-brand-50 flex items-center justify-center group-hover:scale-105 transition-transform text-primary">
                 <CategoryIcon name={cat.icon || "Shield"} className="w-8 h-8" />
               </div>
 
               {/* Title & Product Count */}
               <div className="w-full">
-                <h3 className="text-xs font-bold text-gray-800 line-clamp-1 group-hover:text-[#FF5B00] transition-colors">
+                <h3 className="text-xs font-bold text-gray-800 line-clamp-1 group-hover:text-primary transition-colors">
                   {cat.name}
                 </h3>
                 <span className="text-[11px] text-gray-400 font-semibold mt-0.5 block">

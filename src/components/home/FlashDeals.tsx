@@ -38,34 +38,34 @@ export const FlashDeals: React.FC<FlashDealsProps> = ({ products = [] }) => {
   const CountdownBadge = (
     <div className="flex items-center gap-1.5 sm:gap-2">
       <div className="flex flex-col items-center">
-        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#FF5B00] text-white flex items-center justify-center font-black text-sm sm:text-base shadow-xs">
+        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary text-white flex items-center justify-center font-black text-sm sm:text-base shadow-xs">
           {days.toString().padStart(2, "0")}
         </div>
         <span className="text-[10px] text-gray-500 font-semibold mt-0.5">Day</span>
       </div>
 
-      <span className="text-[#FF5B00] font-black text-xs pb-3">:</span>
+      <span className="text-primary font-black text-xs pb-3">:</span>
 
       <div className="flex flex-col items-center">
-        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#FF5B00] text-white flex items-center justify-center font-black text-sm sm:text-base shadow-xs">
+        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary text-white flex items-center justify-center font-black text-sm sm:text-base shadow-xs">
           {hours.toString().padStart(2, "0")}
         </div>
         <span className="text-[10px] text-gray-500 font-semibold mt-0.5">Hour</span>
       </div>
 
-      <span className="text-[#FF5B00] font-black text-xs pb-3">:</span>
+      <span className="text-primary font-black text-xs pb-3">:</span>
 
       <div className="flex flex-col items-center">
-        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#FF5B00] text-white flex items-center justify-center font-black text-sm sm:text-base shadow-xs">
+        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary text-white flex items-center justify-center font-black text-sm sm:text-base shadow-xs">
           {minutes.toString().padStart(2, "0")}
         </div>
         <span className="text-[10px] text-gray-500 font-semibold mt-0.5">Min</span>
       </div>
 
-      <span className="text-[#FF5B00] font-black text-xs pb-3">:</span>
+      <span className="text-primary font-black text-xs pb-3">:</span>
 
       <div className="flex flex-col items-center">
-        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#FF5B00] text-white flex items-center justify-center font-black text-sm sm:text-base shadow-xs">
+        <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary text-white flex items-center justify-center font-black text-sm sm:text-base shadow-xs">
           {seconds.toString().padStart(2, "0")}
         </div>
         <span className="text-[10px] text-gray-500 font-semibold mt-0.5">Sec</span>

@@ -440,7 +440,7 @@ export function BuyNowModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-orange-100/70 text-[#FF5B00] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-brand-100/70 text-primary flex items-center justify-center">
               <ShoppingBag className="w-4 h-4" />
             </div>
             <div>
@@ -491,7 +491,7 @@ export function BuyNowModal({
               </div>
               <div className="flex justify-between text-slate-600">
                 <span>Total Amount:</span>
-                <span className="font-black text-[#FF5B00]">
+                <span className="font-black text-primary">
                   {formatPoisha(placedOrder.total_amount)}
                 </span>
               </div>
@@ -513,7 +513,7 @@ export function BuyNowModal({
               <Link
                 href={`/orders/${placedOrder.number}`}
                 onClick={onClose}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#FF5B00] text-white text-xs font-bold hover:bg-[#e05000] transition-colors shadow-sm"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-brand-700 transition-colors shadow-sm"
               >
                 Track & View Order
               </Link>
@@ -561,7 +561,7 @@ export function BuyNowModal({
                         SKU: {selectedVariant?.sku || sku}
                       </span>
                     )}
-                    <span className="text-xs font-black text-[#FF5B00] block mt-0.5">
+                    <span className="text-xs font-black text-primary block mt-0.5">
                       {formatPoisha(
                         selectedVariant?.price
                           ? selectedVariant.price
@@ -600,14 +600,14 @@ export function BuyNowModal({
 
               {/* Variant Selector Pills if product has multiple variants */}
               {resolvedVariants.length > 1 && (
-                <div className="p-3 bg-orange-50/50 border border-orange-200/70 rounded-2xl space-y-2">
+                <div className="p-3 bg-brand-50/50 border border-brand-200/70 rounded-2xl space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                      <Tag className="w-3.5 h-3.5 text-[#FF5B00]" />
+                      <Tag className="w-3.5 h-3.5 text-primary" />
                       <span>Choose {resolvedOptionName || "Variant"}:</span>
                     </span>
                     {selectedVariant && (
-                      <span className="text-[11px] font-semibold text-[#FF5B00]">
+                      <span className="text-[11px] font-semibold text-primary">
                         {selectedVariant.label || selectedVariant.value}
                       </span>
                     )}
@@ -625,13 +625,13 @@ export function BuyNowModal({
                           }}
                           className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-1.5 ${
                             isSelected
-                              ? "bg-[#FF5B00] text-white border-[#FF5B00] shadow-xs scale-[1.02]"
+                              ? "bg-primary text-white border-primary shadow-xs scale-[1.02]"
                               : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                           } ${!v.in_stock ? "opacity-50 line-through" : ""}`}
                         >
                           <span>{v.label || v.value || `Variant #${v.id}`}</span>
                           {v.price && (
-                            <span className={`text-[10px] ${isSelected ? "text-orange-100" : "text-slate-500"}`}>
+                            <span className={`text-[10px] ${isSelected ? "text-brand-100" : "text-slate-500"}`}>
                               ৳{poishaToTaka(v.price).toFixed(0)}
                             </span>
                           )}
@@ -647,14 +647,14 @@ export function BuyNowModal({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 uppercase tracking-wider">
-                  <MapPin className="w-3.5 h-3.5 text-[#FF5B00]" />
+                  <MapPin className="w-3.5 h-3.5 text-primary" />
                   <span>Delivery Destination</span>
                 </div>
                 {isAuthenticated && savedAddresses.length > 0 && (
                   <button
                     type="button"
                     onClick={() => setUseNewAddress(!useNewAddress)}
-                    className="text-[11px] font-bold text-[#FF5B00] hover:underline"
+                    className="text-[11px] font-bold text-primary hover:underline"
                   >
                     {useNewAddress ? "Use Saved Address" : "+ Enter New Address"}
                   </button>
@@ -673,14 +673,14 @@ export function BuyNowModal({
                         onClick={() => handleSelectSavedAddress(addr.id)}
                         className={`p-3 rounded-xl border text-xs cursor-pointer transition-all ${
                           isSelected
-                            ? "border-[#FF5B00] bg-orange-50/20 ring-1 ring-[#FF5B00]"
+                            ? "border-primary bg-brand-50/20 ring-1 ring-primary"
                             : "border-slate-200 hover:bg-slate-50"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-bold text-slate-900">{addr.name}</span>
                           {addr.is_default_shipping && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 bg-orange-100 text-[#FF5B00] rounded">
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 bg-brand-100 text-primary rounded">
                               Default
                             </span>
                           )}
@@ -705,7 +705,7 @@ export function BuyNowModal({
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Your full name"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                       />
                     </div>
                     <div className="space-y-1">
@@ -716,7 +716,7 @@ export function BuyNowModal({
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="017XXXXXXXX"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                       />
                     </div>
                   </div>
@@ -727,7 +727,7 @@ export function BuyNowModal({
                       <select
                         value={districtId}
                         onChange={(e) => setDistrictId(Number(e.target.value))}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                       >
                         {locations.map((loc) => (
                           <option key={loc.id} value={loc.id}>
@@ -743,7 +743,7 @@ export function BuyNowModal({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="user@example.com"
-                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] bg-white"
+                        className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                       />
                     </div>
                   </div>
@@ -756,7 +756,7 @@ export function BuyNowModal({
                       value={line1}
                       onChange={(e) => setLine1(e.target.value)}
                       placeholder="House / Flat / Road / Area"
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] bg-white"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                     />
                   </div>
                 </div>
@@ -764,15 +764,15 @@ export function BuyNowModal({
             </div>
 
             {/* Live Financial Breakdown & Quote */}
-            <div className="p-4 bg-orange-50/20 border border-orange-100 rounded-2xl space-y-3">
-              <div className="flex items-center justify-between border-b border-orange-100/60 pb-2">
+            <div className="p-4 bg-brand-50/20 border border-brand-100 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between border-b border-brand-100/60 pb-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 uppercase tracking-wider">
-                  <Receipt className="w-3.5 h-3.5 text-[#FF5B00]" />
+                  <Receipt className="w-3.5 h-3.5 text-primary" />
                   <span>Item & Delivery Quote</span>
                 </div>
                 {quoteLoading ? (
                   <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin text-[#FF5B00]" /> Calculating...
+                    <Loader2 className="w-3 h-3 animate-spin text-primary" /> Calculating...
                   </span>
                 ) : quote?.shipping ? (
                   <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
@@ -788,7 +788,7 @@ export function BuyNowModal({
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
                   placeholder="Coupon code"
-                  className="flex-1 px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#FF5B00] bg-white uppercase placeholder:normal-case"
+                  className="flex-1 px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-1 focus:ring-primary bg-white uppercase placeholder:normal-case"
                 />
                 {appliedCoupon ? (
                   <button
@@ -803,7 +803,7 @@ export function BuyNowModal({
                     type="button"
                     onClick={handleApplyCoupon}
                     disabled={!couponCode.trim()}
-                    className="px-3 py-1.5 rounded-xl bg-[#FF5B00] text-white text-xs font-bold hover:bg-[#e05000] disabled:opacity-50 transition-colors"
+                    className="px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-brand-700 disabled:opacity-50 transition-colors"
                   >
                     Apply
                   </button>
@@ -844,9 +844,9 @@ export function BuyNowModal({
                   </span>
                 </div>
 
-                <div className="flex justify-between items-baseline text-sm font-black text-slate-900 pt-2 border-t border-orange-200/60">
+                <div className="flex justify-between items-baseline text-sm font-black text-slate-900 pt-2 border-t border-brand-200/60">
                   <span>Grand Total</span>
-                  <span className="text-[#FF5B00] text-base font-black">
+                  <span className="text-primary text-base font-black">
                     {formatPoisha(grandTotalPoisha)}
                   </span>
                 </div>
@@ -857,7 +857,7 @@ export function BuyNowModal({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                  <CreditCard className="w-3.5 h-3.5 text-[#FF5B00]" />
+                  <CreditCard className="w-3.5 h-3.5 text-primary" />
                   <span>Ways of Paying on Offer</span>
                 </label>
               </div>
@@ -868,7 +868,7 @@ export function BuyNowModal({
                     key={pm.method}
                     className={`p-3 rounded-xl border text-xs cursor-pointer flex flex-col justify-between transition-all ${
                       paymentMethod === pm.method
-                        ? "border-[#FF5B00] bg-orange-50/20 ring-1 ring-[#FF5B00]"
+                        ? "border-primary bg-brand-50/20 ring-1 ring-primary"
                         : "border-slate-200 hover:bg-slate-50"
                     }`}
                   >
@@ -879,7 +879,7 @@ export function BuyNowModal({
                         value={pm.method}
                         checked={paymentMethod === pm.method}
                         onChange={() => setPaymentMethod(pm.method)}
-                        className="text-[#FF5B00] focus:ring-[#FF5B00]"
+                        className="text-primary focus:ring-primary"
                       />
                       <span className="font-bold text-slate-900 line-clamp-1">{pm.label}</span>
                     </div>
@@ -899,7 +899,7 @@ export function BuyNowModal({
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="e.g. Call before delivery, deliver in afternoon"
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] bg-white"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
               />
             </div>
 
@@ -915,7 +915,7 @@ export function BuyNowModal({
               <button
                 type="submit"
                 disabled={isSubmitting || quoteLoading || variantLoading || !activeVariantId || activeVariantId <= 0}
-                className="flex-1 py-3 rounded-xl bg-[#FF5B00] text-white text-xs font-bold hover:bg-[#e05000] disabled:opacity-50 transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                className="flex-1 py-3 rounded-xl bg-primary text-white text-xs font-bold hover:bg-brand-700 disabled:opacity-50 transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <>

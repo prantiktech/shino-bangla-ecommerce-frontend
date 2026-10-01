@@ -5,7 +5,7 @@ import { ActivityLogManagement } from "./_components/ActivityLogManagement";
 import { ActivityLogFilters } from "@/types/activity-log";
 
 export const metadata: Metadata = {
-  title: "Audit & Activity Logs | Store Management",
+  title: "Activity Log | Admin Portal",
   description: "Real-time audit trail of staff actions, security events, authentication attempts, and operational records.",
 };
 

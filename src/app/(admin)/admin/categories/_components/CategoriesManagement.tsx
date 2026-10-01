@@ -31,6 +31,7 @@ import {
   deleteAdminCategoryAction,
   moveAdminCategoryAction,
   getAdminCategoriesAction,
+  getAdminCategoryDetailAction,
 } from "@/app/(admin)/actions/categories";
 import { uploadAdminMediaAction } from "@/app/(admin)/actions/media";
 
@@ -113,6 +114,15 @@ export function CategoriesManagement({ initialCategories }: CategoriesManagement
   const openEditModal = (cat: AdminCategoryResource) => {
     setError(null);
     setSuccess(null);
+    fillEditForm(cat);
+    setIsEditModalOpen(true);
+    // The list omits some fields (e.g. banner); load the full record.
+    getAdminCategoryDetailAction(cat.id).then((r) => {
+      if (r.success && r.data) fillEditForm({ ...cat, ...r.data });
+    });
+  };
+
+  const fillEditForm = (cat: AdminCategoryResource) => {
     setActiveCategory(cat);
     setName(cat.name || "");
     setSlug(cat.slug || "");
@@ -127,7 +137,6 @@ export function CategoriesManagement({ initialCategories }: CategoriesManagement
     setIconPreviewUrl(cat.icon?.url || null);
     setBannerImageId(cat.banner?.id || null);
     setBannerPreviewUrl(cat.banner?.url || null);
-    setIsEditModalOpen(true);
   };
 
   // Open Move Modal

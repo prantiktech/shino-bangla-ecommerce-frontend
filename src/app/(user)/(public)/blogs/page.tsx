@@ -1,115 +1,72 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
+import type { Metadata } from "next";
+import { ArrowRight, FileText, Newspaper } from "lucide-react";
 import { Breadcrumb } from "@/components/common/Breadcrumb";
-import { Calendar, User, ArrowRight } from "lucide-react";
+import { getPagesAction } from "@/app/(user)/actions/content";
 
-const BLOG_POSTS = [
-  {
-    id: "blog-1",
-    title: "How to Choose the Best Electric Ride-On Car for Your Child in 2026",
-    slug: "choose-best-electric-ride-on-car",
-    excerpt: "Safety features, battery voltages (6V vs 12V vs 24V), remote control overrides, and terrain compatibility explained.",
-    image: "https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=600&auto=format&fit=crop&q=80",
-    date: "Aug 28, 2026",
-    author: "Toy House Expert",
-    category: "Parenting Guide"
-  },
-  {
-    id: "blog-2",
-    title: "The Benefits of Montessori Wooden Toys for Early Childhood Development",
-    slug: "montessori-toys-benefits-early-development",
-    excerpt: "Discover why sensory open-ended toys encourage cognitive problem-solving, focus, and creativity better than screen time.",
-    image: "https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&auto=format&fit=crop&q=80",
-    date: "Aug 20, 2026",
-    author: "Child Psychologist",
-    category: "Learning & STEM"
-  },
-  {
-    id: "blog-3",
-    title: "Baby Stroller Buying Guide: Compact, Jogging, or All-Terrain?",
-    slug: "baby-stroller-complete-buying-guide",
-    excerpt: "Everything you need to know about safety harnesses, canopy sun protection, suspension systems, and travel foldability.",
-    image: "https://images.unsplash.com/photo-1591088398332-8a7791972843?w=600&auto=format&fit=crop&q=80",
-    date: "Aug 15, 2026",
-    author: "Pediatric Care Team",
-    category: "Baby Essentials"
-  }
-];
+export const metadata: Metadata = {
+  title: "Guides & Articles",
+  description: "Buying guides, store policies and helpful articles from Nogod Bazar.",
+};
 
-export default function BlogsPage() {
+export default async function BlogsPage() {
+  const res = await getPagesAction();
+  const pages = res.success ? res.data : [];
+
   return (
-    <div className="min-h-screen bg-[#FAFAFA] pb-20">
-      <Breadcrumb
-        items={[
-          { label: "Pages", href: "/blogs" },
-          { label: "Blogs" },
-        ]}
-      />
+    <div className="pb-16">
+      <Breadcrumb items={[{ label: "Guides & Articles" }]} />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
-        <div className="text-center mb-10">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-2">
-            Toy House Blog & Parenting Hub
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12">
+        <header className="max-w-2xl mb-8 md:mb-10">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">Nogod Bazar Journal</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-ink tracking-tight">
+            Guides & Articles
           </h1>
-          <p className="text-xs sm:text-sm text-gray-500 max-w-xl mx-auto">
-            Insights, guides, toy reviews, and developmental tips from parenting experts.
+          <p className="mt-3 text-sm md:text-base text-slate-500">
+            Helpful guides, store information and policies to make shopping with us simple.
           </p>
-        </div>
+        </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {BLOG_POSTS.map((post) => (
-            <article
-              key={post.id}
-              className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs hover:shadow-lg transition-all duration-300 overflow-hidden flex flex-col justify-between group"
+        {pages.length === 0 ? (
+          <div className="bg-white rounded-2xl ring-1 ring-slate-200/70 py-16 px-6 text-center">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-brand-50 text-primary flex items-center justify-center mb-4">
+              <Newspaper className="w-7 h-7" />
+            </div>
+            <h2 className="text-lg font-semibold text-ink">No articles yet</h2>
+            <p className="mt-1 text-sm text-slate-500">Check back soon for guides and updates.</p>
+            <Link
+              href="/products"
+              className="mt-6 inline-flex items-center gap-2 h-10 px-5 rounded-lg bg-primary hover:bg-primary-hover text-white text-sm font-semibold transition-colors"
             >
-              <div className="relative aspect-[16/10] overflow-hidden bg-gray-100">
-                <Image
-                  src={post.image}
-                  alt={post.title}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
-                <span className="absolute top-3 left-3 bg-[#FF5B00] text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow-xs">
-                  {post.category}
-                </span>
-              </div>
-
-              <div className="p-5 flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-3 text-xs text-gray-400 mb-2">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {post.date}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <User className="w-3.5 h-3.5" />
-                      {post.author}
-                    </span>
-                  </div>
-
-                  <h3 className="text-base font-bold text-gray-900 group-hover:text-[#FF5B00] transition-colors line-clamp-2 mb-2 leading-snug">
-                    {post.title}
-                  </h3>
-
-                  <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed mb-4">
-                    {post.excerpt}
-                  </p>
-                </div>
-
+              Continue shopping
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        ) : (
+          <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {pages.map((page) => (
+              <li key={page.slug}>
                 <Link
-                  href={`/blogs/${post.slug}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#FF5B00] hover:text-[#E64E00] transition-colors"
+                  href={`/pages/${page.slug}`}
+                  className="group h-full flex flex-col bg-white rounded-2xl ring-1 ring-slate-200/70 shadow-card hover:shadow-card-hover hover:ring-brand-200 transition-all p-6"
                 >
-                  <span>Read Article</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span className="w-11 h-11 rounded-xl bg-brand-50 text-primary flex items-center justify-center mb-5">
+                    <FileText className="w-5 h-5" />
+                  </span>
+                  <h2 className="text-base md:text-lg font-semibold text-ink group-hover:text-primary transition-colors leading-snug">
+                    {page.title}
+                  </h2>
+                  <span className="mt-auto pt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
+                    Read more
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                  </span>
                 </Link>
-              </div>
-            </article>
-          ))}
-        </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

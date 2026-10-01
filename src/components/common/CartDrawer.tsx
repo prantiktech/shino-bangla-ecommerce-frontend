@@ -37,7 +37,7 @@ export const CartDrawer: React.FC = () => {
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
           <SheetHeader className="text-left">
             <SheetTitle className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5 text-[#FF5B00]" />
+              <ShoppingBag className="w-5 h-5 text-primary" />
               My Shopping Cart ({totalItems})
             </SheetTitle>
           </SheetHeader>
@@ -47,16 +47,16 @@ export const CartDrawer: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {cart.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-500">
-              <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center text-[#FF5B00] mb-3">
+              <div className="w-16 h-16 rounded-full bg-brand-50 flex items-center justify-center text-primary mb-3">
                 <ShoppingBag className="w-8 h-8" />
               </div>
               <h4 className="text-base font-semibold text-gray-900 mb-1">Your cart is empty</h4>
               <p className="text-xs text-gray-500 max-w-xs mb-4">
-                Looks like you haven&apos;t added any toys or baby gear to your cart yet.
+                Looks like you haven&apos;t added anything to your cart yet. Start exploring our products.
               </p>
               <Button
                 onClick={() => setIsCartOpen(false)}
-                className="bg-[#FF5B00] hover:bg-[#E64E00] text-xs font-semibold"
+                className="bg-primary hover:bg-primary-hover text-xs font-semibold"
               >
                 Continue Shopping
               </Button>
@@ -83,7 +83,7 @@ export const CartDrawer: React.FC = () => {
                   <h4 className="text-xs font-semibold text-gray-900 line-clamp-1 mb-1" title={product.title}>
                     {product.title}
                   </h4>
-                  <div className="text-xs font-bold text-[#FF5B00] mb-2">
+                  <div className="text-xs font-bold text-primary mb-2">
                     {formatPrice(product.price)}
                   </div>
 
@@ -137,13 +137,13 @@ export const CartDrawer: React.FC = () => {
               </div>
               <div className="flex justify-between text-sm font-bold text-gray-900 pt-2 border-t border-gray-200">
                 <span>Total Amount</span>
-                <span className="text-base text-[#FF5B00]">{formatPrice(subtotal)}</span>
+                <span className="text-base text-primary">{formatPrice(subtotal)}</span>
               </div>
             </div>
 
             <Button
               onClick={handleCheckout}
-              className="w-full bg-[#FF5B00] hover:bg-[#E64E00] text-white font-bold h-11 rounded-xl shadow-md gap-2 flex items-center justify-center"
+              className="w-full bg-primary hover:bg-primary-hover text-white font-bold h-11 rounded-xl shadow-md gap-2 flex items-center justify-center"
             >
               Checkout Now
               <ArrowRight className="w-4 h-4" />

@@ -37,8 +37,8 @@ function Calendar({
         day_button:
           "h-8 w-8 p-0 font-medium text-slate-700 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-colors flex items-center justify-center cursor-pointer",
         selected:
-          "!bg-[#FF5B00] !text-white font-bold rounded-lg shadow-sm hover:!bg-[#E64E00] hover:!text-white",
-        today: "font-bold text-[#FF5B00] bg-orange-50 rounded-lg border border-orange-200",
+          "!bg-primary !text-white font-bold rounded-lg shadow-sm hover:!bg-primary-hover hover:!text-white",
+        today: "font-bold text-primary bg-brand-50 rounded-lg border border-brand-200",
         outside: "text-slate-300 opacity-50",
         disabled: "text-slate-300 opacity-40 cursor-not-allowed",
         hidden: "invisible",

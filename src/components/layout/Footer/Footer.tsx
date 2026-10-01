@@ -1,6 +1,4 @@
-"use client";
-
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -8,220 +6,185 @@ import {
   RefreshCcw,
   Headphones,
   Mail,
-  Send,
   PhoneCall,
   MapPin,
+  Banknote,
+  Lock,
 } from "lucide-react";
-import { useCart } from "@/context/CartContext";
-import { subscribeNewsletterAction } from "@/app/(user)/actions/content";
+import { Logo } from "@/components/common/Logo";
+import { NewsletterForm } from "./NewsletterForm";
+import { getSettingsAction } from "@/app/(user)/actions/settings";
+import { getPagesAction } from "@/app/(user)/actions/content";
+import { getCategoriesAction } from "@/app/(user)/actions/categories";
 
-const FOOTER_SECTIONS = [
-  {
-    title: "Categories",
-    links: [
-      { label: "Safety Equipment", href: "/category/safety-equipment" },
-      { label: "Fire Extinguishers", href: "/category/fire-extinguishers" },
-      { label: "Alarms & Detectors", href: "/category/alarms-detectors" },
-      { label: "Hardware & Fasteners", href: "/category/hardware" },
-      { label: "Safety Manuals", href: "/category/safety-manuals" },
-    ],
-  },
-  {
-    title: "Customer Support",
-    links: [
-      { label: "Track Your Order", href: "/track-order" },
-      { label: "All Products", href: "/products" },
-      { label: "All Brands", href: "/brands" },
-      { label: "Staff Portal", href: "/admin/login" },
-      { label: "My Account", href: "/account" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "About Us", href: "/blogs" },
-      { label: "Privacy Policy", href: "#" },
-      { label: "Terms of Service", href: "#" },
-      { label: "Return Policy", href: "#" },
-      { label: "Contact Us", href: "/track-order" },
-    ],
-  },
+const SERVICE_HIGHLIGHTS = [
+  { icon: Truck, title: "Fast Delivery", text: "All across Bangladesh" },
+  { icon: ShieldCheck, title: "100% Genuine", text: "Sourced from trusted brands" },
+  { icon: RefreshCcw, title: "Easy Returns", text: "7-day hassle-free policy" },
+  { icon: Headphones, title: "Dedicated Support", text: "9 AM - 10 PM, every day" },
 ];
 
-export const Footer: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const [subscribing, setSubscribing] = useState(false);
-  const { showToast } = useCart();
+const SUPPORT_LINKS = [
+  { label: "Track Your Order", href: "/track-order" },
+  { label: "My Account", href: "/account" },
+  { label: "My Orders", href: "/account?tab=orders" },
+  { label: "All Products", href: "/products" },
+  { label: "All Brands", href: "/brands" },
+  { label: "FAQs", href: "/faq" },
+  { label: "Contact Us", href: "/contact" },
+];
 
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !email.includes("@")) {
-      showToast("Please enter a valid email address.");
-      return;
-    }
-    setSubscribing(true);
-    try {
-      const res = await subscribeNewsletterAction(email, "footer");
-      if (res.success) {
-        showToast(res.data?.message || "Thank you for subscribing to our newsletter!");
-        setEmail("");
-      } else {
-        showToast(res.error?.message || "Failed to subscribe. Please try again.");
-      }
-    } catch {
-      showToast("Failed to subscribe. Please try again.");
-    } finally {
-      setSubscribing(false);
-    }
-  };
+type FooterLink = { label: string; href: string };
+
+function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) {
+  if (links.length === 0) return null;
+  return (
+    <div>
+      <h3 className="text-xs font-semibold text-white uppercase tracking-wider mb-4">{title}</h3>
+      <ul className="space-y-2.5 text-sm">
+        {links.map((link) => (
+          <li key={link.href + link.label}>
+            <Link href={link.href} className="text-slate-400 hover:text-white transition-colors">
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * Storefront footer. Server component: store contact details, CMS pages and
+ * top categories come straight from the API so nothing is hard-coded.
+ */
+export async function Footer() {
+  const [settingsRes, pagesRes, categoriesRes] = await Promise.all([
+    getSettingsAction(),
+    getPagesAction(),
+    getCategoriesAction(),
+  ]);
+
+  const settings = settingsRes.success ? settingsRes.data : null;
+  const pages = pagesRes.success ? pagesRes.data : [];
+  const categories = categoriesRes.success ? categoriesRes.data : [];
+
+  const categoryLinks: FooterLink[] = categories
+    .slice(0, 6)
+    .map((c: { name: string; slug: string }) => ({ label: c.name, href: `/category/${c.slug}` }));
+
+  const companyLinks: FooterLink[] = [
+    ...pages.map((p) => ({ label: p.title, href: `/pages/${p.slug}` })),
+    { label: "Guides & Articles", href: "/blogs" },
+  ];
+
+  const storeName = settings?.store_name || "Nogod Bazar";
+  const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-slate-900 text-gray-300 pt-12 pb-24 md:pb-12 border-t border-slate-800">
-      {/* Guarantees / Service Highlights */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 pb-10 border-b border-slate-800">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-[#FF5B00] shrink-0">
-              <Truck className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs md:text-sm font-bold text-white">Super Fast Delivery</h4>
-              <p className="text-[11px] text-gray-400">All across Bangladesh</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-[#FF5B00] shrink-0">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs md:text-sm font-bold text-white">100% Genuine Products</h4>
-              <p className="text-[11px] text-gray-400">Certified industrial standards</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-[#FF5B00] shrink-0">
-              <RefreshCcw className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs md:text-sm font-bold text-white">Easy Exchange</h4>
-              <p className="text-[11px] text-gray-400">7-day hassle free policy</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-[#FF5B00] shrink-0">
-              <Headphones className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs md:text-sm font-bold text-white">Dedicated Support</h4>
-              <p className="text-[11px] text-gray-400">9 AM - 10 PM daily</p>
-            </div>
-          </div>
+    <footer className="bg-slate-900 text-slate-300 pb-24 md:pb-0">
+      {/* Service highlights */}
+      <div className="border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
+          <ul className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-6">
+            {SERVICE_HIGHLIGHTS.map(({ icon: Icon, title, text }) => (
+              <li key={title} className="flex items-center gap-3">
+                <span className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-primary/10 ring-1 ring-primary/20 flex items-center justify-center text-brand-400 shrink-0">
+                  <Icon className="w-5 h-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-white">{title}</span>
+                  <span className="block text-xs text-slate-400">{text}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
-      {/* Main Footer Links */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 lg:gap-12">
-          {/* Brand Info */}
-          <div className="md:col-span-2 space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-[#FF5B00] flex items-center justify-center text-white font-black text-lg shadow-sm">
-                N
-              </div>
-              <div className="flex items-baseline leading-none">
-                <span className="text-xl font-black text-white tracking-tight">
-                  nogod
-                </span>
-                <span className="text-xl font-black text-[#FF5B00] tracking-tight ml-0.5">
-                  bazar
-                </span>
-              </div>
-            </Link>
-            <p className="text-xs text-gray-400 max-w-sm leading-relaxed">
-              Bangladesh&apos;s premier destination for genuine products, industrial hardware, safety equipment, and rapid delivery right to your doorstep.
+      {/* Main links */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-10">
+          <div className="col-span-2 space-y-5">
+            <Logo variant="light" />
+            <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
+              Bangladesh&apos;s trusted destination for genuine products, hardware and safety
+              equipment, delivered fast with cash on delivery.
             </p>
 
-            <div className="space-y-2 text-xs text-gray-300">
-              <div className="flex items-center gap-2">
-                <PhoneCall className="w-3.5 h-3.5 text-[#FF5B00]" />
-                <span>+880 1700-000000</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-[#FF5B00]" />
-                <span>shop@example.com</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-3.5 h-3.5 text-[#FF5B00]" />
-                <span>12/A Motijheel, Dhaka 1000, Bangladesh</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Nav Columns */}
-          {FOOTER_SECTIONS.map((section) => (
-            <div key={section.title} className="space-y-3">
-              <h4 className="text-xs md:text-sm font-bold text-white uppercase tracking-wider">
-                {section.title}
-              </h4>
-              <ul className="space-y-2 text-xs">
-                {section.links.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="text-gray-400 hover:text-[#FF5B00] transition-colors"
+            {settings && (
+              <ul className="space-y-2.5 text-sm">
+                {settings.store_phone && (
+                  <li>
+                    <a
+                      href={`tel:${settings.store_phone.replace(/\s/g, "")}`}
+                      className="inline-flex items-center gap-2.5 text-slate-300 hover:text-white transition-colors"
                     >
-                      {link.label}
-                    </Link>
+                      <PhoneCall className="w-4 h-4 text-brand-400 shrink-0" />
+                      <span>{settings.store_phone}</span>
+                    </a>
                   </li>
-                ))}
+                )}
+                {settings.store_email && (
+                  <li>
+                    <a
+                      href={`mailto:${settings.store_email}`}
+                      className="inline-flex items-center gap-2.5 text-slate-300 hover:text-white transition-colors"
+                    >
+                      <Mail className="w-4 h-4 text-brand-400 shrink-0" />
+                      <span className="break-all">{settings.store_email}</span>
+                    </a>
+                  </li>
+                )}
+                {settings.store_address && (
+                  <li className="flex items-start gap-2.5 text-slate-300">
+                    <MapPin className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />
+                    <span className="whitespace-pre-line">{settings.store_address}</span>
+                  </li>
+                )}
               </ul>
-            </div>
-          ))}
+            )}
+          </div>
+
+          <FooterColumn title="Shop" links={categoryLinks} />
+          <FooterColumn title="Customer Care" links={SUPPORT_LINKS} />
+          <FooterColumn title="Company" links={companyLinks} />
         </div>
 
-        {/* Newsletter Subscription */}
-        <div className="mt-10 p-6 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex flex-col md:flex-row items-center justify-between gap-4">
+        {/* Newsletter */}
+        <div className="mt-12 p-6 md:p-8 rounded-2xl bg-slate-800/60 ring-1 ring-slate-700/60 flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div>
-            <h4 className="text-sm md:text-base font-bold text-white">
-              Subscribe to Get Exclusive Offers & Product Updates
-            </h4>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Receive updates on new catalog additions and safety equipment promotions.
+            <h3 className="text-base md:text-lg font-semibold text-white">
+              Get exclusive offers and product updates
+            </h3>
+            <p className="text-sm text-slate-400 mt-1">
+              Join our newsletter. No spam, unsubscribe any time.
             </p>
           </div>
-          <form onSubmit={handleSubscribe} className="flex w-full md:w-auto max-w-md gap-2">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={subscribing}
-              placeholder="Enter your email..."
-              className="px-3.5 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] flex-1 disabled:opacity-50"
-            />
-            <button
-              type="submit"
-              disabled={subscribing}
-              className="px-4 py-2 bg-[#FF5B00] hover:bg-[#E64E00] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
-            >
-              <span>{subscribing ? "Subscribing..." : "Subscribe"}</span>
-              <Send className="w-3.5 h-3.5" />
-            </button>
-          </form>
+          <NewsletterForm />
         </div>
       </div>
 
-      {/* Copyright */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-500 gap-2">
-        <p>© 2026 Nogod Bazar. All rights reserved.</p>
-        <p className="flex items-center gap-2">
-          <span>Safe & Secure Payments</span>
-          <span>•</span>
-          <span>Cash On Delivery Available</span>
-        </p>
+      {/* Bottom bar */}
+      <div className="border-t border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+          <p>
+            © {year} {storeName}. All rights reserved.
+          </p>
+          <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <li className="inline-flex items-center gap-1.5">
+              <Lock className="w-3.5 h-3.5" />
+              Secure payments
+            </li>
+            {(settings?.cod_enabled ?? true) && (
+              <li className="inline-flex items-center gap-1.5">
+                <Banknote className="w-3.5 h-3.5" />
+                Cash on delivery
+              </li>
+            )}
+          </ul>
+        </div>
       </div>
     </footer>
   );
-};
+}

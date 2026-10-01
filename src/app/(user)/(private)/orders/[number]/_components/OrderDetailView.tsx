@@ -27,6 +27,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { OrderDetail, cancelOrderAction } from "@/app/(user)/actions/orders";
+import { PayOrderButton } from "@/components/orders/PayOrderButton";
 import { formatPoisha } from "@/lib/utils/money";
 
 interface OrderDetailViewProps {
@@ -83,7 +84,7 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
     }
     if (s === "pending") {
       return (
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-200">
+        <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
           <Clock className="w-3.5 h-3.5" /> Pending Confirmation
         </span>
       );
@@ -110,7 +111,7 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
       );
     }
     return (
-      <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
+      <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-brand-50 text-brand-700 border border-brand-200">
         <Clock className="w-3.5 h-3.5" /> {status}
       </span>
     );
@@ -181,7 +182,7 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
         <div className="flex items-center justify-between">
           <Link
             href="/account?tab=orders"
-            className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-[#009cae] transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-primary transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to All Orders</span>
@@ -270,7 +271,7 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
 
               <Link
                 href={`/track-order?number=${currentOrder.number || currentOrder.order_number}`}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#009cae] hover:bg-[#008998] text-white text-xs font-bold transition-all shadow-xs"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-white text-xs font-bold transition-all shadow-xs"
               >
                 <Truck className="w-4 h-4" />
                 <span>Track Package</span>
@@ -288,16 +289,25 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
             </div>
           </div>
 
-          {/* Payment Expiry Warning if Applicable */}
-          {currentOrder.payment_expires_at && currentOrder.payment_status === "unpaid" && (
-            <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl flex items-center gap-3 text-xs text-amber-900">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                Please complete your payment before{" "}
-                <strong>{new Date(currentOrder.payment_expires_at).toLocaleString()}</strong> to keep this order active.
-              </span>
-            </div>
-          )}
+          {/* Unpaid online order: let the customer pay or retry */}
+          {currentOrder.payment_method === "sslcommerz" &&
+            ["unpaid", "failed", "pending"].includes(String(currentOrder.payment_status)) &&
+            !["cancelled", "refunded", "returned"].includes(String(currentOrder.status)) && (
+              <div className="p-4 bg-amber-50/80 border border-amber-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm text-amber-900">
+                <span className="flex items-start gap-3">
+                  <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" />
+                  <span>
+                    This order is waiting for payment.
+                    {currentOrder.payment_expires_at && (
+                      <>
+                        {" "}Pay before <strong>{new Date(currentOrder.payment_expires_at).toLocaleString()}</strong> to keep it active.
+                      </>
+                    )}
+                  </span>
+                </span>
+                <PayOrderButton orderNumber={String(currentOrder.number || currentOrder.order_number)} />
+              </div>
+            )}
 
           {/* Chronological Timeline Stepper */}
           {currentOrder.timeline && currentOrder.timeline.length > 0 && (
@@ -313,7 +323,7 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
                       {/* Node Bullet */}
                       <div
                         className={`absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-white ring-2 ${
-                          isLatest ? "bg-[#009cae] ring-[#009cae]/30" : "bg-slate-300 ring-slate-200"
+                          isLatest ? "bg-primary ring-primary/30" : "bg-slate-300 ring-slate-200"
                         }`}
                       />
                       <div>

@@ -87,8 +87,8 @@ export const QuickViewModal: React.FC = () => {
             <div>
               <DialogHeader>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-semibold text-[#FF5B00] uppercase tracking-wider">
-                    {quickViewProduct.brand || "Toy House Official"}
+                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                    {quickViewProduct.brand || "Nogod Bazar"}
                   </span>
                   <span className="text-gray-300">•</span>
                   <span className="text-xs text-green-600 font-medium flex items-center gap-1">
@@ -157,13 +157,13 @@ export const QuickViewModal: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <Button
                   onClick={handleBuyNow}
-                  className="w-full bg-[#FF5B00] hover:bg-[#E64E00] text-white text-xs font-bold h-10 gap-2 shadow-sm"
+                  className="w-full bg-primary hover:bg-primary-hover text-white text-xs font-bold h-10 gap-2 shadow-sm"
                 >
                   <ShoppingBag className="w-4 h-4" />
                   Buy Now
                 </Button>
                 {quantityInCart > 0 ? (
-                  <div className="w-full h-10 rounded-md bg-orange-50/90 border border-[#FF5B00]/40 flex items-center justify-between px-2 shadow-2xs">
+                  <div className="w-full h-10 rounded-md bg-brand-50/90 border border-primary/40 flex items-center justify-between px-2 shadow-2xs">
                     <button
                       type="button"
                       onClick={() => {
@@ -173,7 +173,7 @@ export const QuickViewModal: React.FC = () => {
                           updateQuantity(quickViewProduct.id, quantityInCart - 1);
                         }
                       }}
-                      className="w-7 h-7 rounded-md bg-white border border-gray-200 text-[#FF5B00] hover:bg-orange-100 flex items-center justify-center font-bold text-xs cursor-pointer active:scale-95 transition-colors"
+                      className="w-7 h-7 rounded-md bg-white border border-gray-200 text-primary hover:bg-brand-100 flex items-center justify-center font-bold text-xs cursor-pointer active:scale-95 transition-colors"
                       aria-label="Decrease quantity"
                     >
                       <Minus className="w-3.5 h-3.5" />
@@ -185,7 +185,7 @@ export const QuickViewModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => updateQuantity(quickViewProduct.id, quantityInCart + 1)}
-                      className="w-7 h-7 rounded-md bg-[#FF5B00] hover:bg-[#E64E00] text-white flex items-center justify-center font-bold text-xs cursor-pointer active:scale-95 transition-colors"
+                      className="w-7 h-7 rounded-md bg-primary hover:bg-primary-hover text-white flex items-center justify-center font-bold text-xs cursor-pointer active:scale-95 transition-colors"
                       aria-label="Increase quantity"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -206,15 +206,15 @@ export const QuickViewModal: React.FC = () => {
               {/* Perks */}
               <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100 text-[11px] text-gray-500">
                 <div className="flex items-center gap-1.5">
-                  <Truck className="w-3.5 h-3.5 text-[#FF5B00]" />
+                  <Truck className="w-3.5 h-3.5 text-primary" />
                   <span>Fast Delivery</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#FF5B00]" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-primary" />
                   <span>100% Authentic</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <RefreshCw className="w-3.5 h-3.5 text-[#FF5B00]" />
+                  <RefreshCw className="w-3.5 h-3.5 text-primary" />
                   <span>7 Days Return</span>
                 </div>
               </div>

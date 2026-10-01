@@ -1,5 +1,6 @@
 import React from "react";
 import { getAdminRolesAction } from "@/app/(admin)/actions/roles";
+import { getAdminPermissionsAction } from "@/app/(admin)/actions/permissions";
 import { RolesManagement } from "./_components/RolesManagement";
 
 export const metadata = {
@@ -8,8 +9,8 @@ export const metadata = {
 };
 
 export default async function AdminRolesPage() {
-  const res = await getAdminRolesAction();
+  const [res, perms] = await Promise.all([getAdminRolesAction(), getAdminPermissionsAction()]);
   const roles = res.success && res.data ? res.data : [];
 
-  return <RolesManagement initialRoles={roles} />;
+  return <RolesManagement initialRoles={roles} permissionCatalogue={perms.success ? perms.data : null} />;
 }

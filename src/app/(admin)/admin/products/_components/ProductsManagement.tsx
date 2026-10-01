@@ -2,538 +2,653 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
+  Copy,
+  Download,
+  Edit2,
+  ExternalLink,
+  ImageIcon,
+  Layers,
   Package,
-  Search,
   Plus,
   Trash2,
+  Upload,
   X,
-  AlertCircle,
-  CheckCircle2,
-  ExternalLink,
 } from "lucide-react";
-import { poishaToTaka } from "@/lib/utils/money";
-import { createAdminProductAction, deleteAdminProductAction } from "@/app/(admin)/actions/products";
+import {
+  AdminProductListItem,
+  BulkProductPayload,
+  ProductFlag,
+  ProductStatus,
+  bulkAdminProductsAction,
+  deleteAdminProductAction,
+  duplicateAdminProductAction,
+  getAdminProductsAction,
+  updateAdminProductStatusAction,
+} from "@/app/(admin)/actions/products";
+import type { OptionType } from "@/app/(admin)/actions/option-types";
+import type { Paginated } from "@/app/(admin)/actions/_request";
+import {
+  Badge,
+  BadgeTone,
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  Field,
+  IconButton,
+  Input,
+  LoadingRows,
+  Modal,
+  MoneyInput,
+  NoticeBanner,
+  PageHeader,
+  Pagination,
+  SearchInput,
+  Select,
+  TableShell,
+  TBody,
+  THead,
+  td,
+  th,
+  useDebouncedCallback,
+  useNotice,
+} from "@/app/(admin)/components/ui";
+import { downloadUrl, formatDateTime, formatTaka, percentToBp, takaToPoisha } from "@/app/(admin)/components/format";
+import { ProductFormModal } from "./ProductFormModal";
+import { ImportProductsModal, BulkImagesModal } from "./ProductImportModals";
 
-interface ProductItem {
-  id: number;
-  name: string;
-  slug: string;
-  sku?: string;
-  status?: string;
-  min_price?: number;
-  max_price?: number;
-  stock_total?: number;
-  price?: {
-    min: number;
-    max?: number;
-    compare_at?: number | null;
-  };
-  in_stock: boolean;
-  is_featured?: boolean;
-  is_best_seller?: boolean;
-  is_new_arrival?: boolean;
-  is_trending?: boolean;
+export type Option = { id: number; name: string; depth?: number };
+
+const STATUS_TONE: Record<ProductStatus, BadgeTone> = { active: "green", draft: "slate", hidden: "amber" };
+const FLAG_LABEL: Record<ProductFlag, string> = {
+  featured: "Featured",
+  trending: "Trending",
+  new_arrival: "New arrival",
+  best_seller: "Best seller",
+};
+
+interface Filters {
+  q: string;
+  status: string;
+  category_id: string;
+  brand_id: string;
+  stock: string;
+  flag: string;
+  sort: string;
 }
 
-interface CategoryOption {
-  id: number;
-  name: string;
-  slug: string;
-}
+const emptyFilters: Filters = { q: "", status: "", category_id: "", brand_id: "", stock: "", flag: "", sort: "" };
 
-interface ProductsManagementProps {
-  products: ProductItem[];
-  total: number;
-  totalPages: number;
-  currentPage: number;
-  searchQuery: string;
-  categories: CategoryOption[];
-}
+type BulkKind = "price" | "stock" | null;
 
 export function ProductsManagement({
-  products,
-  total,
-  totalPages,
-  currentPage,
-  searchQuery,
+  initial,
+  initialQuery = "",
   categories,
-}: ProductsManagementProps) {
-  const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isPending, setIsPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  brands,
+  optionTypes,
+  initialError,
+}: {
+  initial: Paginated<AdminProductListItem>;
+  initialQuery?: string;
+  categories: Option[];
+  brands: Option[];
+  optionTypes: OptionType[];
+  initialError: string | null;
+}) {
+  const [list, setList] = useState(initial);
+  const [filters, setFilters] = useState<Filters>({ ...emptyFilters, q: initialQuery });
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<number[]>([]);
+  const { notice, success, error, clear } = useNotice();
 
-  // Form Fields
-  const [name, setName] = useState("");
-  const [categoryId, setCategoryId] = useState<string>(
-    categories[0]?.id ? String(categories[0].id) : ""
-  );
-  const [shortDescription, setShortDescription] = useState("");
-  const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<"active" | "draft" | "hidden">("active");
-  const [priceTaka, setPriceTaka] = useState<number>(0);
-  const [costPriceTaka, setCostPriceTaka] = useState<number>(0);
-  const [stock, setStock] = useState<number>(10);
-  const [sku, setSku] = useState("");
-  const [weightGrams, setWeightGrams] = useState<number>(500);
-  const [isFeatured, setIsFeatured] = useState(false);
-  const [isNewArrival, setIsNewArrival] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [imagesOpen, setImagesOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<"xlsx" | "csv">("xlsx");
 
-  const handleCreateProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-    setIsPending(true);
+  const [deleting, setDeleting] = useState<AdminProductListItem | null>(null);
+  const [bulkDelete, setBulkDelete] = useState(false);
+  const [bulkKind, setBulkKind] = useState<BulkKind>(null);
+  const [bulkMode, setBulkMode] = useState("set");
+  const [bulkValue, setBulkValue] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [rowBusy, setRowBusy] = useState<number | null>(null);
 
-    try {
-      // Backend expects integer poisha (৳1 = 100 poisha)
-      const pricePoisha = Math.round(priceTaka * 100);
-      const costPricePoisha = Math.round(costPriceTaka * 100);
+  const load = async (next: Partial<Filters> = {}, nextPage = page) => {
+    const f = { ...filters, ...next };
+    setLoading(true);
+    const res = await getAdminProductsAction({ ...f, page: nextPage, per_page: 25 });
+    setLoading(false);
+    if (res.success) {
+      setList(res.data);
+      setSelected((s) => s.filter((id) => res.data.data.some((p) => p.id === id)));
+    } else error(res.error.message);
+  };
 
-      const payload = {
-        name,
-        category_id: Number(categoryId),
-        short_description: shortDescription,
-        description: description ? `<p>${description}</p>` : `<p>${shortDescription}</p>`,
-        status,
-        is_featured: isFeatured,
-        is_new_arrival: isNewArrival,
-        variants: [
-          {
-            sku: sku || `SKU-${Date.now().toString().slice(-6)}`,
-            price: pricePoisha,
-            cost_price: costPricePoisha > 0 ? costPricePoisha : Math.round(pricePoisha * 0.7),
-            stock: Number(stock),
-            weight_grams: Number(weightGrams),
-          },
-        ],
-      };
+  const applyFilter = (k: keyof Filters, v: string) => {
+    setFilters((f) => ({ ...f, [k]: v }));
+    setPage(1);
+    load({ [k]: v }, 1);
+  };
+  const debouncedQ = useDebouncedCallback((term: string) => {
+    setPage(1);
+    load({ q: term }, 1);
+  });
 
-      const res = await createAdminProductAction(payload);
-      if (res.success) {
-        setSuccess(`Product "${name}" created successfully in backend catalog!`);
-        setIsModalOpen(false);
-        setName("");
-        setShortDescription("");
-        setDescription("");
-        setPriceTaka(0);
-        setSku("");
-        router.refresh();
-      } else {
-        setError(res.error.message || "Failed to create product");
-      }
-    } catch {
-      setError("An unexpected error occurred while saving product.");
-    } finally {
-      setIsPending(false);
+  const filtersActive = Object.entries(filters).some(([k, v]) => k !== "sort" && v);
+  const allOnPage = list.data.length > 0 && list.data.every((p) => selected.includes(p.id));
+
+  const runBulk = async (payload: Omit<BulkProductPayload, "ids">, message: string) => {
+    if (!selected.length) return;
+    setBusy(true);
+    const res = await bulkAdminProductsAction({ ...payload, ids: selected } as BulkProductPayload);
+    setBusy(false);
+    if (!res.success) return error(res.error.message);
+    success(`${message} (${res.data.products} product${res.data.products === 1 ? "" : "s"}).`);
+    setSelected([]);
+    setBulkKind(null);
+    setBulkDelete(false);
+    load();
+  };
+
+  const submitBulkValue = () => {
+    if (bulkKind === "stock") {
+      const v = Math.round(Number(bulkValue));
+      if (!Number.isFinite(v)) return error("Enter a whole number.");
+      if (bulkMode === "set" && v < 0) return error("Stock cannot be negative.");
+      runBulk({ action: "stock", mode: bulkMode as BulkProductPayload["mode"], value: v }, "Stock updated");
+    } else if (bulkKind === "price") {
+      const isPercent = bulkMode.endsWith("percent");
+      const v = isPercent ? percentToBp(bulkValue) : takaToPoisha(bulkValue);
+      if (v === null || v < 0) return error("Enter a valid amount.");
+      if (isPercent && v > 10000) return error("Percentages cannot exceed 100%.");
+      runBulk({ action: "price", mode: bulkMode as BulkProductPayload["mode"], value: v }, "Prices updated");
     }
   };
 
-  const handleDelete = async (id: number, prodName: string) => {
-    if (!confirm(`Are you sure you want to delete "${prodName}"?`)) return;
-
-    try {
-      const res = await deleteAdminProductAction(id);
-      if (res.success) {
-        router.refresh();
-      } else {
-        alert(res.error.message || "Failed to delete product");
-      }
-    } catch {
-      alert("Failed to delete product.");
-    }
+  const changeStatus = async (p: AdminProductListItem, status: ProductStatus) => {
+    setRowBusy(p.id);
+    const res = await updateAdminProductStatusAction(p.id, status);
+    setRowBusy(null);
+    if (!res.success) return error(res.error.message);
+    setList((l) => ({ ...l, data: l.data.map((x) => (x.id === p.id ? { ...x, status } : x)) }));
+    success(`"${p.name}" is now ${status}.`);
   };
+
+  const duplicate = async (p: AdminProductListItem) => {
+    setRowBusy(p.id);
+    const res = await duplicateAdminProductAction(p.id);
+    setRowBusy(null);
+    if (!res.success) return error(res.error.message);
+    success(`Copied as draft "${res.data.name}". Stock starts at zero.`);
+    load();
+    setEditId(res.data.id);
+    setFormOpen(true);
+  };
+
+  const remove = async () => {
+    if (!deleting) return;
+    setBusy(true);
+    const res = await deleteAdminProductAction(deleting.id);
+    setBusy(false);
+    if (!res.success) error(res.error.message);
+    else {
+      success(`"${deleting.name}" deleted.`);
+      load();
+    }
+    setDeleting(null);
+  };
+
+  const exportHref = downloadUrl("/admin/products/export", {
+    format: exportFormat,
+    status: filters.status,
+    brand_id: filters.brand_id,
+    category_id: filters.category_id,
+  });
 
   return (
-    <div className="space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-            Products Catalogue
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Manage live items, prices in poisha (auto-converted to Taka), and inventory status.
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            setError(null);
-            setIsModalOpen(true);
+    <div className="space-y-5">
+      <PageHeader
+        icon={Layers}
+        title="Products"
+        description="Catalogue items, their variants, prices, stock and visibility."
+        actions={
+          <>
+            <Button variant="secondary" icon={Upload} onClick={() => setImportOpen(true)}>
+              Import
+            </Button>
+            <Button variant="secondary" icon={Download} onClick={() => setExportOpen(true)}>
+              Export
+            </Button>
+            <Button variant="secondary" icon={ImageIcon} onClick={() => setImagesOpen(true)}>
+              Bulk images
+            </Button>
+            <Button
+              icon={Plus}
+              onClick={() => {
+                setEditId(null);
+                setFormOpen(true);
+              }}
+            >
+              New product
+            </Button>
+          </>
+        }
+      />
+      <NoticeBanner notice={notice ?? (initialError ? { type: "error", message: initialError } : null)} onClose={clear} />
+
+      {/* Filters */}
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-2">
+        <SearchInput
+          value={filters.q}
+          onChange={(v) => {
+            setFilters((f) => ({ ...f, q: v }));
+            debouncedQ(v);
           }}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#FF5B00] hover:bg-[#E64E00] text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Add Product
-        </button>
+          placeholder="Search name or SKU"
+          className="col-span-2"
+        />
+        <Select value={filters.status} onChange={(e) => applyFilter("status", e.target.value)} aria-label="Status">
+          <option value="">Any status</option>
+          <option value="active">Active</option>
+          <option value="draft">Draft</option>
+          <option value="hidden">Hidden</option>
+        </Select>
+        <Select value={filters.category_id} onChange={(e) => applyFilter("category_id", e.target.value)} aria-label="Category">
+          <option value="">All categories</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {"— ".repeat(c.depth ?? 0)}
+              {c.name}
+            </option>
+          ))}
+        </Select>
+        <Select value={filters.brand_id} onChange={(e) => applyFilter("brand_id", e.target.value)} aria-label="Brand">
+          <option value="">All brands</option>
+          {brands.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </Select>
+        <Select value={filters.stock} onChange={(e) => applyFilter("stock", e.target.value)} aria-label="Stock">
+          <option value="">Any stock</option>
+          <option value="in">In stock</option>
+          <option value="low">Low stock</option>
+          <option value="out">Out of stock</option>
+        </Select>
+        <Select value={filters.flag} onChange={(e) => applyFilter("flag", e.target.value)} aria-label="Flag">
+          <option value="">Any flag</option>
+          {Object.entries(FLAG_LABEL).map(([v, l]) => (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Select value={filters.sort} onChange={(e) => applyFilter("sort", e.target.value)} className="w-48" aria-label="Sort">
+            <option value="">Recently updated</option>
+            <option value="name">Name A–Z</option>
+            <option value="price_asc">Price: low to high</option>
+            <option value="price_desc">Price: high to low</option>
+          </Select>
+          {filtersActive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={X}
+              onClick={() => {
+                setFilters(emptyFilters);
+                setPage(1);
+                load(emptyFilters, 1);
+              }}
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
+        <span className="text-xs text-slate-500">{list.meta.total} products</span>
       </div>
 
-      {success && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3 text-xs font-semibold text-emerald-800">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{success}</span>
+      {/* Bulk action bar */}
+      {selected.length > 0 && (
+        <div className="sticky top-16 z-30 flex flex-wrap items-center gap-2 rounded-xl bg-slate-900 text-white px-4 py-2.5 shadow-lg">
+          <span className="text-sm font-semibold mr-2">{selected.length} selected</span>
+          <Select
+            value=""
+            onChange={(e) => {
+              const v = e.target.value as ProductStatus;
+              if (v) runBulk({ action: "status", status: v }, `Status set to ${v}`);
+            }}
+            className="h-8 w-40 text-xs bg-slate-800 border-slate-700 text-white"
+            aria-label="Set status"
+            disabled={busy}
+          >
+            <option value="">Set status…</option>
+            <option value="active">Active</option>
+            <option value="draft">Draft</option>
+            <option value="hidden">Hidden</option>
+          </Select>
+          <Select
+            value=""
+            onChange={(e) => {
+              const [flag, on] = e.target.value.split(":");
+              if (flag) runBulk({ action: "flag", flag: flag as ProductFlag, value: on === "1" }, `${FLAG_LABEL[flag as ProductFlag]} ${on === "1" ? "added" : "removed"}`);
+            }}
+            className="h-8 w-44 text-xs bg-slate-800 border-slate-700 text-white"
+            aria-label="Set flag"
+            disabled={busy}
+          >
+            <option value="">Flags…</option>
+            {Object.entries(FLAG_LABEL).map(([v, l]) => (
+              <React.Fragment key={v}>
+                <option value={`${v}:1`}>Mark {l.toLowerCase()}</option>
+                <option value={`${v}:0`}>Unmark {l.toLowerCase()}</option>
+              </React.Fragment>
+            ))}
+          </Select>
+          <Button size="sm" variant="secondary" onClick={() => { setBulkKind("price"); setBulkMode("increase_percent"); setBulkValue(""); }}>
+            Adjust price
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => { setBulkKind("stock"); setBulkMode("add"); setBulkValue(""); }}>
+            Adjust stock
+          </Button>
+          <Button size="sm" variant="danger" icon={Trash2} onClick={() => setBulkDelete(true)}>
+            Delete
+          </Button>
+          <button type="button" onClick={() => setSelected([])} className="ml-auto text-xs text-slate-300 hover:text-white">
+            Clear selection
+          </button>
         </div>
       )}
 
-      {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
-        <form method="GET" className="relative w-full sm:w-80">
-          <input
-            type="text"
-            name="q"
-            defaultValue={searchQuery}
-            placeholder="Search products by title..."
-            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]/20 focus:border-[#FF5B00]"
-          />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-        </form>
-        <div className="text-xs text-slate-500 font-semibold">
-          Showing <span className="text-slate-900 font-bold">{products.length}</span> of{" "}
-          <span className="text-slate-900 font-bold">{total}</span> total
-        </div>
-      </div>
-
-      {/* Products Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-100">
-              <tr>
-                <th className="px-5 py-3.5">ID</th>
-                <th className="px-5 py-3.5">Product Title</th>
-                <th className="px-5 py-3.5">SKU / Slug</th>
-                <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5">Price (BDT)</th>
-                <th className="px-5 py-3.5">Inventory</th>
-                <th className="px-5 py-3.5">Flags</th>
-                <th className="px-5 py-3.5 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {products.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center text-slate-400">
-                    No products found.
+      {/* Table */}
+      <TableShell>
+        <THead>
+          <th className={`${th} w-10`}>
+            <input
+              type="checkbox"
+              aria-label="Select all on this page"
+              className="w-4 h-4 accent-[var(--color-primary)]"
+              checked={allOnPage}
+              onChange={() =>
+                setSelected(allOnPage ? selected.filter((id) => !list.data.some((p) => p.id === id)) : [...new Set([...selected, ...list.data.map((p) => p.id)])])
+              }
+            />
+          </th>
+          <th className={th}>Product</th>
+          <th className={th}>Category</th>
+          <th className={`${th} text-right`}>Price</th>
+          <th className={`${th} text-right`}>Stock</th>
+          <th className={th}>Status</th>
+          <th className={th}>Updated</th>
+          <th className={`${th} text-right`}>Actions</th>
+        </THead>
+        <TBody>
+          {loading ? (
+            <LoadingRows cols={8} />
+          ) : list.data.length === 0 ? (
+            <tr>
+              <td colSpan={8}>
+                <EmptyState
+                  icon={Package}
+                  title={filtersActive ? "No products match these filters" : "No products yet"}
+                  description={filtersActive ? "Clear the filters to see everything." : "Create a product or import a spreadsheet."}
+                />
+              </td>
+            </tr>
+          ) : (
+            list.data.map((p) => {
+              const flags = (
+                [
+                  p.is_featured && "Featured",
+                  p.is_trending && "Trending",
+                  p.is_new_arrival && "New",
+                  p.is_best_seller && "Best seller",
+                ].filter(Boolean) as string[]
+              );
+              return (
+                <tr key={p.id} className={selected.includes(p.id) ? "bg-brand-50/40" : "hover:bg-slate-50/60"}>
+                  <td className={td}>
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${p.name}`}
+                      className="w-4 h-4 accent-[var(--color-primary)]"
+                      checked={selected.includes(p.id)}
+                      onChange={() => setSelected((s) => (s.includes(p.id) ? s.filter((x) => x !== p.id) : [...s, p.id]))}
+                    />
+                  </td>
+                  <td className={td}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditId(p.id);
+                        setFormOpen(true);
+                      }}
+                      className="flex items-center gap-3 text-left cursor-pointer group"
+                    >
+                      <span className="w-11 h-11 rounded-lg bg-slate-100 ring-1 ring-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                        {p.image?.url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.image.url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Package className="w-5 h-5 text-slate-300" />
+                        )}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block font-semibold text-slate-900 group-hover:text-primary truncate max-w-[260px]">{p.name}</span>
+                        <span className="block text-xs text-slate-500">
+                          <span className="font-mono">{p.sku ?? "—"}</span>
+                          {p.variants_count > 1 && <> · {p.variants_count} variants</>}
+                          {p.brand && <> · {p.brand.name}</>}
+                        </span>
+                        {flags.length > 0 && (
+                          <span className="flex gap-1 mt-1">
+                            {flags.map((f) => (
+                              <Badge key={f} tone="orange">
+                                {f}
+                              </Badge>
+                            ))}
+                          </span>
+                        )}
+                      </span>
+                    </button>
+                  </td>
+                  <td className={`${td} text-xs`}>{p.category?.name ?? "—"}</td>
+                  <td className={`${td} text-right tabular-nums whitespace-nowrap`}>
+                    {p.min_price === p.max_price ? formatTaka(p.min_price) : `${formatTaka(p.min_price)} – ${formatTaka(p.max_price)}`}
+                  </td>
+                  <td className={`${td} text-right tabular-nums`}>
+                    <span className={p.stock_total === 0 ? "text-rose-600 font-semibold" : p.in_stock ? "" : "text-amber-600"}>{p.stock_total}</span>
+                  </td>
+                  <td className={td}>
+                    <Select
+                      value={p.status}
+                      disabled={rowBusy === p.id}
+                      onChange={(e) => changeStatus(p, e.target.value as ProductStatus)}
+                      aria-label={`Status of ${p.name}`}
+                      className={`h-8 w-28 text-xs font-semibold ${
+                        STATUS_TONE[p.status] === "green" ? "text-emerald-700" : STATUS_TONE[p.status] === "amber" ? "text-amber-700" : "text-slate-600"
+                      }`}
+                    >
+                      <option value="active">Active</option>
+                      <option value="draft">Draft</option>
+                      <option value="hidden">Hidden</option>
+                    </Select>
+                  </td>
+                  <td className={`${td} text-xs whitespace-nowrap`}>{formatDateTime(p.updated_at)}</td>
+                  <td className={`${td} text-right whitespace-nowrap`}>
+                    <span className="inline-flex gap-0.5">
+                      {p.status === "active" && (
+                        <Link
+                          href={`/products/${p.slug}`}
+                          target="_blank"
+                          title="View on storefront"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Link>
+                      )}
+                      <IconButton
+                        label="Edit product"
+                        icon={Edit2}
+                        tone="primary"
+                        onClick={() => {
+                          setEditId(p.id);
+                          setFormOpen(true);
+                        }}
+                      />
+                      <IconButton label="Duplicate as draft" icon={Copy} disabled={rowBusy === p.id} onClick={() => duplicate(p)} />
+                      <IconButton label="Delete product" icon={Trash2} tone="danger" onClick={() => setDeleting(p)} />
+                    </span>
                   </td>
                 </tr>
+              );
+            })
+          )}
+        </TBody>
+      </TableShell>
+
+      <Pagination
+        meta={list.meta}
+        disabled={loading}
+        onPageChange={(p) => {
+          setPage(p);
+          load({}, p);
+        }}
+      />
+
+      <ProductFormModal
+        open={formOpen}
+        productId={editId}
+        categories={categories}
+        brands={brands}
+        optionTypes={optionTypes}
+        onClose={() => setFormOpen(false)}
+        onSaved={(name, created) => {
+          setFormOpen(false);
+          success(created ? `"${name}" created.` : `"${name}" saved.`);
+          load();
+        }}
+      />
+
+      <ImportProductsModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onFinished={(msg) => {
+          success(msg);
+          load();
+        }}
+      />
+      <BulkImagesModal
+        open={imagesOpen}
+        onClose={() => setImagesOpen(false)}
+        onFinished={(msg) => {
+          success(msg);
+          load();
+        }}
+      />
+
+      <Modal
+        open={exportOpen}
+        onClose={() => setExportOpen(false)}
+        title="Export products"
+        description="Downloads every product matching the current status, category and brand filters."
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setExportOpen(false)}>
+              Cancel
+            </Button>
+            <a
+              href={exportHref}
+              onClick={() => setTimeout(() => setExportOpen(false), 300)}
+              className="inline-flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-hover"
+            >
+              <Download className="w-4 h-4" />
+              Download
+            </a>
+          </>
+        }
+      >
+        <Field label="File format">
+          <Select value={exportFormat} onChange={(e) => setExportFormat(e.target.value as "xlsx" | "csv")}>
+            <option value="xlsx">Excel (.xlsx)</option>
+            <option value="csv">CSV (.csv)</option>
+          </Select>
+        </Field>
+      </Modal>
+
+      <Modal
+        open={bulkKind !== null}
+        onClose={() => setBulkKind(null)}
+        title={bulkKind === "price" ? "Adjust prices" : "Adjust stock"}
+        description={`Applies to every variant of the ${selected.length} selected product${selected.length === 1 ? "" : "s"}.`}
+        size="sm"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setBulkKind(null)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button loading={busy} onClick={submitBulkValue}>
+              Apply
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Field label="Change">
+            <Select value={bulkMode} onChange={(e) => setBulkMode(e.target.value)}>
+              {bulkKind === "price" ? (
+                <>
+                  <option value="increase_percent">Increase by %</option>
+                  <option value="decrease_percent">Decrease by %</option>
+                  <option value="increase_amount">Increase by amount</option>
+                  <option value="decrease_amount">Decrease by amount</option>
+                  <option value="set">Set price to</option>
+                </>
               ) : (
-                products.map((p) => {
-                  const minPrice = p.min_price ?? p.price?.min ?? 0;
-                  const comparePrice = p.price?.compare_at;
-                  const status = p.status || "active";
-
-                  return (
-                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="px-5 py-3.5 font-mono text-slate-400">#{p.id}</td>
-                      <td className="px-5 py-3.5 font-semibold text-slate-900">{p.name}</td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex flex-col">
-                          {p.sku && <span className="font-mono text-slate-700 text-[11px] font-bold">{p.sku}</span>}
-                          <span className="font-mono text-slate-400 text-[10px]">{p.slug}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                            status === "active"
-                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                              : status === "draft"
-                              ? "bg-amber-50 text-amber-700 border border-amber-200"
-                              : "bg-slate-100 text-slate-600 border border-slate-200"
-                          }`}
-                        >
-                          {status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 font-semibold text-slate-900">
-                        ৳ {poishaToTaka(minPrice).toFixed(2)}
-                        {comparePrice && (
-                          <span className="text-slate-400 line-through text-[10px] ml-1.5 font-normal">
-                            ৳ {poishaToTaka(comparePrice).toFixed(2)}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {p.in_stock ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            {p.stock_total !== undefined ? `${p.stock_total} in stock` : "In Stock"}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                            Out of Stock
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex gap-1 flex-wrap">
-                          {p.is_featured && (
-                            <span className="px-1.5 py-0.5 bg-orange-100 text-[#FF5B00] rounded text-[10px] font-bold">
-                              Featured
-                            </span>
-                          )}
-                          {p.is_best_seller && (
-                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">
-                              Best Seller
-                            </span>
-                          )}
-                          {p.is_new_arrival && (
-                            <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">
-                              New
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/products/${p.slug}`}
-                            target="_blank"
-                            className="p-1.5 text-slate-400 hover:text-[#FF5B00] hover:bg-orange-50 rounded-lg transition-colors"
-                            title="View on storefront"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(p.id, p.name)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                            title="Delete product"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                <>
+                  <option value="add">Add to stock (use a negative number to remove)</option>
+                  <option value="set">Set stock to</option>
+                </>
               )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="p-4 border-t border-slate-100 flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-medium">
-              Page {currentPage} of {totalPages}
-            </span>
-            <div className="flex gap-1">
-              {currentPage > 1 && (
-                <Link
-                  href={`/admin/products?page=${currentPage - 1}${searchQuery ? `&q=${searchQuery}` : ""}`}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold"
-                >
-                  Previous
-                </Link>
-              )}
-              {currentPage < totalPages && (
-                <Link
-                  href={`/admin/products?page=${currentPage + 1}${searchQuery ? `&q=${searchQuery}` : ""}`}
-                  className="px-3 py-1.5 bg-[#FF5B00] hover:bg-[#E64E00] text-white rounded-lg text-xs font-semibold"
-                >
-                  Next
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Add Product Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl my-8 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-orange-100 text-[#FF5B00] flex items-center justify-center font-bold">
-                  <Package className="w-4 h-4" />
-                </div>
-                <h3 className="text-base font-bold text-slate-900">Add New Product</h3>
-              </div>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {error && (
-              <div className="mx-5 mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-2.5 text-xs font-semibold text-rose-700">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
-              </div>
+            </Select>
+          </Field>
+          <Field label="Value">
+            {bulkKind === "price" && !bulkMode.endsWith("percent") ? (
+              <MoneyInput value={bulkValue} onChange={setBulkValue} />
+            ) : (
+              <Input type="number" value={bulkValue} onChange={(e) => setBulkValue(e.target.value)} step={bulkKind === "stock" ? 1 : 0.01} />
             )}
-
-            <form onSubmit={handleCreateProduct} className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">Product Title *</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. ABC Dry Powder Fire Extinguisher 2kg"
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] focus:border-transparent"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Category *</label>
-                  <select
-                    required
-                    value={categoryId}
-                    onChange={(e) => setCategoryId(e.target.value)}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] focus:border-transparent bg-white"
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Status</label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as any)}
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] focus:border-transparent bg-white"
-                  >
-                    <option value="active">Active (Published)</option>
-                    <option value="draft">Draft</option>
-                    <option value="hidden">Hidden</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">Short Summary</label>
-                <input
-                  type="text"
-                  value={shortDescription}
-                  onChange={(e) => setShortDescription(e.target.value)}
-                  placeholder="Brief 1-sentence product summary"
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] focus:border-transparent"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">Detailed Description</label>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Full specifications, safety guidelines, and application details..."
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] focus:border-transparent resize-none"
-                />
-              </div>
-
-              {/* Pricing & Inventory */}
-              <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-3">
-                <h4 className="text-xs font-bold text-slate-900">Pricing & Default Inventory</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-600">Price (BDT) *</label>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      value={priceTaka || ""}
-                      onChange={(e) => setPriceTaka(Number(e.target.value))}
-                      placeholder="950"
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
-                    />
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      = {Math.round(priceTaka * 100)} poisha
-                    </span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-600">Cost Price (BDT)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={costPriceTaka || ""}
-                      onChange={(e) => setCostPriceTaka(Number(e.target.value))}
-                      placeholder="650"
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-600">Stock Qty *</label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={stock}
-                      onChange={(e) => setStock(Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-slate-600">SKU Code</label>
-                    <input
-                      type="text"
-                      value={sku}
-                      onChange={(e) => setSku(e.target.value)}
-                      placeholder="FE-ABC-1KG"
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Marketing Flags */}
-              <div className="flex items-center gap-6 pt-1">
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isFeatured}
-                    onChange={(e) => setIsFeatured(e.target.checked)}
-                    className="w-4 h-4 text-[#FF5B00] rounded border-slate-300 focus:ring-[#FF5B00]"
-                  />
-                  Featured Product
-                </label>
-                <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isNewArrival}
-                    onChange={(e) => setIsNewArrival(e.target.checked)}
-                    className="w-4 h-4 text-[#FF5B00] rounded border-slate-300 focus:ring-[#FF5B00]"
-                  />
-                  New Arrival
-                </label>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending || !name.trim() || priceTaka <= 0}
-                  className="px-4 py-2 bg-[#FF5B00] hover:bg-[#E64E00] text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 cursor-pointer"
-                >
-                  {isPending ? "Creating..." : "Save Product"}
-                </button>
-              </div>
-            </form>
-          </div>
+          </Field>
         </div>
-      )}
+      </Modal>
+
+      <ConfirmDialog
+        open={!!deleting}
+        title="Delete product?"
+        message={<><strong className="text-slate-900">{deleting?.name}</strong> and all its variants will be deleted. To take it off sale without losing it, set it to Hidden.</>}
+        confirmLabel="Delete product"
+        loading={busy}
+        onConfirm={remove}
+        onClose={() => setDeleting(null)}
+      />
+      <ConfirmDialog
+        open={bulkDelete}
+        title={`Delete ${selected.length} products?`}
+        message="The selected products and all their variants will be deleted permanently."
+        confirmLabel="Delete products"
+        loading={busy}
+        onConfirm={() => runBulk({ action: "delete" }, "Products deleted")}
+        onClose={() => setBulkDelete(false)}
+      />
     </div>
   );
 }

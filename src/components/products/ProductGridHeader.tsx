@@ -33,13 +33,15 @@ export const ProductGridHeader: React.FC<ProductGridHeaderProps> = ({
           value={sortBy}
           onChange={(e) => onSortChange(e.target.value)}
           aria-label="Sort products"
-          className="text-xs bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FF5B00] cursor-pointer"
+          className="text-xs bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer"
         >
-          <option value="default">Default Sorting</option>
-          <option value="price-low">Price: Low to High</option>
-          <option value="price-high">Price: High to Low</option>
-          <option value="rating">Top Rated</option>
-          <option value="popular">Most Popular / Sold</option>
+          <option value="default">Newest first</option>
+          <option value="price_asc">Price: low to high</option>
+          <option value="price_desc">Price: high to low</option>
+          <option value="best_selling">Best selling</option>
+          <option value="popular">Most popular</option>
+          <option value="rating">Top rated</option>
+          <option value="name">Name A–Z</option>
         </select>
 
         {/* View mode toggle buttons */}
@@ -49,7 +51,7 @@ export const ProductGridHeader: React.FC<ProductGridHeaderProps> = ({
             aria-label="Grid View"
             className={`p-1.5 rounded-md transition-colors ${
               viewMode === "grid"
-                ? "bg-[#FF5B00] text-white shadow-2xs"
+                ? "bg-primary text-white shadow-2xs"
                 : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/60"
             }`}
           >
@@ -60,7 +62,7 @@ export const ProductGridHeader: React.FC<ProductGridHeaderProps> = ({
             aria-label="Compact / List View"
             className={`p-1.5 rounded-md transition-colors ${
               viewMode === "list"
-                ? "bg-[#FF5B00] text-white shadow-2xs"
+                ? "bg-primary text-white shadow-2xs"
                 : "text-gray-500 hover:text-gray-900 hover:bg-gray-200/60"
             }`}
           >

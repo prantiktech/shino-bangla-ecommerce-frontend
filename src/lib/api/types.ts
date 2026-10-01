@@ -305,3 +305,10 @@ export interface StoreSettings {
   logo_url?: string | null;
   favicon_url?: string | null;
 }
+
+/** Credentials for POST /auth/login. `login` is an email address or mobile number. */
+export interface LoginPayload {
+  login: string;
+  password: string;
+  device_name?: string;
+}

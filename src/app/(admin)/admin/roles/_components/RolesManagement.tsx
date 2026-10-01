@@ -9,6 +9,7 @@ import {
   getAdminRolesAction,
   getAdminRoleDetailAction,
 } from "@/app/(admin)/actions/roles";
+import type { PermissionGroup } from "@/app/(admin)/actions/permissions";
 import {
   ShieldCheck,
   Shield,
@@ -143,13 +144,46 @@ export const PERMISSION_GROUPS = [
   },
 ];
 
-const ALL_PERMISSION_KEYS = PERMISSION_GROUPS.flatMap((g) => g.permissions.map((p) => p.key));
+type PermissionGroupView = (typeof PERMISSION_GROUPS)[number];
+
+const PAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  products: Layers,
+  categories: Layers,
+  brands: Tag,
+  inventory: Truck,
+  orders: ShoppingBag,
+  customers: Users,
+  reports: BarChart3,
+  dashboard: BarChart3,
+  pages: FileText,
+  faqs: FileText,
+  banners: Eye,
+  roles: Key,
+  staff: Users,
+  settings: Lock,
+};
+
+/** Convert the API permission catalogue (GET /permissions) into the grouped view used below. */
+function toGroups(api: PermissionGroup[] | null | undefined): PermissionGroupView[] {
+  if (!api || api.length === 0) return PERMISSION_GROUPS;
+  return api.map((g) => ({
+    category: g.label,
+    icon: (PAGE_ICONS[g.page] ?? Shield) as PermissionGroupView["icon"],
+    permissions: g.permissions.map((p) => ({ key: p.name, label: p.label, desc: `${g.label} · ${p.label.toLowerCase()}` })),
+  })) as PermissionGroupView[];
+}
 
 interface RolesManagementProps {
   initialRoles: RoleResource[];
+  permissionCatalogue?: PermissionGroup[] | null;
 }
 
-export const RolesManagement: React.FC<RolesManagementProps> = ({ initialRoles }) => {
+export const RolesManagement: React.FC<RolesManagementProps> = ({ initialRoles, permissionCatalogue }) => {
+  const PERMISSION_GROUPS_VIEW = React.useMemo(() => toGroups(permissionCatalogue), [permissionCatalogue]);
+  const ALL_PERMISSION_KEYS = React.useMemo(
+    () => PERMISSION_GROUPS_VIEW.flatMap((g) => g.permissions.map((p) => p.key)),
+    [PERMISSION_GROUPS_VIEW]
+  );
   const [roles, setRoles] = useState<RoleResource[]>(initialRoles);
   const [searchQuery, setSearchQuery] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -665,7 +699,7 @@ export const RolesManagement: React.FC<RolesManagementProps> = ({ initialRoles }
                 </div>
 
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-                  {PERMISSION_GROUPS.map((group) => {
+                  {PERMISSION_GROUPS_VIEW.map((group) => {
                     const GroupIcon = group.icon;
                     const groupKeys = group.permissions.map((p) => p.key);
                     const allInGroupSelected = groupKeys.every((k) => selectedPermissions.includes(k));
@@ -797,7 +831,7 @@ export const RolesManagement: React.FC<RolesManagementProps> = ({ initialRoles }
               </p>
             ) : (
               <div className="space-y-4">
-                {PERMISSION_GROUPS.filter((g) =>
+                {PERMISSION_GROUPS_VIEW.filter((g) =>
                   g.permissions.some((p) => inspectRole.permissions.includes(p.key))
                 ).map((g) => (
                   <div key={g.category} className="space-y-2">

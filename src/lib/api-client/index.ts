@@ -1,6 +1,7 @@
 import { HttpClient } from './client';
 import { authInterceptor } from './interceptors';
 import { RequestConfig } from './types';
+import { API_BASE_URL } from '../api/config';
 
 // Export all types and classes
 export * from './types';
@@ -14,10 +15,7 @@ export * from './endpoints';
 // NOTE: Do NOT re-export './server' here — server.ts uses "use server".
 // Import server functions directly: import { serverGet } from '@/lib/api-client/server'
 
-const baseURL =
-  process.env.API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  'http://13.140.181.253/api/v1';
+const baseURL = API_BASE_URL;
 
 export const apiClient = new HttpClient({
   baseURL,

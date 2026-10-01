@@ -66,7 +66,7 @@ export const FeatureBanners: React.FC = () => {
                     </h3>
                   </div>
 
-                  <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-[#FF5B00] group-hover:scale-110 transition-all duration-300 shrink-0 ml-2">
+                  <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-primary group-hover:scale-110 transition-all duration-300 shrink-0 ml-2">
                     <ArrowRight className="w-4 h-4" />
                   </div>
                 </div>

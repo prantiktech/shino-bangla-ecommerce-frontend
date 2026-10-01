@@ -1,8 +1,23 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { User, LoginPayload, authService } from "@/lib/api";
-import { loginAction, logoutAction, getCurrentUserAction } from "@/lib/actions/auth.actions";
+import type { User, LoginPayload } from "@/lib/api/types";
+import {
+  loginAction,
+  logoutAction,
+  updateMeAction,
+  getSessionUserAction,
+} from "@/app/(user)/actions/auth";
+
+/** Error thrown by `login`, carrying the API's error code (e.g. ACCOUNT_NOT_VERIFIED). */
+export class AuthError extends Error {
+  code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "AuthError";
+    this.code = code;
+  }
+}
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +28,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateName: (name: string) => Promise<void>;
   refreshUser: () => Promise<void>;
+  /** Adopt a user whose session cookie a server action has already set (sign-up, OTP, Google). */
+  setSessionUser: (user: User, token?: string | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,40 +39,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Initialize auth state securely from Next.js HttpOnly cookies on mount
+  // Restore the session from the HttpOnly cookie on first load.
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const { user: serverUser, token: serverToken } = await getCurrentUserAction();
-        if (serverUser && serverToken) {
-          setUser(serverUser);
-          setToken(serverToken);
-        } else {
+    let cancelled = false;
+    getSessionUserAction()
+      .then(({ user: u, token: t }) => {
+        if (cancelled) return;
+        setUser(u);
+        setToken(t);
+      })
+      .catch(() => {
+        if (!cancelled) {
           setUser(null);
           setToken(null);
         }
-      } catch {
-        setUser(null);
-        setToken(null);
-      } finally {
-        setIsLoading(false);
-      }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
     };
-
-    initializeAuth();
   }, []);
 
   const login = useCallback(async (payload: LoginPayload) => {
     setIsLoading(true);
     try {
-      // Execute Next.js 16 Server Action which writes HttpOnly secure cookie
-      const res = await loginAction(payload);
-      if (!res.success || !res.user) {
-        throw new Error(res.error || "Failed to sign in. Please check your credentials.");
+      const res = await loginAction(payload.login, payload.password, payload.device_name);
+      if (!res.success) {
+        throw new AuthError(res.error.message || "Failed to sign in. Please check your credentials.", res.error.code);
       }
-
-      setUser(res.user);
-      setToken(res.token || null);
+      setUser(res.data.user);
+      setToken(res.data.token || null);
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +79,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Execute Server Action to clear HttpOnly cookie
       await logoutAction();
     } finally {
       setUser(null);
@@ -74,20 +88,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const updateName = useCallback(async (name: string) => {
-    const updated = await authService.updateProfile(name);
-    setUser(updated);
+    const res = await updateMeAction(name);
+    if (!res.success) throw new AuthError(res.error.message, res.error.code);
+    setUser(res.data);
   }, []);
 
   const refreshUser = useCallback(async () => {
     try {
-      const { user: serverUser, token: serverToken } = await getCurrentUserAction();
-      if (serverUser) {
-        setUser(serverUser);
-        setToken(serverToken);
+      const { user: u, token: t } = await getSessionUserAction();
+      if (u) {
+        setUser(u);
+        setToken(t);
       }
     } catch {
       // ignore
     }
+  }, []);
+
+  const setSessionUser = useCallback((u: User, t?: string | null) => {
+    setUser(u);
+    if (t !== undefined) setToken(t);
   }, []);
 
   return (
@@ -100,7 +120,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         updateName,
-        refreshUser
+        refreshUser,
+        setSessionUser,
       }}
     >
       {children}

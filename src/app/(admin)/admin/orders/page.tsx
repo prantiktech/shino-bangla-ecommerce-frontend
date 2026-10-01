@@ -3,7 +3,7 @@ import { getAdminOrdersAction } from "@/app/(admin)/actions/orders";
 import { OrdersManagement } from "./_components/OrdersManagement";
 
 export const metadata = {
-  title: "Admin Orders | Store Management",
+  title: "Orders | Admin Portal",
 };
 
 export default async function AdminOrdersPage() {

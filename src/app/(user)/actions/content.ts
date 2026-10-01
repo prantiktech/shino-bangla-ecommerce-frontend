@@ -22,6 +22,8 @@ export interface FaqItem {
   question: string;
   answer: string;
   category?: string;
+  group?: string | null;
+  position?: number;
   sort_order?: number;
 }
 
@@ -52,7 +54,7 @@ export interface ContactPayload {
  */
 export async function getPagesAction(): Promise<ActionResponse<PageListItem[]>> {
   try {
-    const res = await serverGet<any>("GET_PAGES");
+    const res = await serverGet<any>("GET_PAGES", { next: { revalidate: 300 } });
     if (res.success && res.data) {
       const list = Array.isArray(res.data.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
       return { success: true, data: list };
@@ -122,11 +124,13 @@ export async function getFaqsAction(): Promise<ActionResponse<FaqItem[]>> {
  * GET /api/v1/sitemap?type={products|categories|brands|pages}
  */
 export async function getSitemapAction(
-  type?: "products" | "categories" | "brands" | "pages" | string
+  type?: "products" | "categories" | "brands" | "pages" | string,
+  page = 1
 ): Promise<ActionResponse<SitemapResult>> {
   try {
     const res = await serverGet<any>("GET_SITEMAP", {
-      params: type ? { type } : undefined,
+      params: { ...(type ? { type } : {}), page },
+      next: { revalidate: 3600 },
     });
     if (res.success && res.data) {
       return { success: true, data: res.data.data || res.data };

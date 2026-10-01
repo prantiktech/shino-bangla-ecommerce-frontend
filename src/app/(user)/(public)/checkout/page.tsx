@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getCurrentUserAction } from "@/lib/actions/auth.actions";
+import { getSessionUserAction } from "@/app/(user)/actions/auth";
 import { getAddressesAction } from "@/app/(user)/actions/addresses";
 import { getCheckoutLocationsAction } from "@/app/(user)/actions/checkout";
 import { CheckoutClient } from "./_components/CheckoutClient";
 
 export const metadata: Metadata = {
-  title: "Secure Checkout | Nogod Bazar",
+  title: "Secure Checkout",
   description: "Complete your order with cash on delivery or instant digital payment.",
 };
 
 export default async function CheckoutPage() {
-  const { user } = await getCurrentUserAction();
+  const { user } = await getSessionUserAction();
 
   if (!user) {
     redirect("/login?redirect=/checkout");

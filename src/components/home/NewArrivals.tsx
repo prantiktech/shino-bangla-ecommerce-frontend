@@ -35,7 +35,7 @@ export const NewArrivals: React.FC<NewArrivalsProps> = ({ products = [] }) => {
         <SectionHeader
           title={
             <span className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#FF5B00]" />
+              <Sparkles className="w-5 h-5 text-primary" />
               <span>New Arrivals</span>
             </span>
           }

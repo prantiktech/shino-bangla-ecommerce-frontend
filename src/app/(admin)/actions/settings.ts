@@ -5,15 +5,19 @@ import { ActionResponse, handleActionError } from "@/lib/api-client/status-handl
 
 export interface StoreSettings {
   store_name: string;
-  store_phone: string;
+  store_email?: string | null;
+  store_phone?: string | null;
+  store_address?: string | null;
   default_vat_rate_bp: number;
   vat_on_shipping: boolean;
   cod_enabled: boolean;
   bank_transfer_enabled: boolean;
+  bank_transfer_instructions?: string | null;
   low_stock_threshold: number;
   order_payment_timeout_minutes: number;
-  logo_url?: string;
-  favicon_url?: string;
+  logo_url?: string | null;
+  favicon_url?: string | null;
+  invoice_logo_url?: string | null;
 }
 
 export async function getAdminSettingsAction(): Promise<ActionResponse<StoreSettings>> {

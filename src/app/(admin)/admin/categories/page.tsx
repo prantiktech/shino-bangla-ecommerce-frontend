@@ -4,7 +4,7 @@ import { getAdminCategoriesAction } from "@/app/(admin)/actions/categories";
 import { CategoriesManagement } from "./_components/CategoriesManagement";
 
 export const metadata: Metadata = {
-  title: "Categories Architecture | Store Management",
+  title: "Categories | Admin Portal",
   description: "Manage store taxonomy, nested subcategories, VAT rates, media banners and SEO configurations.",
 };
 

@@ -34,7 +34,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
           aria-label="Previous Page"
-          className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-[#FF5B00] hover:text-white hover:border-[#FF5B00] disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white hover:border-primary disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -44,7 +44,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
           onClick={() => onPageChange(1)}
           className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
             currentPage === 1
-              ? "bg-[#FF5B00] text-white shadow-xs"
+              ? "bg-primary text-white shadow-xs"
               : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
           }`}
         >
@@ -56,7 +56,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
           onClick={() => onPageChange(2)}
           className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
             currentPage === 2
-              ? "bg-[#FF5B00] text-white shadow-xs"
+              ? "bg-primary text-white shadow-xs"
               : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
           }`}
         >
@@ -68,7 +68,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
           onClick={() => onPageChange(3)}
           className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
             currentPage === 3
-              ? "bg-[#FF5B00] text-white shadow-xs"
+              ? "bg-primary text-white shadow-xs"
               : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
           }`}
         >
@@ -82,7 +82,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
           onClick={() => onPageChange(98)}
           className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
             currentPage === 98
-              ? "bg-[#FF5B00] text-white shadow-xs"
+              ? "bg-primary text-white shadow-xs"
               : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
           }`}
         >
@@ -94,7 +94,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
           onClick={() => onPageChange(99)}
           className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
             currentPage === 99
-              ? "bg-[#FF5B00] text-white shadow-xs"
+              ? "bg-primary text-white shadow-xs"
               : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
           }`}
         >
@@ -106,7 +106,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
           onClick={() => onPageChange(100)}
           className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
             currentPage === 100
-              ? "bg-[#FF5B00] text-white shadow-xs"
+              ? "bg-primary text-white shadow-xs"
               : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
           }`}
         >
@@ -118,7 +118,7 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
           aria-label="Next Page"
-          className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-[#FF5B00] hover:text-white hover:border-[#FF5B00] disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white hover:border-primary disabled:opacity-40 disabled:pointer-events-none transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -134,13 +134,13 @@ export const ProductPagination: React.FC<ProductPaginationProps> = ({
           value={jumpPage}
           onChange={(e) => setJumpPage(e.target.value)}
           placeholder="Page"
-          className="w-16 h-7 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-[#FF5B00] text-xs"
+          className="w-16 h-7 text-center border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary text-xs"
         />
         <span>of {totalPages}</span>
         {jumpPage && (
           <button
             type="submit"
-            className="px-2 py-1 bg-[#FF5B00] text-white rounded text-[11px] font-bold"
+            className="px-2 py-1 bg-primary text-white rounded text-[11px] font-bold"
           >
             Go
           </button>

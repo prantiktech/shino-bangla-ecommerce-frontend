@@ -203,31 +203,6 @@ export async function cancelOrderAction(
   }
 }
 
-export async function checkoutAction(payload: any): Promise<ActionResponse<OrderDetail>> {
-  try {
-    const idempotencyKey = crypto.randomUUID();
-    const res = await serverPost<any>("CHECKOUT", payload, {
-      headers: {
-        "Idempotency-Key": idempotencyKey,
-      },
-    });
-
-    if (res.success && res.data) {
-      return { success: true, data: res.data.data || res.data };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: !res.success ? (res.error?.message || "Checkout failed") : "Checkout failed",
-        code: "CHECKOUT_FAILED",
-      },
-    };
-  } catch (error) {
-    return handleActionError(error);
-  }
-}
-
 /**
  * Start or retry an online payment for an order.
  * POST /api/v1/orders/{number}/pay
@@ -267,18 +242,5 @@ export async function payOrderAction(
   } catch (error) {
     return handleActionError(error);
   }
-}
-
-/**
- * Helper to get the authenticated download URL for an order invoice.
- * GET /api/orders/[orderNumber]/invoice
- */
-export async function getOrderInvoiceUrlAction(
-  orderNumber: string
-): Promise<{ success: boolean; url: string }> {
-  return {
-    success: true,
-    url: `/api/orders/${encodeURIComponent(orderNumber)}/invoice`,
-  };
 }
 

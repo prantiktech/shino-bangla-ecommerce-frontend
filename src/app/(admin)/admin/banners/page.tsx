@@ -4,7 +4,7 @@ import { getAdminBannersAction } from "@/app/(admin)/actions/banners";
 import { BannersManagement } from "./_components/BannersManagement";
 
 export const metadata: Metadata = {
-  title: "Banners & Promos | Store Management",
+  title: "Banners | Admin Portal",
   description: "Manage homepage sliders, promotional banners, scheduling campaigns, and target destinations.",
 };
 

@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: SubCategoryPageProps): Promis
   const name = subSlug.replace(/-/g, " ");
 
   return {
-    title: `${name} | Nogod Bazar`,
+    title: `${name}`,
     description: `Shop authentic ${name} products with fast delivery in Bangladesh at Nogod Bazar.`,
   };
 }

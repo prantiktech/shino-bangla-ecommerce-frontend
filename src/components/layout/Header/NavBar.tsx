@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   ChevronDown,
   ChevronUp,
@@ -11,15 +11,46 @@ import {
   ShoppingBag,
   Gift,
   Newspaper,
-  Layers
+  Layers,
+  Menu,
+  Tag,
 } from "lucide-react";
 import { Category, SubCategory } from "@/types";
 import { CategoryIcon } from "@/components/common/CategoryIcon";
 import { getCategoriesAction } from "@/app/(user)/actions/categories";
 import { mapApiCategoryToCategory } from "@/lib/utils/category-mapper";
 
+const QUICK_LINKS = [
+  {
+    href: "/products",
+    label: "Products",
+    icon: ShoppingBag,
+    match: (p: string | null, sort: string | null) => p === "/products" && sort !== "newest",
+  },
+  {
+    href: "/products?sort=newest",
+    label: "New Arrivals",
+    icon: Gift,
+    match: (p: string | null, sort: string | null) => p === "/products" && sort === "newest",
+  },
+  {
+    href: "/brands",
+    label: "Brands",
+    icon: Tag,
+    match: (p: string | null) => !!p && (p === "/brands" || p.startsWith("/brand/")),
+  },
+  {
+    href: "/blogs",
+    label: "Guides",
+    icon: Newspaper,
+    match: (p: string | null) => !!p && p.startsWith("/blogs"),
+  },
+];
+
 export const NavBar: React.FC = () => {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentSort = searchParams?.get("sort") ?? null;
 
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -65,6 +96,33 @@ export const NavBar: React.FC = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Close any open menu after navigation (state adjusted during render, no effect needed)
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setIsAllCategoriesOpen(false);
+    setActiveFlyoutCategory(null);
+    setHoveredCategory(null);
+  }
+
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsAllCategoriesOpen(false);
+        setActiveFlyoutCategory(null);
+        setHoveredCategory(null);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Re-evaluate arrow state once categories load
+  useEffect(() => {
+    checkScrollState();
+  }, [categories]);
+
   // Handle clicking outside to dismiss dropdowns
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -92,7 +150,9 @@ export const NavBar: React.FC = () => {
   };
 
   // Slider Category Hover Handlers
-  const handleCategoryMouseEnter = (category: Category, e: React.MouseEvent<HTMLElement>) => {
+  const handleCategoryMouseEnter = (category: Category, e: React.PointerEvent<HTMLElement>) => {
+    // Hover menus are a mouse affordance; on touch a tap simply navigates.
+    if (e.pointerType !== "mouse") return;
     if (sliderCloseTimeout.current) {
       clearTimeout(sliderCloseTimeout.current);
       sliderCloseTimeout.current = null;
@@ -135,7 +195,8 @@ export const NavBar: React.FC = () => {
   };
 
   // All Categories Dropdown Handlers
-  const handleAllCategoriesMouseEnter = () => {
+  const handleAllCategoriesMouseEnter = (e?: React.PointerEvent<HTMLElement>) => {
+    if (e && e.pointerType !== "mouse") return;
     if (allCatTimeoutRef.current) {
       clearTimeout(allCatTimeoutRef.current);
       allCatTimeoutRef.current = null;
@@ -145,7 +206,8 @@ export const NavBar: React.FC = () => {
     setIsAllCategoriesOpen(true);
   };
 
-  const handleAllCategoriesMouseLeave = () => {
+  const handleAllCategoriesMouseLeave = (e?: React.PointerEvent<HTMLElement>) => {
+    if (e && e.pointerType !== "mouse") return;
     allCatTimeoutRef.current = setTimeout(() => {
       setIsAllCategoriesOpen(false);
       setActiveFlyoutCategory(null);
@@ -164,29 +226,31 @@ export const NavBar: React.FC = () => {
   return (
     <nav
       ref={navContainerRef}
-      className="bg-[#FF5B00] text-white relative z-40 select-none shadow-sm transition-colors overflow-visible"
+      className="bg-primary text-white relative z-30 select-none overflow-visible"
       aria-label="Categories navigation"
     >
-      <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-8 overflow-visible">
-        <div className="flex items-center justify-between h-11 md:h-12 gap-1.5 md:gap-3">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 overflow-visible">
+        <div className="flex items-center justify-between h-11 gap-2 md:gap-3">
           
           {/* 1. Left Trigger: Categories Dropdown Button (matching brand theme) */}
           <div
             className="relative shrink-0 overflow-visible"
-            onMouseEnter={handleAllCategoriesMouseEnter}
-            onMouseLeave={handleAllCategoriesMouseLeave}
+            onPointerEnter={handleAllCategoriesMouseEnter}
+            onPointerLeave={handleAllCategoriesMouseLeave}
           >
             <button
               onClick={() => setIsAllCategoriesOpen((prev) => !prev)}
-              className={`flex items-center gap-2 px-3.5 py-1.5 md:py-2 rounded-md font-semibold text-xs md:text-sm tracking-wide transition-all ${
+              className={`flex items-center gap-2 h-11 px-3 md:px-4 font-semibold text-xs md:text-sm transition-colors ${
                 isAllCategoriesOpen
-                  ? "bg-[#E05000] text-white ring-1 ring-white/30"
-                  : "bg-[#EA5400] hover:bg-[#E05000] text-white"
+                  ? "bg-brand-700 text-white"
+                  : "bg-brand-600 hover:bg-brand-700 text-white"
               }`}
               aria-expanded={isAllCategoriesOpen}
-              aria-haspopup="true"
+              aria-haspopup="menu"
             >
-              <span>Categories</span>
+              <Menu className="w-4 h-4" />
+              <span className="hidden sm:inline">All Categories</span>
+              <span className="sm:hidden">Categories</span>
               {isAllCategoriesOpen ? (
                 <ChevronUp className="w-4 h-4 transition-transform duration-200" />
               ) : (
@@ -197,23 +261,23 @@ export const NavBar: React.FC = () => {
             {/* "All Categories" Dropdown with Nested Subcategories Flyout */}
             {isAllCategoriesOpen && (
               <div
-                className="absolute top-full left-0 mt-1 w-64 md:w-72 bg-white rounded-xl shadow-2xl border border-gray-200/90 text-gray-800 py-0 z-50 animate-in fade-in-50 zoom-in-95 duration-150 overflow-visible"
-                onMouseEnter={handleAllCategoriesMouseEnter}
-                onMouseLeave={handleAllCategoriesMouseLeave}
+                className="absolute top-full left-0 w-[min(18rem,calc(100vw-2rem))] bg-white rounded-b-xl shadow-xl ring-1 ring-slate-900/5 text-slate-800 py-0 z-50 overflow-visible"
+                onPointerEnter={handleAllCategoriesMouseEnter}
+                onPointerLeave={handleAllCategoriesMouseLeave}
               >
                 {/* Header Banner */}
-                <div className="bg-[#FF5B00] text-white px-4 py-2.5 rounded-t-xl font-bold text-xs md:text-sm flex items-center justify-between shadow-xs">
+                <div className="bg-slate-50 border-b border-slate-100 text-slate-700 px-4 py-2.5 font-semibold text-xs flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4" />
                     <span>All Categories</span>
                   </div>
-                  <span className="text-[11px] text-white/80 font-normal">
+                  <span className="text-[11px] text-slate-400 font-normal">
                     {categories.length} items
                   </span>
                 </div>
 
                 {/* Categories List (Overflow visible so flyout submenu extends outside seamlessly) */}
-                <div className="py-1.5 overflow-visible">
+                <div className="py-1.5 max-h-[70vh] overflow-y-auto md:max-h-none md:overflow-visible">
                   {categories.map((category, index) => {
                     const isHovered = activeFlyoutCategory?.id === category.id;
                     const hasSubs = category.subCategories && category.subCategories.length > 0;
@@ -233,15 +297,15 @@ export const NavBar: React.FC = () => {
                           }}
                           className={`flex items-center justify-between px-3.5 py-2 text-xs md:text-sm transition-colors ${
                             isHovered
-                              ? "bg-orange-50 text-[#FF5B00] font-semibold"
-                              : "text-gray-700 hover:bg-gray-50 hover:text-[#FF5B00]"
+                              ? "bg-brand-50 text-primary font-semibold"
+                              : "text-gray-700 hover:bg-gray-50 hover:text-primary"
                           }`}
                         >
                           <div className="flex items-center gap-2.5 truncate pr-2">
                             <div
                               className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
                                 isHovered
-                                  ? "bg-orange-100 text-[#FF5B00]"
+                                  ? "bg-brand-100 text-primary"
                                   : "bg-gray-100 text-gray-500"
                               }`}
                             >
@@ -253,7 +317,7 @@ export const NavBar: React.FC = () => {
                           {hasSubs && (
                             <ChevronRight
                               className={`w-3.5 h-3.5 shrink-0 transition-transform ${
-                                isHovered ? "text-[#FF5B00] translate-x-0.5" : "text-gray-400"
+                                isHovered ? "text-primary translate-x-0.5" : "text-gray-400"
                               }`}
                             />
                           )}
@@ -262,7 +326,7 @@ export const NavBar: React.FC = () => {
                         {/* Nested Subcategories Flyout */}
                         {isHovered && hasSubs && (
                           <div
-                            className={`absolute left-full pl-2 z-50 animate-in fade-in-50 zoom-in-95 duration-100 ${
+                            className={`hidden md:block absolute left-full pl-2 z-50 ${
                               isNearBottom ? "bottom-0" : "-top-1"
                             }`}
                             onMouseEnter={() => setActiveFlyoutCategory(category)}
@@ -270,7 +334,7 @@ export const NavBar: React.FC = () => {
                             {/* Invisible Mouse Bridge to ensure cursor never drops off */}
                             <div className="absolute top-0 bottom-0 -left-3 w-5" />
 
-                            <div className="w-64 bg-white rounded-xl border border-gray-200/90 shadow-2xl py-2 px-1.5 max-h-[420px] overflow-y-auto">
+                            <div className="w-64 bg-white rounded-xl shadow-xl ring-1 ring-slate-900/5 border border-transparent py-2 px-1.5 max-h-[420px] overflow-y-auto">
                               <div className="space-y-0.5">
                                 {category.subCategories?.map((sub: SubCategory) => (
                                   <Link
@@ -280,17 +344,17 @@ export const NavBar: React.FC = () => {
                                       setIsAllCategoriesOpen(false);
                                       setActiveFlyoutCategory(null);
                                     }}
-                                    className="flex items-center justify-between px-3 py-2 rounded-lg text-xs text-gray-700 hover:bg-orange-50 hover:text-[#FF5B00] transition-colors group/item"
+                                    className="flex items-center justify-between px-3 py-2 rounded-lg text-xs text-gray-700 hover:bg-brand-50 hover:text-primary transition-colors group/item"
                                   >
                                     <div className="flex items-center gap-2.5 truncate">
                                       {sub.icon && (
-                                        <div className="w-6 h-6 rounded-md bg-gray-50 flex items-center justify-center text-gray-500 group-hover/item:text-[#FF5B00] group-hover/item:bg-orange-100/60 transition-colors shrink-0">
+                                        <div className="w-6 h-6 rounded-md bg-gray-50 flex items-center justify-center text-gray-500 group-hover/item:text-primary group-hover/item:bg-brand-100/60 transition-colors shrink-0">
                                           <CategoryIcon name={sub.icon} className="w-3.5 h-3.5" />
                                         </div>
                                       )}
                                       <span className="truncate font-medium">{sub.name}</span>
                                     </div>
-                                    <ChevronRight className="w-3 h-3 text-gray-300 group-hover/item:text-[#FF5B00] opacity-0 group-hover/item:opacity-100 transition-all shrink-0" />
+                                    <ChevronRight className="w-3 h-3 text-gray-300 group-hover/item:text-primary opacity-0 group-hover/item:opacity-100 transition-all shrink-0" />
                                   </Link>
                                 ))}
                               </div>
@@ -313,11 +377,11 @@ export const NavBar: React.FC = () => {
               onClick={handleScrollLeft}
               disabled={!canScrollLeft}
               aria-label="Scroll categories left"
-              className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center bg-white text-[#FF5B00] hover:bg-white/90 active:scale-95 transition-all shrink-0 mr-1.5 shadow-sm ${
-                !canScrollLeft ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
+              className={`hidden sm:flex w-7 h-7 rounded-full items-center justify-center bg-white/15 text-white hover:bg-white/25 active:scale-95 transition-all shrink-0 mr-1.5 ${
+                !canScrollLeft ? "opacity-0 pointer-events-none" : "cursor-pointer"
               }`}
             >
-              <ChevronLeft className="w-4 h-4 stroke-[3]" />
+              <ChevronLeft className="w-4 h-4 stroke-[2.5]" />
             </button>
 
             {/* Horizontally Scrollable Categories Slider */}
@@ -328,20 +392,22 @@ export const NavBar: React.FC = () => {
             >
               {categories.map((category) => {
                 const isActiveHover = hoveredCategory?.id === category.id;
+                const isCurrent = pathname?.startsWith(`/category/${category.slug}`);
 
                 return (
                   <div
                     key={category.id}
-                    onMouseEnter={(e) => handleCategoryMouseEnter(category, e)}
-                    onMouseLeave={handleCategoryMouseLeave}
+                    onPointerEnter={(e) => handleCategoryMouseEnter(category, e)}
+                    onPointerLeave={handleCategoryMouseLeave}
                     className="relative shrink-0"
                   >
                     <Link
                       href={`/category/${category.slug}`}
-                      className={`whitespace-nowrap px-2.5 sm:px-3 py-1 rounded-md text-xs md:text-sm font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
-                        isActiveHover
-                          ? "bg-white/25 text-white shadow-2xs font-semibold"
-                          : "text-white/95 hover:text-white hover:bg-white/15"
+                      aria-current={isCurrent ? "page" : undefined}
+                      className={`whitespace-nowrap px-3 py-1.5 rounded-md text-xs md:text-[13px] font-medium transition-colors inline-flex items-center gap-1.5 cursor-pointer ${
+                        isActiveHover || isCurrent
+                          ? "bg-white/20 text-white"
+                          : "text-white/90 hover:text-white hover:bg-white/10"
                       }`}
                     >
                       <span>{category.name}</span>
@@ -356,47 +422,32 @@ export const NavBar: React.FC = () => {
               onClick={handleScrollRight}
               disabled={!canScrollRight}
               aria-label="Scroll categories right"
-              className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center bg-white text-[#FF5B00] hover:bg-white/90 active:scale-95 transition-all shrink-0 ml-1.5 shadow-sm ${
-                !canScrollRight ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
+              className={`hidden sm:flex w-7 h-7 rounded-full items-center justify-center bg-white/15 text-white hover:bg-white/25 active:scale-95 transition-all shrink-0 ml-1.5 ${
+                !canScrollRight ? "opacity-0 pointer-events-none" : "cursor-pointer"
               }`}
             >
-              <ChevronRight className="w-4 h-4 stroke-[3]" />
+              <ChevronRight className="w-4 h-4 stroke-[2.5]" />
             </button>
           </div>
 
-          {/* 3. Right Static Links: Products, New Arrivals, Blogs */}
-          <div className="hidden lg:flex items-center gap-1 md:gap-2 shrink-0 text-xs md:text-sm font-medium border-l border-white/20 pl-2 md:pl-3">
-            <Link
-              href="/products"
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-                pathname === "/products"
-                  ? "bg-white/25 text-white font-bold"
-                  : "text-white/95 hover:text-white hover:bg-white/15"
-              }`}
-            >
-              <ShoppingBag className="w-4 h-4" />
-              <span>Products</span>
-            </Link>
-
-            <Link
-              href="/products?sort=newest"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white/95 hover:text-white hover:bg-white/15 transition-colors whitespace-nowrap"
-            >
-              <Gift className="w-4 h-4" />
-              <span>New Arrivals</span>
-            </Link>
-
-            <Link
-              href="/blogs"
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-                pathname === "/blogs"
-                  ? "bg-white/25 text-white font-bold"
-                  : "text-white/95 hover:text-white hover:bg-white/15"
-              }`}
-            >
-              <Newspaper className="w-4 h-4" />
-              <span>Blogs</span>
-            </Link>
+          {/* 3. Right Static Links */}
+          <div className="hidden lg:flex items-center gap-1 shrink-0 text-[13px] font-medium border-l border-white/20 pl-3">
+            {QUICK_LINKS.map(({ href, label, icon: Icon, match }) => {
+              const active = match(pathname, currentSort);
+              return (
+                <Link
+                  key={label}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-colors whitespace-nowrap ${
+                    active ? "bg-white/20 text-white" : "text-white/90 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{label}</span>
+                </Link>
+              );
+            })}
           </div>
 
         </div>
@@ -405,7 +456,7 @@ export const NavBar: React.FC = () => {
       {/* Floating Category Subcategories Dropdown (On Slider Hover) */}
       {hoveredCategory && hoveredCategory.subCategories && hoveredCategory.subCategories.length > 0 && (
         <div
-          className="absolute top-full z-50 animate-in fade-in-50 zoom-in-95 duration-150 pt-1"
+          className="hidden md:block absolute top-full z-50 pt-1"
           style={{
             left: `${clampedX}px`,
             transform: "translateX(-50%)"
@@ -417,7 +468,7 @@ export const NavBar: React.FC = () => {
           <div className="absolute -top-3 left-0 right-0 h-4 bg-transparent" />
 
           {/* Card Container */}
-          <div className="w-64 bg-white rounded-xl border border-gray-200/90 shadow-2xl py-2 px-1.5 max-h-[420px] overflow-y-auto relative text-gray-800">
+          <div className="w-64 bg-white rounded-xl shadow-xl ring-1 ring-slate-900/5 border border-transparent py-2 px-1.5 max-h-[420px] overflow-y-auto relative text-gray-800">
             {/* Top Pointer Arrow */}
             <div
               className="absolute -top-1.5 w-3 h-3 bg-white border-t border-l border-gray-200/90 rotate-45 transform"
@@ -431,18 +482,18 @@ export const NavBar: React.FC = () => {
                   key={sub.id}
                   href={`/category/${hoveredCategory.slug}/${sub.slug}`}
                   onClick={() => setHoveredCategory(null)}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg text-xs text-gray-700 hover:bg-orange-50 hover:text-[#FF5B00] transition-colors group/item"
+                  className="flex items-center justify-between px-3 py-2 rounded-lg text-xs text-gray-700 hover:bg-brand-50 hover:text-primary transition-colors group/item"
                 >
                   <div className="flex items-center gap-2.5 truncate">
                     {sub.icon && (
-                      <div className="w-6 h-6 rounded-md bg-gray-50 flex items-center justify-center text-gray-500 group-hover/item:text-[#FF5B00] group-hover/item:bg-orange-100/60 transition-colors shrink-0">
+                      <div className="w-6 h-6 rounded-md bg-gray-50 flex items-center justify-center text-gray-500 group-hover/item:text-primary group-hover/item:bg-brand-100/60 transition-colors shrink-0">
                         <CategoryIcon name={sub.icon} className="w-3.5 h-3.5" />
                       </div>
                     )}
                     <span className="truncate font-medium">{sub.name}</span>
                   </div>
 
-                  <ChevronRight className="w-3 h-3 text-gray-300 group-hover/item:text-[#FF5B00] opacity-0 group-hover/item:opacity-100 transition-all shrink-0" />
+                  <ChevronRight className="w-3 h-3 text-gray-300 group-hover/item:text-primary opacity-0 group-hover/item:opacity-100 transition-all shrink-0" />
                 </Link>
               ))}
             </div>

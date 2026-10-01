@@ -34,6 +34,7 @@ import {
   CheckoutQuoteResponse,
 } from "@/app/(user)/actions/checkout";
 import { Address } from "@/app/(user)/actions/addresses";
+import { applyCouponAction, removeCouponAction } from "@/app/(user)/actions/cart";
 import confetti from "canvas-confetti";
 
 interface CheckoutClientProps {
@@ -97,6 +98,12 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
   const [error, setError] = useState<string | null>(null);
   const [placedOrder, setPlacedOrder] = useState<OrderPlacedResponse | null>(null);
 
+  // Coupon (applied to the server cart; the quote reflects it)
+  const [couponInput, setCouponInput] = useState("");
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [couponMessage, setCouponMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const [quoteVersion, setQuoteVersion] = useState(0);
+
   // Fetch checkout quote whenever address or district changes
   useEffect(() => {
     let isCancelled = false;
@@ -132,7 +139,44 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
     return () => {
       isCancelled = true;
     };
-  }, [selectedAddressId, districtId, useNewAddress]);
+  }, [selectedAddressId, districtId, useNewAddress, quoteVersion]);
+
+  const appliedCoupon: string | null = (() => {
+    const c = (quote as unknown as { coupon?: string | { code?: string } | null })?.coupon;
+    if (!c) return null;
+    return typeof c === "string" ? c : c.code ?? null;
+  })();
+  const couponError = (quote as unknown as { coupon_error?: string | null })?.coupon_error ?? null;
+
+  // Not a <form>: the summary sits inside the checkout form, and forms cannot nest.
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponBusy(true);
+    setCouponMessage(null);
+    const res = await applyCouponAction(code, useNewAddress ? districtId : undefined);
+    setCouponBusy(false);
+    if (!res.success) {
+      setCouponMessage({ ok: false, text: res.error || "That coupon code is not valid." });
+      return;
+    }
+    const cartErr = (res.data as { coupon_error?: string | null } | undefined)?.coupon_error;
+    if (cartErr) {
+      setCouponMessage({ ok: false, text: cartErr });
+    } else {
+      setCouponMessage({ ok: true, text: `Coupon ${code.toUpperCase()} applied.` });
+      setCouponInput("");
+    }
+    setQuoteVersion((v) => v + 1);
+  };
+
+  const handleRemoveCoupon = async () => {
+    setCouponBusy(true);
+    await removeCouponAction();
+    setCouponBusy(false);
+    setCouponMessage(null);
+    setQuoteVersion((v) => v + 1);
+  };
 
   // Derived financials in integer poisha
   const rawSubtotalPoisha = takaToPoisha(subtotal);
@@ -284,7 +328,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
 
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <span className="text-xs text-slate-500 font-semibold">Total Amount</span>
-            <span className="text-sm font-bold text-[#FF5B00]">
+            <span className="text-sm font-bold text-primary">
               {formatPoisha(placedOrder.total_amount)}
             </span>
           </div>
@@ -314,7 +358,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
           <Link
             href={`/orders/${placedOrder.number || placedOrder.order_number}`}
-            className="w-full sm:w-auto px-6 py-3 bg-[#FF5B00] hover:bg-[#E64E00] text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+            className="w-full sm:w-auto px-6 py-3 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all shadow-sm"
           >
             View Order Details
           </Link>
@@ -355,14 +399,14 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
-                <MapPin className="w-5 h-5 text-[#FF5B00]" />
+                <MapPin className="w-5 h-5 text-primary" />
                 <h2 className="text-sm font-bold text-slate-900">Delivery Address</h2>
               </div>
               {initialAddresses.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setUseNewAddress(!useNewAddress)}
-                  className="text-xs font-bold text-[#FF5B00] hover:underline cursor-pointer"
+                  className="text-xs font-bold text-primary hover:underline cursor-pointer"
                 >
                   {useNewAddress ? "Use Saved Address" : "+ New Address"}
                 </button>
@@ -377,7 +421,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                     key={addr.id}
                     className={`block p-4 border rounded-xl cursor-pointer transition-all ${
                       selectedAddressId === addr.id
-                        ? "border-[#FF5B00] bg-orange-50/20 ring-1 ring-[#FF5B00]"
+                        ? "border-primary bg-brand-50/20 ring-1 ring-primary"
                         : "border-slate-200 hover:bg-slate-50"
                     }`}
                   >
@@ -387,7 +431,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                         name="address_select"
                         checked={selectedAddressId === addr.id}
                         onChange={() => setSelectedAddressId(addr.id)}
-                        className="mt-1 text-[#FF5B00] focus:ring-[#FF5B00]"
+                        className="mt-1 text-primary focus:ring-primary"
                       />
                       <div className="text-xs space-y-1">
                         <div className="flex items-center gap-2">
@@ -419,7 +463,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Rafi Ahmed"
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -430,7 +474,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="01712345678"
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -441,7 +485,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                     <select
                       value={districtId}
                       onChange={(e) => setDistrictId(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] bg-white"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                     >
                       {locations.map((loc) => (
                         <option key={loc.id} value={loc.id}>
@@ -457,7 +501,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                       value={area}
                       onChange={(e) => setArea(e.target.value)}
                       placeholder="e.g. Dhanmondi, Motijheel"
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -471,7 +515,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                       value={line1}
                       onChange={(e) => setLine1(e.target.value)}
                       placeholder="House 12, Road 4"
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
 
@@ -482,7 +526,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                       value={line2}
                       onChange={(e) => setLine2(e.target.value)}
                       placeholder="Flat 4B, 3rd Floor"
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -494,7 +538,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                     value={postcode}
                     onChange={(e) => setPostcode(e.target.value)}
                     placeholder="1205"
-                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
+                    className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
@@ -507,7 +551,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                   type="checkbox"
                   checked={sameAsShipping}
                   onChange={(e) => setSameAsShipping(e.target.checked)}
-                  className="rounded text-[#FF5B00] focus:ring-[#FF5B00]"
+                  className="rounded text-primary focus:ring-primary"
                 />
                 <span>Billing address is the same as delivery address</span>
               </label>
@@ -529,7 +573,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                       value={billingName}
                       onChange={(e) => setBillingName(e.target.value)}
                       placeholder="Full Name"
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -540,7 +584,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                       value={billingPhone}
                       onChange={(e) => setBillingPhone(e.target.value)}
                       placeholder="Phone"
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -551,7 +595,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                     <select
                       value={billingDistrictId}
                       onChange={(e) => setBillingDistrictId(Number(e.target.value))}
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] bg-white"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary bg-white"
                     >
                       {locations.map((loc) => (
                         <option key={loc.id} value={loc.id}>
@@ -568,7 +612,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                       value={billingLine1}
                       onChange={(e) => setBillingLine1(e.target.value)}
                       placeholder="Address line 1"
-                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -580,7 +624,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
-                <CreditCard className="w-5 h-5 text-[#FF5B00]" />
+                <CreditCard className="w-5 h-5 text-primary" />
                 <h2 className="text-sm font-bold text-slate-900">Payment Method</h2>
               </div>
               <span className="text-[11px] text-slate-400 font-medium">Ways of paying on offer</span>
@@ -592,7 +636,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                   key={pm.method}
                   className={`block p-4 border rounded-xl cursor-pointer transition-all ${
                     paymentMethod === pm.method
-                      ? "border-[#FF5B00] bg-orange-50/20 ring-1 ring-[#FF5B00]"
+                      ? "border-primary bg-brand-50/20 ring-1 ring-primary"
                       : "border-slate-200 hover:bg-slate-50"
                   }`}
                 >
@@ -603,7 +647,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                       value={pm.method}
                       checked={paymentMethod === pm.method}
                       onChange={() => setPaymentMethod(pm.method)}
-                      className="text-[#FF5B00] focus:ring-[#FF5B00]"
+                      className="text-primary focus:ring-primary"
                     />
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
@@ -643,7 +687,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder="e.g. Ring doorbell, deliver after 2 PM, call before arriving..."
-              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] resize-none"
+              className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
             />
           </div>
         </div>
@@ -653,12 +697,12 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 space-y-5 sticky top-24">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-[#FF5B00]" />
+                <Receipt className="w-4 h-4 text-primary" />
                 <h2 className="text-sm font-bold text-slate-900">Order Summary</h2>
               </div>
               {quoteLoading ? (
                 <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                  <RefreshCw className="w-3 h-3 animate-spin text-[#FF5B00]" /> Calculating...
+                  <RefreshCw className="w-3 h-3 animate-spin text-primary" /> Calculating...
                 </span>
               ) : quote?.shipping ? (
                 <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
@@ -702,6 +746,59 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                   </div>
                 );
               })}
+            </div>
+
+            {/* Coupon */}
+            <div className="pt-4 border-t border-slate-100 space-y-2">
+              {appliedCoupon ? (
+                <div className="flex items-center justify-between rounded-lg bg-emerald-50 ring-1 ring-emerald-200 px-3 py-2 text-xs">
+                  <span className="flex items-center gap-1.5 font-semibold text-emerald-800">
+                    <Tag className="w-3.5 h-3.5" />
+                    {appliedCoupon}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    disabled={couponBusy}
+                    className="text-emerald-700 hover:text-emerald-900 font-semibold disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <label htmlFor="checkout-coupon" className="sr-only">
+                    Coupon code
+                  </label>
+                  <input
+                    id="checkout-coupon"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleApplyCoupon();
+                      }
+                    }}
+                    placeholder="Coupon code"
+                    maxLength={32}
+                    className="flex-1 min-w-0 h-10 px-3 rounded-lg border border-slate-200 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={couponBusy || !couponInput.trim()}
+                    className="h-10 px-4 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-700 disabled:opacity-50"
+                  >
+                    {couponBusy ? "Applying…" : "Apply"}
+                  </button>
+                </div>
+              )}
+              {(couponMessage || couponError) && (
+                <p role="status" className={`text-xs ${couponMessage?.ok && !couponError ? "text-emerald-700" : "text-rose-600"}`}>
+                  {couponError || couponMessage?.text}
+                </p>
+              )}
             </div>
 
             {/* Financial Breakdown */}
@@ -755,7 +852,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
                   <span className="block">Total Payable</span>
                   <span className="text-[10px] text-slate-400 font-normal">All taxes & duties included</span>
                 </div>
-                <span className="text-[#FF5B00] text-lg font-black">
+                <span className="text-primary text-lg font-black">
                   {formatPoisha(grandTotalPoisha)}
                 </span>
               </div>
@@ -771,7 +868,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
             <button
               type="submit"
               disabled={isPending || cart.length === 0}
-              className="w-full py-3.5 px-4 bg-[#FF5B00] hover:bg-[#E64E00] text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              className="w-full py-3.5 px-4 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {isPending ? (
                 <>

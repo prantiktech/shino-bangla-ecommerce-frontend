@@ -51,7 +51,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
         {actionText && actionHref && (
           <a
             href={actionHref}
-            className="text-xs sm:text-sm font-semibold text-[#FF5B00] hover:text-[#E64E00] transition-colors"
+            className="text-xs sm:text-sm font-semibold text-primary hover:text-primary-hover transition-colors"
           >
             {actionText} →
           </a>
@@ -62,14 +62,14 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
             <button
               onClick={onPrev}
               aria-label="Previous items"
-              className="w-8 h-8 rounded-full border border-gray-300 bg-white flex items-center justify-center text-gray-600 hover:bg-[#FF5B00] hover:text-white hover:border-[#FF5B00] transition-all duration-200 shadow-2xs active:scale-95"
+              className="w-8 h-8 rounded-full border border-gray-300 bg-white flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white hover:border-primary transition-all duration-200 shadow-2xs active:scale-95"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={onNext}
               aria-label="Next items"
-              className="w-8 h-8 rounded-full border border-gray-300 bg-white flex items-center justify-center text-gray-600 hover:bg-[#FF5B00] hover:text-white hover:border-[#FF5B00] transition-all duration-200 shadow-2xs active:scale-95"
+              className="w-8 h-8 rounded-full border border-gray-300 bg-white flex items-center justify-center text-gray-600 hover:bg-primary hover:text-white hover:border-primary transition-all duration-200 shadow-2xs active:scale-95"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

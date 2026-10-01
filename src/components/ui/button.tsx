@@ -9,19 +9,19 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[#FF5B00] text-white shadow-sm hover:bg-[#E64E00] focus-visible:ring-[#FF5B00]",
+          "bg-primary text-white shadow-sm hover:bg-primary-hover focus-visible:ring-primary",
         secondary:
           "bg-slate-900 text-white shadow-sm hover:bg-slate-800 focus-visible:ring-slate-900",
         outline:
-          "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus-visible:ring-[#FF5B00]",
+          "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 focus-visible:ring-primary",
         cartOutline:
           "border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900 font-medium",
         ghost:
           "text-gray-700 hover:bg-gray-100 hover:text-gray-900",
         link:
-          "text-[#FF5B00] underline-offset-4 hover:underline",
+          "text-primary underline-offset-4 hover:underline",
         pill:
-          "bg-[#FF5B00] text-white rounded-full font-semibold shadow-md hover:bg-[#E64E00] hover:shadow-lg focus-visible:ring-[#FF5B00]",
+          "bg-primary text-white rounded-full font-semibold shadow-md hover:bg-primary-hover hover:shadow-lg focus-visible:ring-primary",
       },
       size: {
         default: "h-10 px-4 py-2",

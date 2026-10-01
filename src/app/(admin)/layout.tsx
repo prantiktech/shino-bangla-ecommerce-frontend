@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, ChevronLeft, LogOut, Search, User } from "lucide-react";
+import { Menu, ChevronLeft, LogOut, Search } from "lucide-react";
 import { AdminSidebar } from "./components/Sidebar";
-import { adminLogoutAction } from "./actions/auth";
+import { adminLogoutAction, getAdminMeAction } from "./actions/auth";
 
 export default function AdminLayout({
   children,
@@ -18,10 +18,30 @@ export default function AdminLayout({
   const [isDesktop, setIsDesktop] = useState(true);
 
   const isLoginPage = pathname === "/admin/login";
+  const [me, setMe] = useState<{ name: string; roles: string[]; permissions: string[] } | null>(null);
 
+  // Load the signed-in staff member for the header and permission-aware navigation.
   useEffect(() => {
+    if (isLoginPage) return;
+    let cancelled = false;
+    getAdminMeAction().then((res) => {
+      if (cancelled || !res.success) return;
+      const d = res.data as unknown as { name?: string; roles?: string[]; permissions?: string[] };
+      setMe({ name: d.name ?? "Staff", roles: d.roles ?? [], permissions: d.permissions ?? [] });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoginPage]);
+
+  const roleLabel = me?.roles?.[0]?.replace(/[-_]/g, " ") ?? "";
+
+  // Close the mobile drawer after navigation (adjusted during render, no effect needed).
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
     setIsMobileOpen(false);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     const handleResize = () => {
@@ -53,6 +73,7 @@ export default function AdminLayout({
         <AdminSidebar
           isCollapsed={isCollapsed}
           setIsMobileOpen={setIsMobileOpen}
+          permissions={me?.permissions ?? null}
         />
       </aside>
 
@@ -68,6 +89,7 @@ export default function AdminLayout({
               isCollapsed={false}
               setIsMobileOpen={setIsMobileOpen}
               forceOpen={true}
+              permissions={me?.permissions ?? null}
             />
           </aside>
         </div>
@@ -94,26 +116,36 @@ export default function AdminLayout({
               )}
             </button>
 
-            <div className="relative w-full max-w-md hidden sm:block">
+            <form
+              role="search"
+              className="relative w-full max-w-md hidden sm:block"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const q = new FormData(e.currentTarget).get("q")?.toString().trim();
+                if (q) router.push(`/admin/products?q=${encodeURIComponent(q)}`);
+              }}
+            >
               <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none text-slate-400">
                 <Search className="w-4 h-4" />
               </div>
               <input
-                type="text"
-                placeholder="Search catalogue, orders, customers..."
-                className="w-full bg-slate-50 border border-slate-200 focus:border-slate-300 focus:bg-white transition-all rounded-lg pl-9 pr-4 py-1.5 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none"
+                type="search"
+                name="q"
+                aria-label="Search products"
+                placeholder="Search products by name or SKU, then press Enter"
+                className="w-full bg-slate-50 border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/15 focus:bg-white transition-all rounded-lg pl-9 pr-4 h-9 text-sm text-slate-800 placeholder-slate-400 focus:outline-none"
               />
-            </div>
+            </form>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
-              <div className="w-8 h-8 rounded-full bg-[#FF5B00] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                A
+              <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                {me?.name?.[0]?.toUpperCase() ?? "…"}
               </div>
               <div className="hidden sm:flex flex-col text-left">
-                <span className="text-xs font-semibold text-slate-900 leading-tight">Admin User</span>
-                <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">Super Admin</span>
+                <span className="text-xs font-semibold text-slate-900 leading-tight">{me?.name ?? "Loading…"}</span>
+                {roleLabel && <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">{roleLabel}</span>}
               </div>
               <button
                 onClick={handleLogout}

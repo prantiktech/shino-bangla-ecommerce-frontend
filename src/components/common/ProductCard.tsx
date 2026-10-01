@@ -94,7 +94,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
           <button
             onClick={handleQuickView}
             aria-label="Quick view product"
-            className="h-8 w-8 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-gray-700 hover:bg-[#FF5B00] hover:text-white transition-colors"
+            className="h-8 w-8 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-gray-700 hover:bg-primary hover:text-white transition-colors"
           >
             <Eye className="w-4 h-4" />
           </button>
@@ -132,7 +132,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
           {/* Product Title */}
           <Link
             href={`/products/${product.slug}`}
-            className="block text-[13px] font-semibold text-gray-800 line-clamp-2 leading-snug cursor-pointer hover:text-[#FF5B00] transition-colors mb-2 min-h-[36px]"
+            className="block text-[13px] font-semibold text-gray-800 line-clamp-2 leading-snug cursor-pointer hover:text-primary transition-colors mb-2 min-h-[36px]"
             title={product.title}
           >
             {product.title}
@@ -158,7 +158,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
             onClick={handleBuyNow}
             variant="default"
             size="sm"
-            className="w-full bg-[#FF5B00] hover:bg-[#E64E00] text-white text-xs font-semibold py-2 h-8 rounded-lg flex items-center justify-center gap-1.5 shadow-xs transition-transform active:scale-95"
+            className="w-full bg-primary hover:bg-primary-hover text-white text-xs font-semibold py-2 h-8 rounded-lg flex items-center justify-center gap-1.5 shadow-xs transition-transform active:scale-95"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
             Buy Now
@@ -167,7 +167,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
           {/* Add to Cart / Quantity Controller Button */}
           {quantityInCart > 0 ? (
             <div
-              className="w-full h-8 rounded-lg bg-orange-50/90 border border-[#FF5B00]/40 flex items-center justify-between px-1.5 shadow-2xs transition-all"
+              className="w-full h-8 rounded-lg bg-brand-50/90 border border-primary/40 flex items-center justify-between px-1.5 shadow-2xs transition-all"
               onClick={(e) => e.stopPropagation()}
             >
               <button
@@ -181,7 +181,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
                   }
                 }}
                 aria-label="Decrease quantity"
-                className="w-6 h-6 rounded-md bg-white border border-gray-200 hover:bg-orange-100 text-[#FF5B00] hover:text-[#E64E00] flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
+                className="w-6 h-6 rounded-md bg-white border border-gray-200 hover:bg-brand-100 text-primary hover:text-primary-hover flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
               >
                 <Minus className="w-3 h-3" />
               </button>
@@ -196,7 +196,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
                   updateQuantity(product.id, quantityInCart + 1);
                 }}
                 aria-label="Increase quantity"
-                className="w-6 h-6 rounded-md bg-[#FF5B00] hover:bg-[#E64E00] text-white flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
+                className="w-6 h-6 rounded-md bg-primary hover:bg-primary-hover text-white flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
               >
                 <Plus className="w-3 h-3" />
               </button>

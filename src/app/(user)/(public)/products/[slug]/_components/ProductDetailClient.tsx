@@ -37,9 +37,11 @@ import { Product } from "@/types";
 interface ProductDetailClientProps {
   product: ApiProduct;
   similarProducts: ApiProduct[];
+  crossSellProducts?: ApiProduct[];
+  upsellProducts?: ApiProduct[];
 }
 
-export function ProductDetailClient({ product, similarProducts }: ProductDetailClientProps) {
+export function ProductDetailClient({ product, similarProducts, crossSellProducts = [], upsellProducts = [] }: ProductDetailClientProps) {
   const router = useRouter();
   const { cart, addToCart, updateQuantity, removeFromCart, setIsCartOpen, showToast } = useCart();
   const { isAuthenticated } = useAuth();
@@ -183,19 +185,19 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] pb-20">
+    <div className="min-h-screen bg-canvas pb-20">
       {/* 1. Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="bg-white border-b border-gray-100 py-3">
+      <nav aria-label="Breadcrumb" className="bg-white border-b border-slate-200/70 py-2.5">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <ol className="flex items-center gap-1.5 text-xs text-gray-500 overflow-x-auto no-scrollbar">
+          <ol className="flex items-center gap-1.5 text-xs text-slate-500 overflow-x-auto no-scrollbar whitespace-nowrap [&>li]:shrink-0">
             <li>
-              <Link href="/" className="hover:text-[#FF5B00] transition-colors">
+              <Link href="/" className="hover:text-primary transition-colors">
                 Home
               </Link>
             </li>
             <li><ChevronRight className="w-3.5 h-3.5 text-gray-400" /></li>
             <li>
-              <Link href="/products" className="hover:text-[#FF5B00] transition-colors">
+              <Link href="/products" className="hover:text-primary transition-colors">
                 Products
               </Link>
             </li>
@@ -205,7 +207,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                 <li>
                   <Link
                     href={`/category/${product.category.slug}`}
-                    className="hover:text-[#FF5B00] transition-colors"
+                    className="hover:text-primary transition-colors"
                   >
                     {product.category.name}
                   </Link>
@@ -234,7 +236,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                   </span>
                 )}
                 {product.is_featured && (
-                  <span className="px-2.5 py-1 bg-[#FF5B00] text-white text-xs font-bold rounded-lg shadow-sm">
+                  <span className="px-2.5 py-1 bg-primary text-white text-xs font-bold rounded-lg shadow-sm">
                     Featured
                   </span>
                 )}
@@ -256,7 +258,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                 <button
                   onClick={handleShare}
                   title="Copy link"
-                  className="w-9 h-9 rounded-full bg-white/90 hover:bg-white shadow-sm flex items-center justify-center text-gray-600 hover:text-[#FF5B00] transition-colors cursor-pointer"
+                  className="w-9 h-9 rounded-full bg-white/90 hover:bg-white shadow-sm flex items-center justify-center text-gray-600 hover:text-primary transition-colors cursor-pointer"
                 >
                   <Share2 className="w-4 h-4" />
                 </button>
@@ -281,7 +283,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                     onClick={() => setActiveImage(img)}
                     className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 shrink-0 transition-all bg-gray-50 ${
                       activeImage === img
-                        ? "border-[#FF5B00] shadow-sm scale-95"
+                        ? "border-primary shadow-sm scale-95"
                         : "border-gray-200/80 hover:border-gray-300"
                     }`}
                   >
@@ -308,7 +310,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                   {product.category && (
                     <Link
                       href={`/category/${product.category.slug}`}
-                      className="text-xs font-bold text-[#FF5B00] hover:underline bg-orange-50 px-2.5 py-1 rounded-md"
+                      className="text-xs font-bold text-primary hover:underline bg-brand-50 px-2.5 py-1 rounded-md"
                     >
                       {product.category.name}
                     </Link>
@@ -353,9 +355,9 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
               </div>
 
               {/* Price Banner */}
-              <div className="bg-[#FFF9F5] border border-orange-100/90 rounded-2xl p-4 sm:p-5 flex flex-wrap items-baseline gap-3">
+              <div className="bg-brand-50 border border-brand-100/90 rounded-2xl p-4 sm:p-5 flex flex-wrap items-baseline gap-3">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl sm:text-3xl font-black text-[#FF5B00]">
+                  <span className="text-2xl sm:text-3xl font-black text-primary">
                     ৳ {currentPriceTaka.toFixed(2)}
                   </span>
                   {originalPriceTaka && originalPriceTaka > currentPriceTaka && (
@@ -400,7 +402,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                           onClick={() => handleSelectVariant(variant)}
                           className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                             isSelected
-                              ? "bg-[#FF5B00] text-white border-[#FF5B00] shadow-xs scale-102"
+                              ? "bg-primary text-white border-primary shadow-xs scale-102"
                               : "bg-white text-gray-700 border-gray-200 hover:border-gray-400"
                           } ${!variant.in_stock ? "opacity-50 line-through" : ""}`}
                         >
@@ -441,7 +443,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
 
                   {/* Add to Cart / Quantity Controller Button */}
                   {quantityInCart > 0 ? (
-                    <div className="flex-1 min-w-[160px] h-11 px-3 bg-orange-50/90 border-2 border-[#FF5B00] rounded-xl flex items-center justify-between shadow-xs">
+                    <div className="flex-1 min-w-[160px] h-11 px-3 bg-brand-50/90 border-2 border-primary rounded-xl flex items-center justify-between shadow-xs">
                       <button
                         type="button"
                         onClick={() => {
@@ -451,19 +453,19 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                             updateQuantity(String(product.id), quantityInCart - 1);
                           }
                         }}
-                        className="w-8 h-8 rounded-lg bg-white border border-gray-200 text-[#FF5B00] hover:bg-orange-100 flex items-center justify-center font-bold transition-all cursor-pointer active:scale-95"
+                        className="w-8 h-8 rounded-lg bg-white border border-gray-200 text-primary hover:bg-brand-100 flex items-center justify-center font-bold transition-all cursor-pointer active:scale-95"
                         aria-label="Decrease quantity"
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
                       <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900 select-none">
-                        <ShoppingCart className="w-3.5 h-3.5 text-[#FF5B00]" />
+                        <ShoppingCart className="w-3.5 h-3.5 text-primary" />
                         <span>{quantityInCart} In Cart</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => updateQuantity(String(product.id), quantityInCart + 1)}
-                        className="w-8 h-8 rounded-lg bg-[#FF5B00] hover:bg-[#E64E00] text-white flex items-center justify-center font-bold transition-all cursor-pointer active:scale-95"
+                        className="w-8 h-8 rounded-lg bg-primary hover:bg-primary-hover text-white flex items-center justify-center font-bold transition-all cursor-pointer active:scale-95"
                         aria-label="Increase quantity"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -473,7 +475,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                     <button
                       onClick={handleAddToCart}
                       disabled={!isCurrentlyInStock}
-                      className="flex-1 min-w-[160px] h-11 px-5 bg-white border-2 border-[#FF5B00] text-[#FF5B00] hover:bg-[#FF5B00] hover:text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 min-w-[160px] h-11 px-5 bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <ShoppingCart className="w-4 h-4" />
                       <span>Add to Cart</span>
@@ -484,7 +486,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                   <button
                     onClick={handleBuyNow}
                     disabled={!isCurrentlyInStock}
-                    className="flex-1 min-w-[160px] h-11 px-5 bg-[#FF5B00] hover:bg-[#E64E00] text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 min-w-[160px] h-11 px-5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span>Buy Now</span>
                     <ArrowRight className="w-4 h-4" />
@@ -495,7 +497,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
               {/* Guarantees Strip */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-gray-100">
                 <div className="flex items-center gap-2 text-gray-700">
-                  <Truck className="w-4 h-4 text-[#FF5B00] shrink-0" />
+                  <Truck className="w-4 h-4 text-primary shrink-0" />
                   <span className="text-[11px] font-semibold">Fast Delivery</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-700">
@@ -507,7 +509,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                   <span className="text-[11px] font-semibold">7-Day Returns</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-700">
-                  <Check className="w-4 h-4 text-orange-600 shrink-0" />
+                  <Check className="w-4 h-4 text-brand-600 shrink-0" />
                   <span className="text-[11px] font-semibold">Cash On Delivery</span>
                 </div>
               </div>
@@ -524,7 +526,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
               onClick={() => setActiveTab("description")}
               className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "description"
-                  ? "border-[#FF5B00] text-[#FF5B00] bg-white"
+                  ? "border-primary text-primary bg-white"
                   : "border-transparent text-gray-500 hover:text-gray-800"
               }`}
             >
@@ -534,7 +536,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
               onClick={() => setActiveTab("specs")}
               className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "specs"
-                  ? "border-[#FF5B00] text-[#FF5B00] bg-white"
+                  ? "border-primary text-primary bg-white"
                   : "border-transparent text-gray-500 hover:text-gray-800"
               }`}
             >
@@ -544,7 +546,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
               onClick={() => setActiveTab("reviews")}
               className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 transition-all cursor-pointer whitespace-nowrap ${
                 activeTab === "reviews"
-                  ? "border-[#FF5B00] text-[#FF5B00] bg-white"
+                  ? "border-primary text-primary bg-white"
                   : "border-transparent text-gray-500 hover:text-gray-800"
               }`}
             >
@@ -591,9 +593,9 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
 
             {activeTab === "reviews" && (
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl bg-[#FFF9F5] border border-orange-100 max-w-lg">
+                <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl bg-brand-50 border border-brand-100 max-w-lg">
                   <div className="text-center">
-                    <span className="text-4xl sm:text-5xl font-black text-[#FF5B00]">
+                    <span className="text-4xl sm:text-5xl font-black text-primary">
                       {product.rating?.average?.toFixed(1) || "5.0"}
                     </span>
                     <div className="flex items-center justify-center gap-1 text-amber-400 mt-1">
@@ -677,16 +679,16 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-[#FF5B00]" />
+                  <Sparkles className="w-5 h-5 text-primary" />
                   <span>Similar & Related Products</span>
                 </h2>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Customers also viewed these items in the same catalog category
+                  You may also like these
                 </p>
               </div>
               <Link
                 href="/products"
-                className="text-xs font-bold text-[#FF5B00] hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
               >
                 View all <ArrowRight className="w-3.5 h-3.5" />
               </Link>
@@ -699,6 +701,25 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
             </div>
           </div>
         )}
+
+        {[
+          { title: "Frequently bought together", subtitle: "Customers often add these to the same order", items: crossSellProducts },
+          { title: "Upgrade options", subtitle: "Bigger, better or higher-rated alternatives", items: upsellProducts },
+        ]
+          .filter((g) => g.items.length > 0)
+          .map((g) => (
+            <section key={g.title} className="space-y-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">{g.title}</h2>
+                <p className="text-xs text-gray-500 mt-0.5">{g.subtitle}</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5">
+                {g.items.map((p) => (
+                  <ProductCard key={p.id} product={mapApiProductToProduct(p)} />
+                ))}
+              </div>
+            </section>
+          ))}
 
         {/* 5. Buy Now Instant Modal */}
         {isBuyNowOpen && (

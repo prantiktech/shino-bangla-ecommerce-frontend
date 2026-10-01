@@ -46,7 +46,7 @@ export default function TrackOrderPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] pb-20">
+    <div className="min-h-screen bg-canvas pb-20">
       <Breadcrumb
         items={[
           { label: "Home", href: "/" },
@@ -56,7 +56,7 @@ export default function TrackOrderPage() {
 
       <div className="max-w-3xl mx-auto px-4 md:px-8 py-10">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-orange-100/80 text-[#FF5B00] flex items-center justify-center mx-auto mb-3">
+          <div className="w-14 h-14 rounded-2xl bg-brand-100/80 text-primary flex items-center justify-center mx-auto mb-3">
             <Truck className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-2">
@@ -81,7 +81,7 @@ export default function TrackOrderPage() {
                   placeholder="e.g. 261001-X4V72"
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
-                  className="w-full h-10 px-3.5 text-xs sm:text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
+                  className="w-full h-10 px-3.5 text-xs sm:text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
@@ -95,7 +95,7 @@ export default function TrackOrderPage() {
                   placeholder="e.g. 01712345678"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full h-10 px-3.5 text-xs sm:text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
+                  className="w-full h-10 px-3.5 text-xs sm:text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
@@ -110,7 +110,7 @@ export default function TrackOrderPage() {
             <Button
               type="submit"
               disabled={isPending}
-              className="w-full h-11 bg-[#FF5B00] hover:bg-[#E64E00] text-white font-bold rounded-xl flex items-center justify-center gap-2 mt-2 cursor-pointer disabled:opacity-50"
+              className="w-full h-11 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl flex items-center justify-center gap-2 mt-2 cursor-pointer disabled:opacity-50"
             >
               <Search className="w-4 h-4" />
               <span>{isPending ? "Tracking..." : "Track Now"}</span>
@@ -128,7 +128,7 @@ export default function TrackOrderPage() {
                   #{trackingData.order_number}
                 </h3>
               </div>
-              <span className="px-3 py-1 bg-orange-50 text-[#FF5B00] border border-orange-200 text-xs font-bold rounded-full uppercase">
+              <span className="px-3 py-1 bg-brand-50 text-primary border border-brand-200 text-xs font-bold rounded-full uppercase">
                 {trackingData.status}
               </span>
             </div>
@@ -173,7 +173,7 @@ export default function TrackOrderPage() {
                   ))
                 ) : (
                   <div className="flex items-start gap-4 relative">
-                    <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center z-10 shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center z-10 shrink-0">
                       <Clock className="w-4 h-4" />
                     </div>
                     <div className="text-xs">

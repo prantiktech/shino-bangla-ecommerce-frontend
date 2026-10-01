@@ -30,6 +30,7 @@ import {
   updateAdminOrderStatusAction,
   markAdminOrderPaidAction,
 } from "@/app/(admin)/actions/orders";
+import { AdminInvoiceButton, OrderRefundsPanel } from "./OrderRefundsPanel";
 
 interface OrderCustomer {
   id?: number;
@@ -439,11 +440,13 @@ export function OrdersManagement({ initialOrders }: OrdersManagementProps) {
                     )}
                   </div>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    Live database record from backend API (GET /admin/orders/{selectedOrder?.id || "..."})
+                    Review the order, move it through fulfilment, record payment or issue a refund.
                   </p>
                 </div>
               </div>
 
+              <div className="flex items-center gap-2">
+              {selectedOrder && <AdminInvoiceButton orderId={selectedOrder.id} />}
               <button
                 onClick={() => {
                   setIsModalOpen(false);
@@ -453,6 +456,7 @@ export function OrdersManagement({ initialOrders }: OrdersManagementProps) {
               >
                 <X className="w-5 h-5" />
               </button>
+              </div>
             </div>
 
             {/* Modal Body */}
@@ -628,6 +632,19 @@ export function OrdersManagement({ initialOrders }: OrdersManagementProps) {
                       )}
                     </div>
                   </div>
+
+                  {/* Refunds (online payments only) */}
+                  <OrderRefundsPanel
+                    orderId={selectedOrder.id}
+                    onRefunded={async () => {
+                      const refreshed = await getAdminOrderAction(selectedOrder.id);
+                      if (refreshed.success && refreshed.data) {
+                        const d = refreshed.data;
+                        setSelectedOrder(d);
+                        setOrders((prev) => prev.map((o) => (o.id === d.id ? { ...o, payment_status: d.payment_status } : o)));
+                      }
+                    }}
+                  />
 
                   {/* 2. Order Products Table */}
                   <div className="space-y-2.5">

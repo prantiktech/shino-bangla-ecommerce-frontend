@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React from "react";
 import { Header } from "@/components/layout/Header/Header";
 import { Footer } from "@/components/layout/Footer/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileNav/MobileBottomNav";

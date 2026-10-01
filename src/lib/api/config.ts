@@ -3,8 +3,19 @@
  * Base URL and endpoint routes for Shino-Bangla eCommerce Backend
  */
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") || "http://13.140.181.253/api/v1";
+/**
+ * Single source of truth for the backend address.
+ * Set API_BASE_URL (server only) or NEXT_PUBLIC_API_BASE_URL; NEXT_PUBLIC_API_URL is still honoured.
+ */
+export const API_BASE_URL = (
+  process.env.API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://13.140.181.253/api/v1"
+).replace(/\/+$/, "");
+
+/** Public address of this storefront, used for absolute links (sitemap, robots). */
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/+$/, "");
 
 export const API_ENDPOINTS = {
   // 00 · Health & Settings
@@ -57,8 +68,6 @@ export const API_ENDPOINTS = {
   CART: "/cart",
   CART_ITEMS: "/cart/items",
   CART_ITEM_BY_ID: (id: number | string) => `/cart/items/${id}`,
-  CART_ITEM_SAVE_FOR_LATER: (id: number | string) => `/cart/items/${id}/save-for-later`,
-  CART_ITEM_MOVE_TO_CART: (id: number | string) => `/cart/items/${id}/move-to-cart`,
   CART_COUPON: "/cart/coupon",
   CART_CLAIM: "/cart/claim",
 

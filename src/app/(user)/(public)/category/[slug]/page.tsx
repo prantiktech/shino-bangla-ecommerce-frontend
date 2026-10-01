@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const name = res.success ? res.data.name : slug.replace(/-/g, " ");
 
   return {
-    title: `${name} | Nogod Bazar`,
+    title: `${name}`,
     description: `Shop authentic ${name} products with fast delivery in Bangladesh at Nogod Bazar.`,
   };
 }

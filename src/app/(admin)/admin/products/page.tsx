@@ -1,62 +1,34 @@
-import React from "react";
+import type { Metadata } from "next";
 import { getAdminProductsAction } from "@/app/(admin)/actions/products";
-import { getProductsAction } from "@/app/(user)/actions/products";
-import { getCategoriesAction } from "@/app/(user)/actions/categories";
+import { getAdminCategoriesAction } from "@/app/(admin)/actions/categories";
+import { getAdminBrandsAction } from "@/app/(admin)/actions/brands";
+import { getAdminOptionTypesAction } from "@/app/(admin)/actions/option-types";
 import { ProductsManagement } from "./_components/ProductsManagement";
 
-interface PageProps {
-  searchParams: Promise<{
-    q?: string;
-    page?: string;
-  }>;
-}
+export const metadata: Metadata = { title: "Products | Admin Portal" };
 
-export const metadata = {
-  title: "Admin Products | Store Management",
-};
-
-export default async function AdminProductsPage({ searchParams }: PageProps) {
-  const resolved = await searchParams;
-  const q = resolved.q || "";
-  const page = Number(resolved.page) || 1;
-
-  const [adminRes, categoriesRes] = await Promise.all([
-    getAdminProductsAction({ q: q || undefined, page, per_page: 20 }),
-    getCategoriesAction(),
+export default async function AdminProductsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
+  const [products, categories, brands, optionTypes] = await Promise.all([
+    getAdminProductsAction({ per_page: 25, q: q?.trim() || undefined }),
+    getAdminCategoriesAction(),
+    getAdminBrandsAction(),
+    getAdminOptionTypesAction(),
   ]);
-
-  let products = [];
-  let total = 0;
-  let totalPages = 1;
-
-  if (adminRes.success && adminRes.data) {
-    const rawData = adminRes.data;
-    products = Array.isArray(rawData.data) ? rawData.data : Array.isArray(rawData) ? rawData : [];
-    total = rawData.meta?.total ?? products.length;
-    totalPages = rawData.meta?.last_page ?? 1;
-  } else {
-    const productsRes = await getProductsAction({ q: q || undefined, page, per_page: 20 });
-    products = productsRes.success ? productsRes.data.items : [];
-    total = productsRes.success ? productsRes.data.total : 0;
-    totalPages = productsRes.success ? productsRes.data.lastPage : 1;
-  }
-
-  const categories = categoriesRes.success
-    ? categoriesRes.data.map((c) => ({
-        id: c.id,
-        name: c.name,
-        slug: c.slug,
-      }))
-    : [];
 
   return (
     <ProductsManagement
-      products={products}
-      total={total}
-      totalPages={totalPages}
-      currentPage={page}
-      searchQuery={q}
-      categories={categories}
+      key={q ?? ""}
+      initialQuery={q ?? ""}
+      initial={products.success ? products.data : { data: [], meta: { current_page: 1, last_page: 1, per_page: 25, total: 0 } }}
+      categories={
+        categories.success
+          ? categories.data.map((c) => ({ id: c.id, name: c.name, depth: (c as { depth?: number }).depth ?? 0 }))
+          : []
+      }
+      brands={brands.success ? brands.data.data.map((b) => ({ id: b.id, name: b.name })) : []}
+      optionTypes={optionTypes.success ? optionTypes.data ?? [] : []}
+      initialError={products.success ? null : products.error.message}
     />
   );
 }

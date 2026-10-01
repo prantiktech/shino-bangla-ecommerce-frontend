@@ -2,7 +2,7 @@ import React from "react";
 import { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getCurrentUserAction } from "@/lib/actions/auth.actions";
+import { getSessionUserAction } from "@/app/(user)/actions/auth";
 import { getOrderDetailAction } from "@/app/(user)/actions/orders";
 import { OrderDetailView } from "./_components/OrderDetailView";
 import { ShoppingBag, ArrowLeft } from "lucide-react";
@@ -18,13 +18,13 @@ export async function generateMetadata({
 }: SingleOrderPageProps): Promise<Metadata> {
   const resolved = await params;
   return {
-    title: `Order #${resolved.number} Details | Storefront`,
+    title: `Order #${resolved.number} Details`,
     description: `Track and view line items, payments, delivery status and invoices for order #${resolved.number}.`,
   };
 }
 
 export default async function SingleOrderPage({ params }: SingleOrderPageProps) {
-  const { user } = await getCurrentUserAction();
+  const { user } = await getSessionUserAction();
   if (!user) {
     redirect("/login");
   }

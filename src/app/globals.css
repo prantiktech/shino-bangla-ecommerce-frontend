@@ -50,9 +50,43 @@
 }
 
 @theme {
+  /* ------------------------------------------------------------------
+   * Nogod Bazar design tokens
+   * Brand: vivid orange (#FF5B00) on a cool slate neutral scale.
+   * Use `primary` / `brand-*` utilities instead of hard-coded hex values.
+   * ------------------------------------------------------------------ */
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Brand scale */
+  --color-brand-50: #FFF5EE;
+  --color-brand-100: #FFE7D6;
+  --color-brand-200: #FFCBA8;
+  --color-brand-300: #FFA670;
+  --color-brand-400: #FF7D38;
+  --color-brand-500: #FF5B00;
+  --color-brand-600: #E64E00;
+  --color-brand-700: #BF4000;
+  --color-brand-800: #973405;
+  --color-brand-900: #7A2C08;
+  --color-brand-950: #421302;
+
+  /* Semantic aliases */
   --color-primary: #FF5B00;
   --color-primary-hover: #E64E00;
-  --color-primary-light: #FFF3EB;
+  --color-primary-active: #BF4000;
+  --color-primary-light: #FFF5EE;
+  --color-primary-foreground: #FFFFFF;
+
+  --color-ink: #0F172A;          /* headings, primary text */
+  --color-surface: #FFFFFF;      /* cards, header */
+  --color-canvas: #F8FAFC;       /* page background */
+
+  --color-success: #16A34A;
+  --color-warning: #D97706;
+  --color-danger: #DC2626;
+  --color-info: #2563EB;
+
+  /* Legacy aliases kept for existing markup */
   --color-toy-orange: var(--toy-orange);
   --color-toy-orange-hover: var(--toy-orange-hover);
   --color-toy-orange-soft: var(--toy-orange-soft);
@@ -62,7 +96,6 @@
   --color-toy-gray-bg: var(--toy-gray-bg);
   --color-toy-card-bg: var(--toy-card-bg);
 
-  --color-primary-foreground: hsl(var(--primary-foreground));
   --color-secondary: hsl(var(--secondary));
   --color-secondary-foreground: hsl(var(--secondary-foreground));
   --color-muted: hsl(var(--muted));
@@ -72,15 +105,24 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
+  --shadow-card-hover: 0 4px 6px -1px rgb(15 23 42 / 0.06), 0 10px 24px -6px rgb(15 23 42 / 0.12);
 }
 
 * {
   border-color: hsl(var(--border));
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 8rem;
+}
+
 body {
-  background-color: #FAFAFA;
-  color: #1F2937;
+  background-color: var(--color-canvas);
+  color: #1E293B;
+  overflow-x: hidden;
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
@@ -97,7 +139,27 @@ body {
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #FF5B00;
+  background: #94A3B8;
+}
+
+/* Accessible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Bottom padding so fixed mobile nav never covers content */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Hide scrollbar utility */
@@ -138,3 +200,30 @@ body {
 .animate-soft-pulse {
   animation: soft-pulse 3s infinite ease-in-out;
 }
+
+/* Typography for CMS / rich HTML content coming from the API */
+.cms-content {
+  color: #334155;
+  font-size: 0.95rem;
+  line-height: 1.75;
+}
+.cms-content > * + * { margin-top: 1em; }
+.cms-content h1, .cms-content h2, .cms-content h3, .cms-content h4 {
+  color: var(--color-ink);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1.6em;
+}
+.cms-content h1 { font-size: 1.6rem; }
+.cms-content h2 { font-size: 1.35rem; }
+.cms-content h3 { font-size: 1.15rem; }
+.cms-content a { color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; }
+.cms-content a:hover { color: var(--color-primary-hover); }
+.cms-content ul { list-style: disc; padding-left: 1.4em; }
+.cms-content ol { list-style: decimal; padding-left: 1.4em; }
+.cms-content li + li { margin-top: 0.35em; }
+.cms-content blockquote { border-left: 3px solid var(--color-brand-200); padding-left: 1em; color: #475569; font-style: italic; }
+.cms-content img { border-radius: 0.75rem; max-width: 100%; height: auto; }
+.cms-content table { width: 100%; border-collapse: collapse; font-size: 0.9rem; display: block; overflow-x: auto; }
+.cms-content th, .cms-content td { border: 1px solid #E2E8F0; padding: 0.5em 0.75em; text-align: left; }
+.cms-content th { background: #F8FAFC; font-weight: 600; }

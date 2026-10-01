@@ -3,245 +3,157 @@
 import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
-import { ApiError } from "@/lib/api";
-import { Lock, Mail, ArrowRight, ShieldCheck, Sparkles, AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, Loader2, Sparkles } from "lucide-react";
+import { useAuth, AuthError } from "@/context/AuthContext";
+import { verifyOtpAction } from "@/app/(user)/actions/auth";
+import { AuthAlert, AuthCard, AuthField, authButton, authInput } from "@/components/auth/AuthCard";
+import { PasswordInput } from "@/components/auth/PasswordInput";
+import { OtpStep } from "@/components/auth/OtpStep";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { safeRedirect } from "@/components/auth/redirect";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, setSessionUser } = useAuth();
 
   const rawRedirect = searchParams.get("redirect");
-  const redirectTarget =
-    rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
-      ? rawRedirect
-      : "/account";
-
+  const redirectTarget = safeRedirect(rawRedirect);
   const isCheckoutRedirect = redirectTarget === "/checkout";
+  const resetDone = searchParams.get("reset") === "1";
 
-  const [form, setForm] = useState({
-    login: "",
-    password: ""
-  });
+  const [form, setForm] = useState({ login: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [needsVerify, setNeedsVerify] = useState(false);
 
-  // If already logged in, redirect to destination
   React.useEffect(() => {
-    if (isAuthenticated) {
-      router.push(redirectTarget);
-    }
+    if (isAuthenticated) router.replace(redirectTarget);
   }, [isAuthenticated, redirectTarget, router]);
-
-  const handleFillDemo = () => {
-    setForm({
-      login: "customer@example.com",
-      password: "Demo-Password-1!"
-    });
-    setErrorMsg(null);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.login.trim() || !form.password) {
-      setErrorMsg("Please enter both email/phone and password.");
+      setErrorMsg("Enter your email or mobile number and your password.");
       return;
     }
-
     setLoading(true);
     setErrorMsg(null);
-    setSuccessMsg(null);
-
     try {
-      await login({
-        login: form.login.trim(),
-        password: form.password,
-        device_name: "web"
-      });
-      setSuccessMsg("Signed in successfully! Redirecting...");
-      setTimeout(() => {
-        router.push(redirectTarget);
-      }, 700);
-    } catch (err: any) {
-      if (err instanceof ApiError) {
-        setErrorMsg(err.message || "Invalid login credentials. Please try again.");
+      await login({ login: form.login.trim(), password: form.password, device_name: "web" });
+      router.replace(redirectTarget);
+    } catch (err) {
+      if (err instanceof AuthError && err.code === "ACCOUNT_NOT_VERIFIED") {
+        // The API has just sent a fresh code; move to the code entry step.
+        setNeedsVerify(true);
       } else {
-        setErrorMsg(err.message || "An unexpected error occurred.");
+        setErrorMsg(err instanceof Error ? err.message : "Something went wrong. Please try again.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-[75vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50/60">
-      <div className="max-w-md w-full space-y-6">
-        
-        {/* Header Branding */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-1.5 group select-none">
-            <div className="flex items-center">
-              <span className="text-3xl font-black text-[#009cae] leading-none">C</span>
-              <span className="text-2xl font-black text-gray-900 tracking-tight">embula</span>
-              <span className="text-[10px] font-semibold text-gray-400 ml-0.5">.com</span>
-            </div>
-          </Link>
-          <h2 className="mt-4 text-2xl font-extrabold text-gray-900 tracking-tight">
-            Sign in to your customer account
-          </h2>
-          <p className="mt-1.5 text-xs text-gray-500">
-            Access your orders, track shipments, and manage wishlist
-          </p>
-        </div>
+  const registerHref = rawRedirect ? `/register?redirect=${encodeURIComponent(rawRedirect)}` : "/register";
 
-        {/* Checkout Authentication Alert Banner */}
+  if (needsVerify) {
+    return (
+      <AuthCard title="Verify your account" subtitle="Your account isn't verified yet. Enter the code we just sent.">
+        <OtpStep
+          login={form.login.trim()}
+          purpose="verify"
+          submitLabel="Verify and sign in"
+          onSubmit={async (code) => {
+            const res = await verifyOtpAction({ login: form.login.trim(), code, purpose: "verify" });
+            if (!res.success) return res.error.message;
+            setSessionUser(res.data.user, res.data.token);
+            router.replace(redirectTarget);
+          }}
+        />
+      </AuthCard>
+    );
+  }
+
+  return (
+    <AuthCard
+      title="Sign in"
+      subtitle="Track orders, save addresses and check out faster."
+      footer={
+        <>
+          New to Nogod Bazar?{" "}
+          <Link href={registerHref} className="font-semibold text-primary hover:underline">
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <div className="space-y-4">
         {isCheckoutRedirect && (
-          <div className="bg-amber-50 border border-amber-200/90 rounded-xl p-3.5 flex items-center gap-3 text-xs text-amber-900 shadow-2xs">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-            <div>
-              <span className="font-bold">Authentication Required: </span>
-              <span>Please sign in with your customer account to confirm and place your order. You will be redirected right back to checkout.</span>
-            </div>
+          <AuthAlert tone="info">
+            <span className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              Sign in to place your order. You&apos;ll come straight back to checkout.
+            </span>
+          </AuthAlert>
+        )}
+        {resetDone && <AuthAlert tone="success">Your password has been reset. Sign in with your new password.</AuthAlert>}
+
+        {process.env.NODE_ENV !== "production" && (
+          <div className="flex items-center justify-between gap-3 rounded-xl bg-brand-50 ring-1 ring-brand-200 px-3.5 py-2.5 text-xs text-brand-900">
+            <span className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" />
+              Demo: customer@example.com / Demo-Password-1!
+            </span>
+            <button
+              type="button"
+              onClick={() => setForm({ login: "customer@example.com", password: "Demo-Password-1!" })}
+              className="font-semibold text-primary hover:underline"
+            >
+              Fill
+            </button>
           </div>
         )}
 
-        {/* Demo Credentials Quick-Fill Banner */}
-        <div className="bg-teal-50/80 border border-teal-200/80 rounded-xl p-3.5 flex items-center justify-between text-xs text-teal-900 shadow-2xs">
-          <div className="space-y-0.5">
-            <span className="font-bold flex items-center gap-1 text-[#009cae]">
-              <Sparkles className="w-3.5 h-3.5" />
-              Customer Demo Account:
-            </span>
-            <div className="text-[11px] text-teal-800 font-mono">
-              customer@example.com / Demo-Password-1!
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleFillDemo}
-            className="px-3 py-1.5 bg-[#009cae] hover:bg-[#008998] text-white font-semibold rounded-lg text-xs transition-colors shadow-2xs shrink-0 active:scale-95"
-          >
-            Auto Fill
-          </button>
-        </div>
-
-        {/* Form Container */}
-        <div className="bg-white py-8 px-6 sm:px-8 rounded-2xl shadow-xl border border-gray-100/90">
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            
-            {/* Error Alert */}
-            {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-                <span>{errorMsg}</span>
-              </div>
-            )}
-
-            {/* Success Alert */}
-            {successMsg && (
-              <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
-                <span>{successMsg}</span>
-              </div>
-            )}
-
-            {/* Email or Phone Input */}
-            <div>
-              <label htmlFor="login" className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-                Email or Mobile Number
-              </label>
-              <div className="relative rounded-xl shadow-2xs">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <input
-                  id="login"
-                  type="text"
-                  required
-                  value={form.login}
-                  onChange={(e) => setForm({ ...form, login: e.target.value })}
-                  placeholder="e.g. customer@example.com or 01712345678"
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs md:text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#009cae] focus:bg-white transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Password Input */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label htmlFor="password" className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                  Password
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs text-[#009cae] hover:underline font-medium"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative rounded-xl shadow-2xs">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                  <Lock className="w-4 h-4" />
-                </div>
-                <input
-                  id="password"
-                  type="password"
-                  required
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder="••••••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs md:text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#009cae] focus:bg-white transition-colors"
-                />
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-white font-bold text-sm bg-[#009cae] hover:bg-[#008998] active:scale-[0.99] transition-all shadow-md shadow-teal-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span>{isCheckoutRedirect ? "Sign In & Proceed to Checkout" : "Sign In"}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-
-          {/* Footer Navigation */}
-          <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-            <p className="text-xs text-gray-600">
-              Don&apos;t have an account yet?{" "}
-              <Link
-                href={rawRedirect ? `/register?redirect=${encodeURIComponent(rawRedirect)}` : "/register"}
-                className="font-bold text-[#009cae] hover:underline"
-              >
-                Create Account
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {errorMsg && <AuthAlert tone="error">{errorMsg}</AuthAlert>}
+          <AuthField label="Email or mobile number" htmlFor="login">
+            <input
+              id="login"
+              type="text"
+              autoComplete="username"
+              value={form.login}
+              onChange={(e) => setForm((f) => ({ ...f, login: e.target.value }))}
+              placeholder="you@example.com or 01XXXXXXXXX"
+              className={authInput}
+              autoFocus
+            />
+          </AuthField>
+          <AuthField
+            label="Password"
+            htmlFor="password"
+            aside={
+              <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+                Forgot password?
               </Link>
-            </p>
-          </div>
-        </div>
+            }
+          >
+            <PasswordInput id="password" value={form.password} onChange={(v) => setForm((f) => ({ ...f, password: v }))} />
+          </AuthField>
+          <button type="submit" disabled={loading} className={authButton}>
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            Sign in
+          </button>
+        </form>
 
-        {/* Security Trust Badges */}
-        <div className="flex items-center justify-center gap-4 text-gray-400 text-xs">
-          <div className="flex items-center gap-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
-            <span>256-bit SSL Encrypted</span>
-          </div>
-          <span>•</span>
-          <span>Fast Bangladeshi Delivery</span>
-        </div>
-
+        <GoogleSignInButton
+          onSignedIn={(user, token) => {
+            setSessionUser(user, token);
+            router.replace(redirectTarget);
+          }}
+          onError={setErrorMsg}
+        />
       </div>
-    </div>
+    </AuthCard>
   );
 }
 
@@ -249,8 +161,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-[75vh] flex items-center justify-center py-12 px-4">
-          <div className="w-8 h-8 border-2 border-[#009cae] border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="w-7 h-7 animate-spin text-primary" />
         </div>
       }
     >

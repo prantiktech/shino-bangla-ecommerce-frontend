@@ -12,7 +12,7 @@ import { mapApiProductToProduct } from "@/lib/utils/product-mapper";
 import { mapApiCategoryToCategory } from "@/lib/utils/category-mapper";
 
 export const metadata: Metadata = {
-  title: "Nogod Bazar | Quality Products, Hardware & Safety Essentials",
+  title: { absolute: "Nogod Bazar | Quality Products, Hardware & Safety Essentials" },
   description:
     "Order quality products, certified safety equipment, hardware, and books with fast delivery in Bangladesh at Nogod Bazar.",
 };

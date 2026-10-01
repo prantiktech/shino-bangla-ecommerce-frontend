@@ -5,7 +5,7 @@ import { Sparkles, Package } from "lucide-react";
 import { getBrandsAction } from "@/app/(user)/actions/brands";
 
 export const metadata = {
-  title: "All Brands | Nogod Bazar",
+  title: "All Brands",
   description: "Explore genuine equipment and hardware brands available at Nogod Bazar.",
 };
 
@@ -14,7 +14,7 @@ export default async function AllBrandsPage() {
   const brands = res.success ? res.data : [];
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] pb-20">
+    <div className="min-h-screen bg-canvas pb-20">
       <Breadcrumb
         items={[
           { label: "Home", href: "/" },
@@ -35,16 +35,16 @@ export default async function AllBrandsPage() {
         <div className="text-center mb-8">
           <div className="inline-block relative">
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight pb-1.5 flex items-center justify-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-[#FF5B00]" />
+              <Sparkles className="w-4 h-4 text-primary" />
               <span>Verified Brands</span>
             </h2>
-            <div className="w-10 h-0.5 bg-[#FF5B00] mx-auto rounded-full" />
+            <div className="w-10 h-0.5 bg-primary mx-auto rounded-full" />
           </div>
         </div>
 
         {brands.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200/90 p-12 text-center max-w-md mx-auto space-y-2">
-            <div className="w-12 h-12 rounded-xl bg-orange-50 text-[#FF5B00] flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-xl bg-brand-50 text-primary flex items-center justify-center mx-auto">
               <Package className="w-6 h-6" />
             </div>
             <h3 className="text-sm font-bold text-gray-800">No Brands Added Yet</h3>
@@ -58,12 +58,12 @@ export default async function AllBrandsPage() {
               <Link
                 key={brand.id}
                 href={`/brand/${brand.slug}`}
-                className="group p-5 bg-white rounded-2xl border border-gray-200/90 shadow-2xs hover:border-[#FF5B00]/40 hover:shadow-md transition-all text-center flex flex-col items-center justify-center"
+                className="group p-5 bg-white rounded-2xl border border-gray-200/90 shadow-2xs hover:border-primary/40 hover:shadow-md transition-all text-center flex flex-col items-center justify-center"
               >
-                <div className="w-14 h-14 rounded-xl bg-slate-50 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform text-[#FF5B00]">
+                <div className="w-14 h-14 rounded-xl bg-slate-50 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform text-primary">
                   <Package className="w-6 h-6" />
                 </div>
-                <h3 className="text-xs font-bold text-gray-800 group-hover:text-[#FF5B00] transition-colors">
+                <h3 className="text-xs font-bold text-gray-800 group-hover:text-primary transition-colors">
                   {brand.name}
                 </h3>
                 <span className="text-[10px] text-gray-400 font-semibold mt-0.5">

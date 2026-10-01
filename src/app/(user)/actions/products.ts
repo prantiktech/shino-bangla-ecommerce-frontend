@@ -291,39 +291,3 @@ export interface ReviewsResponseData {
   };
 }
 
-/**
- * Server Action to fetch product reviews matching GET /api/v1/products/:slug/reviews
- */
-export async function getProductReviewsAction(
-  slug: string
-): Promise<ActionResponse<ReviewsResponseData>> {
-  try {
-    const res = await serverGet<any>("GET_PRODUCT_REVIEWS", {
-      pathParams: { slug },
-      next: { revalidate: 60 },
-    });
-
-    if (res.success && res.data) {
-      const items = Array.isArray(res.data.data) ? res.data.data : [];
-      const summary = res.data.meta?.summary || { average: 0, count: items.length };
-      return {
-        success: true,
-        data: {
-          reviews: items,
-          summary,
-        },
-      };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: !res.success ? (res.error?.message || "Failed to load reviews") : "Failed to load reviews",
-        code: "FETCH_REVIEWS_FAILED",
-      },
-    };
-  } catch (error) {
-    return handleActionError(error);
-  }
-}
-

@@ -1,8 +1,10 @@
 import React from "react";
+import { SITE_URL } from "@/lib/api/config";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getProductBySlugAction, getProductsAction } from "@/app/(user)/actions/products";
+import { getProductBySlugAction, getProductsAction, getRelatedProductsAction } from "@/app/(user)/actions/products";
 import { ProductDetailClient } from "./_components/ProductDetailClient";
+import { DeliveryInfo } from "@/components/products/DeliveryInfo";
 import { poishaToTaka } from "@/lib/utils/money";
 
 interface PageProps {
@@ -11,18 +13,18 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = SITE_URL;
 
   const res = await getProductBySlugAction(slug);
   if (!res.success || !res.data) {
     return {
-      title: "Product Details | Nogod Bazar",
+      title: "Product Details",
       description: "Buy genuine products and hardware online at Nogod Bazar.",
     };
   }
 
   const product = res.data;
-  const title = `${product.name} | Nogod Bazar`;
+  const title = `${product.name}`;
   const priceTaka = poishaToTaka(product.price.min);
   const description = product.short_description || `Buy ${product.name} online for ৳${priceTaka.toFixed(2)}. 100% genuine products with fast delivery in Bangladesh.`;
   const imageUrl = product.image || product.main_image || `${baseUrl}/placeholder.svg`;
@@ -58,7 +60,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProductDetailPage({ params }: PageProps) {
   const { slug } = await params;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = SITE_URL;
 
   // Fetch product detail on the server
   const productRes = await getProductBySlugAction(slug);
@@ -69,26 +71,21 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   const product = productRes.data;
 
-  // Fetch similar products dynamically from the same category or general catalog
-  let similarProducts: any[] = [];
-  if (product.category?.slug) {
-    const similarRes = await getProductsAction({
-      category: product.category.slug,
-      per_page: 6,
-    });
-    if (similarRes.success && similarRes.data.items) {
-      similarProducts = similarRes.data.items
-        .filter((p) => p.slug !== product.slug && p.id !== product.id)
-        .slice(0, 5);
-    }
-  }
+  // Linked products curated in the admin panel (falls back to the same category).
+  const [relatedRes, crossRes, upsellRes] = await Promise.all([
+    getRelatedProductsAction(product.slug, "related"),
+    getRelatedProductsAction(product.slug, "cross_sell"),
+    getRelatedProductsAction(product.slug, "upsell"),
+  ]);
+  const notSelf = (p: { id: number; slug: string }) => p.id !== product.id && p.slug !== product.slug;
+  let similarProducts = (relatedRes.success ? relatedRes.data : []).filter(notSelf).slice(0, 10);
+  const crossSellProducts = (crossRes.success ? crossRes.data : []).filter(notSelf).slice(0, 10);
+  const upsellProducts = (upsellRes.success ? upsellRes.data : []).filter(notSelf).slice(0, 10);
 
-  if (similarProducts.length === 0) {
-    const generalRes = await getProductsAction({ per_page: 6 });
-    if (generalRes.success && generalRes.data.items) {
-      similarProducts = generalRes.data.items
-        .filter((p) => p.slug !== product.slug && p.id !== product.id)
-        .slice(0, 5);
+  if (similarProducts.length === 0 && product.category?.slug) {
+    const similarRes = await getProductsAction({ category: product.category.slug, per_page: 6 });
+    if (similarRes.success && similarRes.data.items) {
+      similarProducts = similarRes.data.items.filter(notSelf).slice(0, 5);
     }
   }
 
@@ -123,7 +120,13 @@ export default async function ProductDetailPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <ProductDetailClient product={product} similarProducts={similarProducts} />
+      <ProductDetailClient
+        product={product}
+        similarProducts={similarProducts}
+        crossSellProducts={crossSellProducts}
+        upsellProducts={upsellProducts}
+      />
+      <DeliveryInfo />
     </>
   );
 }

@@ -2,7 +2,13 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { Product, CartItem } from "@/types";
-import { cartService } from "@/lib/api/services/cart.service";
+import {
+  getCartAction,
+  apiAddCartItemAction,
+  apiUpdateCartItemAction,
+  apiRemoveCartItemAction,
+} from "@/app/(user)/actions/cart";
+import { getProductBySlugAction } from "@/app/(user)/actions/products";
 import { poishaToTaka } from "@/lib/utils/money";
 
 interface CartContextType {
@@ -77,10 +83,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsInitialized(true);
 
     // Fetch live cart from backend API (works for both guests via X-Cart-Token and logged-in customers)
-    cartService
-      .getCart()
-      .then((apiCart) => {
-        const serverItems = mapApiCartToItems(apiCart);
+    getCartAction()
+      .then((res) => {
+        if (!res.success) return;
+        const serverItems = mapApiCartToItems(res.data);
         if (serverItems.length > 0) {
           setCart(serverItems);
           try {
@@ -131,11 +137,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       let variantId = product.variantId;
       if (!variantId && product.slug) {
         try {
-          const detailRes: any = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || "http://13.140.181.253/api/v1"}/products/${product.slug}`
-          ).then((r) => r.json());
-          const variants = detailRes?.data?.variants || [];
-          const defaultVar = variants.find((v: any) => v.is_default) || variants[0];
+          const detail = await getProductBySlugAction(product.slug);
+          const variants = (detail.success ? detail.data.variants : []) as { id: number; is_default?: boolean }[];
+          const defaultVar = variants.find((v) => v.is_default) || variants[0];
           if (defaultVar?.id) {
             variantId = defaultVar.id;
           }
@@ -147,10 +151,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // 3. API sync with resolved variantId
       if (variantId) {
         try {
-          const apiCart = await cartService.addItem({
-            variant_id: variantId,
-            quantity
-          });
+          const added = await apiAddCartItemAction(variantId, quantity);
+          if (!added.success) {
+            showToast(added.error || "Could not add this item. Please try again.");
+            return;
+          }
+          const apiCart = added.data;
 
           // Sync whole cart from server response if available
           const serverItems = mapApiCartToItems(apiCart);
@@ -194,7 +200,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setCart((prev) => {
         const item = prev.find((i) => i.product.id === productId);
         if (item?.apiCartItemId) {
-          cartService.removeItem(item.apiCartItemId).catch(() => {});
+          apiRemoveCartItemAction(item.apiCartItemId).catch(() => {});
         }
         return prev.filter((i) => i.product.id !== productId);
       });
@@ -214,7 +220,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const updated = prev.map((item) => {
           if (item.product.id !== productId) return item;
           if (item.apiCartItemId) {
-            cartService.updateItem(item.apiCartItemId, quantity).catch(() => {});
+            apiUpdateCartItemAction(item.apiCartItemId, quantity).catch(() => {});
           }
           return { ...item, quantity };
         });

@@ -8,14 +8,14 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-transparent bg-[#FF5B00] text-white shadow hover:bg-[#E64E00]",
+          "border-transparent bg-primary text-white shadow hover:bg-primary-hover",
         secondary:
           "border-transparent bg-slate-100 text-slate-900 hover:bg-slate-200",
         discount:
           "border-transparent bg-[#16A34A] text-white font-bold text-[11px] shadow-sm tracking-wide",
         outline: "text-foreground border border-gray-200",
         cartBadge:
-          "bg-[#FF5B00] text-white rounded-full font-bold px-1.5 min-w-[18px] h-[18px] text-[10px] flex items-center justify-center",
+          "bg-primary text-white rounded-full font-bold px-1.5 min-w-[18px] h-[18px] text-[10px] flex items-center justify-center",
       },
     },
     defaultVariants: {

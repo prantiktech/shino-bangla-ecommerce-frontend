@@ -9,7 +9,7 @@ export const FloatingChat: React.FC = () => {
   const [messages, setMessages] = useState<{ sender: "bot" | "user"; text: string }[]>([
     {
       sender: "bot",
-      text: "👋 Hello! Welcome to Toy House. How can we assist you with our toys and baby products today?",
+      text: "👋 Hi there! Welcome to Nogod Bazar. How can we help you today?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -28,7 +28,7 @@ export const FloatingChat: React.FC = () => {
         ...prev,
         {
           sender: "bot",
-          text: "Thank you for reaching out! An agent is connecting, or feel free to call our hotline at +880 1800-TOYHOUSE for instant order assistance.",
+          text: "Thanks for reaching out! A support agent will reply shortly. For urgent order help, you can also call our support line listed in the footer.",
         },
       ]);
       showToast("Live support received your message");
@@ -36,19 +36,19 @@ export const FloatingChat: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-50">
+    <div className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] md:bottom-6 right-4 md:right-6 z-40 flex flex-col items-end">
       {/* Chat Popup Box */}
       {isOpen && (
-        <div className="mb-3 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col h-[400px] animate-in slide-in-from-bottom-5 duration-200">
+        <div className="mb-3 w-[calc(100vw-2rem)] max-w-sm bg-white rounded-2xl shadow-2xl ring-1 ring-slate-900/5 overflow-hidden flex flex-col h-[min(420px,calc(100dvh-10rem))]">
           {/* Header */}
-          <div className="bg-[#FF5B00] text-white p-3.5 flex items-center justify-between shadow-xs">
+          <div className="bg-primary text-white p-3.5 flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
                 <Bot className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h4 className="text-xs font-bold">Toy House Support</h4>
-                <span className="text-[10px] text-orange-100 flex items-center gap-1">
+                <h4 className="text-xs font-bold">Nogod Bazar Support</h4>
+                <span className="text-[10px] text-brand-100 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" />
                   Online
                 </span>
@@ -73,7 +73,7 @@ export const FloatingChat: React.FC = () => {
                 <div
                   className={`max-w-[80%] p-2.5 rounded-xl leading-relaxed ${
                     msg.sender === "user"
-                      ? "bg-[#FF5B00] text-white rounded-br-none"
+                      ? "bg-primary text-white rounded-br-none"
                       : "bg-white text-gray-800 border border-gray-200/80 shadow-2xs rounded-bl-none"
                   }`}
                 >
@@ -89,12 +89,12 @@ export const FloatingChat: React.FC = () => {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything about toys..."
-              className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#FF5B00]"
+              placeholder="Type your message..."
+              className="flex-1 min-w-0 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
             />
             <button
               type="submit"
-              className="p-2 bg-[#FF5B00] hover:bg-[#E64E00] text-white rounded-lg transition-colors flex items-center justify-center"
+              className="p-2 bg-primary hover:bg-primary-hover text-white rounded-lg transition-colors flex items-center justify-center"
               aria-label="Send message"
             >
               <Send className="w-3.5 h-3.5" />
@@ -106,8 +106,9 @@ export const FloatingChat: React.FC = () => {
       {/* Floating Orange Chat Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Live Customer Chat"
-        className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-[#FF5B00] hover:bg-[#E64E00] text-white shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-orange-200"
+        aria-label={isOpen ? "Close chat" : "Chat with support"}
+        aria-expanded={isOpen}
+        className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-primary hover:bg-primary-hover text-white shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-200"
       >
         {isOpen ? (
           <X className="w-6 h-6 stroke-[2.5]" />

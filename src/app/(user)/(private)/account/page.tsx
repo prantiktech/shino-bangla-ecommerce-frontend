@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentUserAction } from "@/lib/actions/auth.actions";
+import { getSessionUserAction } from "@/app/(user)/actions/auth";
 import { getOrdersAction } from "@/app/(user)/actions/orders";
 import { getAddressesAction } from "@/app/(user)/actions/addresses";
 import { getCheckoutLocationsAction } from "@/app/(user)/actions/checkout";
@@ -8,7 +8,7 @@ import { getReviewableItemsAction, getMyReviewsAction } from "@/app/(user)/actio
 import { AccountDashboard } from "@/components/account/AccountDashboard";
 
 export const metadata = {
-  title: "My Account - Hardware & Fasteners Store",
+  title: "My Account",
   description: "View and manage your customer account, addresses, order history, wishlist, and reviews.",
 };
 
@@ -21,7 +21,7 @@ interface AccountPageProps {
 }
 
 export default async function AccountPage({ searchParams }: AccountPageProps) {
-  const { user } = await getCurrentUserAction();
+  const { user } = await getSessionUserAction();
 
   // Secure server-side redirect if not authenticated
   if (!user) {
@@ -29,12 +29,9 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
   }
 
   const resolved = await searchParams;
-  const initialTab =
-    resolved?.tab === "addresses" ||
-    resolved?.tab === "profile" ||
-    resolved?.tab === "overview"
-      ? (resolved.tab as "addresses" | "profile" | "overview")
-      : "orders";
+  const TABS = ["orders", "addresses", "profile", "overview", "wishlist", "reviews", "security"] as const;
+  type Tab = (typeof TABS)[number];
+  const initialTab: Tab = TABS.includes(resolved?.tab as Tab) ? (resolved.tab as Tab) : "orders";
 
   // Fetch customer orders, addresses, locations, wishlist, and reviews in parallel
   const [ordersRes, addressesRes, locationsRes, wishlistRes, reviewablesRes, reviewsRes] = await Promise.all([

@@ -107,7 +107,7 @@ export function DateTimePicker({
               <select
                 value={hours}
                 onChange={(e) => setHours(e.target.value)}
-                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#FF5B00]"
+                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:border-primary"
               >
                 {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0")).map(
                   (h) => (
@@ -121,7 +121,7 @@ export function DateTimePicker({
               <select
                 value={minutes}
                 onChange={(e) => setMinutes(e.target.value)}
-                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#FF5B00]"
+                className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-900 focus:outline-none focus:border-primary"
               >
                 {["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].map(
                   (m) => (
@@ -136,7 +136,7 @@ export function DateTimePicker({
             <Button
               size="sm"
               onClick={() => handleApply(selectedDate || new Date(), hours, minutes)}
-              className="h-7 px-3 text-xs font-bold bg-[#FF5B00] hover:bg-[#E64E00] text-white rounded-lg cursor-pointer"
+              className="h-7 px-3 text-xs font-bold bg-primary hover:bg-primary-hover text-white rounded-lg cursor-pointer"
             >
               Set
             </Button>

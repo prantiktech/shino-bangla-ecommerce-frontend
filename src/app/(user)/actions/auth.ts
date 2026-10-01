@@ -1,28 +1,13 @@
 "use server";
 
+import type { User } from "@/lib/api/types";
+
 import { serverGet, serverPost, serverPut, serverDelete } from "@/lib/api-client/server";
 import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
 import { cookies } from "next/headers";
 
-export interface UserProfile {
-  id: number;
-  name: string;
-  email: string | null;
-  email_verified?: boolean;
-  email_verified_at?: string | null;
-  phone?: string | null;
-  phone_verified?: boolean;
-  avatar_url?: string | null;
-  has_password?: boolean;
-  google_linked?: boolean;
-  is_active?: boolean;
-  is_staff?: boolean;
-  roles?: string[];
-  permissions?: string[];
-  last_login_at?: string | null;
-  created_at?: string;
-  updated_at?: string;
-}
+/** The signed-in shopper, as returned by GET /me. */
+export type UserProfile = User;
 
 export interface VerificationData {
   channel: "phone" | "email" | string;
@@ -264,11 +249,14 @@ export async function loginAction(
       };
     }
 
+    // Keep the API's own code (e.g. ACCOUNT_NOT_VERIFIED) so the UI can react to it.
+    const apiCode = !res.success ? (res.error?.details as { code?: string } | undefined)?.code : undefined;
     return {
       success: false,
       error: {
         message: !res.success ? (res.error?.message || "Invalid credentials") : "Login failed",
-        code: "AUTH_LOGIN_FAILED",
+        code: apiCode || "AUTH_LOGIN_FAILED",
+        status: !res.success ? res.error?.status : undefined,
       },
     };
   } catch (error) {
@@ -420,45 +408,6 @@ export async function logoutAllAction(): Promise<ActionResponse<boolean>> {
 }
 
 /**
- * 10. Change password
- * PUT /api/v1/auth/password
- */
-export async function changePasswordAction(payload: {
-  current_password?: string;
-  password: string;
-  password_confirmation: string;
-}): Promise<ActionResponse<{ message: string }>> {
-  try {
-    const body: Record<string, any> = {
-      password: payload.password,
-      password_confirmation: payload.password_confirmation,
-    };
-    if (payload.current_password) body.current_password = payload.current_password;
-
-    const res = await serverPut<any>("CHANGE_PASSWORD", body);
-
-    if (res.success) {
-      return {
-        success: true,
-        data: {
-          message: res.data?.message || "Your password has been changed.",
-        },
-      };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: !res.success ? (res.error?.message || "Failed to change password") : "Failed to change password",
-        code: "AUTH_PASSWORD_CHANGE_FAILED",
-      },
-    };
-  } catch (error) {
-    return handleActionError(error);
-  }
-}
-
-/**
  * 11. List active devices / tokens
  * GET /api/v1/auth/tokens
  */
@@ -500,28 +449,6 @@ export async function revokeAuthTokenAction(
       error: {
         message: !res.success ? (res.error?.message || "Failed to revoke token") : "Failed to revoke token",
         code: "REVOKE_TOKEN_FAILED",
-      },
-    };
-  } catch (error) {
-    return handleActionError(error);
-  }
-}
-
-/**
- * 13. Fetch current customer profile
- * GET /api/v1/me
- */
-export async function getMeAction(): Promise<ActionResponse<UserProfile>> {
-  try {
-    const res = await serverGet<any>("GET_ME");
-    if (res.success && res.data) {
-      return { success: true, data: res.data.data || res.data };
-    }
-    return {
-      success: false,
-      error: {
-        message: !res.success ? (res.error?.message || "Unauthenticated") : "Unauthenticated",
-        code: "UNAUTHENTICATED",
       },
     };
   } catch (error) {
@@ -608,4 +535,26 @@ export async function verifyContactAction(
   } catch (error) {
     return handleActionError(error);
   }
+}
+
+
+/**
+ * The signed-in shopper from the session cookie, or nulls when signed out.
+ * Clears stale cookies when the API no longer accepts the token.
+ */
+export async function getSessionUserAction(): Promise<{ user: User | null; token: string | null }> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("customer_token")?.value || cookieStore.get("token")?.value || null;
+  if (!token) return { user: null, token: null };
+
+  const res = await serverGet<{ data?: User }>("GET_ME", {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.success) {
+    if (res.error?.status === 401) await clearSessionCookies();
+    return { user: null, token: null };
+  }
+  const user = (res.data?.data ?? res.data) as User;
+  return { user, token };
 }

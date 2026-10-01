@@ -49,7 +49,6 @@ export const ApiEndpoints = {
   // 03 · Addresses
   GET_ADDRESSES: '/me/addresses',
   CREATE_ADDRESS: '/me/addresses',
-  GET_ADDRESS: '/me/addresses/:id',
   UPDATE_ADDRESS: '/me/addresses/:id',
   DELETE_ADDRESS: '/me/addresses/:id',
 
@@ -65,8 +64,6 @@ export const ApiEndpoints = {
   ADD_CART_ITEM: '/cart/items',
   UPDATE_CART_ITEM: '/cart/items/:id',
   REMOVE_CART_ITEM: '/cart/items/:id',
-  SAVE_FOR_LATER: '/cart/items/:id/save-for-later',
-  MOVE_TO_CART: '/cart/items/:id/move-to-cart',
   APPLY_COUPON: '/cart/coupon',
   REMOVE_COUPON: '/cart/coupon',
   CLAIM_CART: '/cart/claim',

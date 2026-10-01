@@ -62,15 +62,15 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
                 href={`/category/${category.slug}`}
                 className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
                   isHovered
-                    ? "bg-orange-50 text-[#FF5B00] font-bold shadow-2xs"
-                    : "text-gray-700 hover:bg-gray-50 hover:text-[#FF5B00]"
+                    ? "bg-brand-50 text-primary font-bold shadow-2xs"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-primary"
                 }`}
               >
                 <div className="flex items-center gap-2.5 truncate">
                   <div
                     className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
                       isHovered
-                        ? "bg-orange-100/80 text-[#FF5B00]"
+                        ? "bg-brand-100/80 text-primary"
                         : "bg-gray-100 text-gray-600"
                     }`}
                   >
@@ -81,7 +81,7 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
                 {category.subCategories && category.subCategories.length > 0 && (
                   <ChevronRight
                     className={`w-3.5 h-3.5 transition-colors ${
-                      isHovered ? "text-[#FF5B00]" : "text-gray-400"
+                      isHovered ? "text-primary" : "text-gray-400"
                     }`}
                   />
                 )}
@@ -102,7 +102,7 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
                       <Link
                         key={sub.id}
                         href={`/category/${category.slug}/${sub.slug}`}
-                        className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-700 hover:bg-orange-50 hover:text-[#FF5B00] transition-colors"
+                        className="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-700 hover:bg-brand-50 hover:text-primary transition-colors"
                       >
                         <span>{sub.name}</span>
                         {sub.itemCount !== undefined && (
@@ -124,7 +124,7 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
       <div className="pt-2 px-2 border-t border-gray-100">
         <Link
           href="/products"
-          className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold text-gray-700 hover:bg-orange-50 hover:text-[#FF5B00] transition-colors text-center"
+          className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold text-gray-700 hover:bg-brand-50 hover:text-primary transition-colors text-center"
         >
           <Layers className="w-3.5 h-3.5" />
           <span>All Categories</span>

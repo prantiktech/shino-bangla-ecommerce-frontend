@@ -7,6 +7,7 @@ import {
   updateAdminStaffAction,
   deleteAdminStaffAction,
   getAdminStaffAction,
+  getAdminStaffDetailAction,
 } from "@/app/(admin)/actions/staff";
 import { RoleResource } from "@/app/(admin)/actions/roles";
 import {
@@ -99,6 +100,14 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
     setEditorError(null);
     setEditorSuccess(null);
     setIsEditorOpen(true);
+    getAdminStaffDetailAction(member.id).then((r) => {
+      if (!r.success || !r.data) return;
+      setEditingStaff(r.data);
+      setName(r.data.name);
+      setEmail(r.data.email || "");
+      setRole(r.data.roles?.[0] || roles[0]?.name || "super-admin");
+      setIsActive(r.data.is_active);
+    });
   };
 
   const handleSaveStaff = async (e: React.FormEvent) => {

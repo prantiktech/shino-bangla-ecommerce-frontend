@@ -19,7 +19,7 @@ import { getAdminDashboardAction } from "@/app/(admin)/actions/dashboard";
 import { poishaToTaka } from "@/lib/utils/money";
 
 export const metadata = {
-  title: "Admin Dashboard | Store Management",
+  title: "Dashboard | Admin Portal",
 };
 
 export default async function AdminDashboardPage() {
