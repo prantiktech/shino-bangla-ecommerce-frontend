@@ -149,5 +149,21 @@ src/
   - Order note / special delivery instructions.
   - **Order Cancellation**: `POST /api/v1/me/orders/{number}/cancel` with `{ reason: string }`. Strictly enforced to orders before packing begins; returns updated order object or descriptive rejection message when packing has started.
 
-
-
+### Checkout Quote & Placement ([`src/app/(user)/(public)/checkout/page.tsx`](file:///home/dtid/fronted/src/app/(user)/(public)/checkout/page.tsx))
+- **Live Checkout Calculation (Quote)**: `POST /api/v1/checkout/quote`
+  - Dry-run calculation endpoint ("Nothing is written" to orders or inventory).
+  - Accepts `{ address_id, district_id }`.
+  - Accurately returns:
+    - **Lines**: Itemized list with `name`, `sku`, `unit_price`, `quantity`, `discount`, `vat`, `vat_rate_bp`, and `line_total`.
+    - **Discount**: Applied coupon savings and promo discounts.
+    - **VAT**: Exact tax amount computed according to product and category rules.
+    - **Delivery**: Shipping fee (`charge`), shipping zone (`zone_name`), and estimated transit window (`delivery_days_min` - `delivery_days_max`).
+    - **Totals**: Precise financial totals with subtotal, discount, VAT, shipping, and grand total in integer poisha (`formatPoisha`).
+    - **Ways of paying on offer**: Dynamic array of available `payment_methods` (e.g., Cash on Delivery, Bank Transfer, SSLCommerz online cards/mobile banking).
+- **Order Placement**: `POST /api/v1/checkout`
+  - Accepts `{ address_id, billing_address_id, address, billing_address, payment_method, note }`.
+  - Supports both saved addresses and inline address input for both shipping and billing addresses.
+  - Automatically claims guest cart tokens into authenticated user cart upon checkout.
+  - Generates secure `Idempotency-Key` headers for safe, duplicate-free order creation.
+  - Returns placed order record (`number`, `status`, `totals`, `items`, `timeline`) and immediate payment details (`tran_id`, `gateway_url`, `amount`, `expires_at`).
+  - Seamlessly redirects customers to `gateway_url` for online payments (bKash/Nagad/Cards) or presents the confirmation receipt with confetti for COD/offline methods.

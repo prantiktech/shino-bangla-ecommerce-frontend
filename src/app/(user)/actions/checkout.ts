@@ -4,37 +4,132 @@ import { cookies } from "next/headers";
 import { serverGet, serverPost } from "@/lib/api-client/server";
 import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
 
+export interface CheckoutQuoteItem {
+  variant_id: number;
+  product_id: number;
+  name: string;
+  slug: string;
+  label?: string | null;
+  sku?: string | null;
+  image?: string | null;
+  quantity: number;
+  unit_price: number;
+  compare_at?: number | null;
+  discount: number;
+  vat_rate_bp: number;
+  vat: number;
+  line_total: number;
+}
+
+export interface CheckoutQuoteShipping {
+  zone_id: number;
+  zone_name: string;
+  charge: number;
+  free_applied: boolean;
+  delivery_days_min: number;
+  delivery_days_max: number;
+}
+
+export interface CheckoutQuoteTotals {
+  subtotal: number;
+  discount: number;
+  vat: number;
+  shipping: number | string;
+  grand_total: number;
+}
+
+export interface CheckoutPaymentMethodOption {
+  method: string;
+  label: string;
+  is_online: boolean;
+  instructions?: string | null;
+}
+
+export interface CheckoutQuoteResponse {
+  items: CheckoutQuoteItem[];
+  coupon?: string | null;
+  coupon_error?: string | null;
+  shipping: CheckoutQuoteShipping;
+  totals: CheckoutQuoteTotals;
+  weight_grams?: number;
+  payment_methods: CheckoutPaymentMethodOption[];
+}
+
 export interface CheckoutAddressPayload {
   name: string;
   phone: string;
   line1: string;
+  line2?: string;
   area?: string;
   district_id: number;
+  postcode?: string;
 }
 
 export interface PlaceOrderPayload {
   address_id?: number;
+  billing_address_id?: number;
   address?: CheckoutAddressPayload;
-  payment_method: "cod" | "bank_transfer" | "sslcommerz";
+  billing_address?: CheckoutAddressPayload;
+  payment_method: string;
   note?: string;
   items?: Array<{ variant_id: number; quantity: number }>;
 }
 
+export interface OrderTimelineItem {
+  status: string;
+  note?: string | null;
+  at: string;
+}
+
 export interface OrderPlacedResponse {
   id?: number;
-  number?: string;
-  order_number: string;
-  total_amount: number;
-  totals?: { grand_total: number };
-  grand_total?: number;
+  number: string;
   status: string;
   payment_status: string;
   payment_method: string;
-  gateway_url?: string | null;
+  payment_method_label?: string;
+  source?: string;
+  contact?: {
+    name?: string;
+    phone?: string;
+    email?: string;
+  };
+  shipping_address?: any;
+  billing_address?: any;
+  delivery?: {
+    zone?: string;
+    days_min?: number;
+    days_max?: number;
+  };
+  items?: any[];
+  totals?: {
+    subtotal: number;
+    discount: number;
+    vat: number;
+    shipping: number | string;
+    grand_total: number;
+  };
+  coupon_code?: string | null;
+  currency?: string;
+  note?: string | null;
+  can_cancel?: boolean;
+  payment_expires_at?: string | null;
+  placed_at?: string;
+  confirmed_at?: string | null;
+  delivered_at?: string | null;
+  cancelled_at?: string | null;
+  timeline?: OrderTimelineItem[];
   payment?: {
-    gateway: string;
-    payment_url?: string | null;
+    tran_id?: string;
+    gateway_url?: string;
+    payment_url?: string;
+    amount?: number;
+    expires_at?: string;
   } | null;
+  // Aliases for convenience
+  order_number: string;
+  total_amount: number;
+  gateway_url?: string | null;
 }
 
 export async function getCheckoutLocationsAction(): Promise<ActionResponse<any[]>> {
@@ -85,19 +180,27 @@ export async function getCheckoutLocationsAction(): Promise<ActionResponse<any[]
   }
 }
 
+/**
+ * Fetch checkout quote (lines, discount, VAT, delivery fee, grand total, and payment methods on offer)
+ * Endpoint: POST /api/v1/checkout/quote
+ */
 export async function getCheckoutQuoteAction(params: {
   address_id?: number;
   district_id?: number;
-}): Promise<ActionResponse<any>> {
+}): Promise<ActionResponse<CheckoutQuoteResponse>> {
   try {
-    const res = await serverPost<any>("CHECKOUT_QUOTE", params);
+    const body: Record<string, any> = {};
+    if (params.address_id) body.address_id = Number(params.address_id);
+    if (params.district_id) body.district_id = Number(params.district_id);
+
+    const res = await serverPost<any>("CHECKOUT_QUOTE", body);
     if (res.success && res.data) {
       return { success: true, data: res.data.data || res.data };
     }
     return {
       success: false,
       error: {
-        message: !res.success ? (res.error?.message || "Failed to calculate quote") : "Failed to calculate quote",
+        message: !res.success ? (res.error?.message || "Failed to calculate checkout quote") : "Failed to calculate checkout quote",
         code: "CHECKOUT_QUOTE_FAILED",
       },
     };
@@ -106,6 +209,10 @@ export async function getCheckoutQuoteAction(params: {
   }
 }
 
+/**
+ * Place order
+ * Endpoint: POST /api/v1/checkout
+ */
 export async function placeOrderAction(payload: PlaceOrderPayload): Promise<ActionResponse<OrderPlacedResponse>> {
   try {
     const cookieStore = await cookies();
@@ -163,9 +270,10 @@ export async function placeOrderAction(payload: PlaceOrderPayload): Promise<Acti
       const paymentData = res.data.payment;
       const normalized: OrderPlacedResponse = {
         ...orderData,
-        order_number: orderData.order_number || orderData.number || `#${orderData.id || ""}`,
-        total_amount: orderData.total_amount || orderData.totals?.grand_total || orderData.grand_total || 0,
-        gateway_url: paymentData?.payment_url || null,
+        number: orderData.number || orderData.order_number || `#${orderData.id || ""}`,
+        order_number: orderData.number || orderData.order_number || `#${orderData.id || ""}`,
+        total_amount: orderData.totals?.grand_total || orderData.total_amount || 0,
+        gateway_url: paymentData?.gateway_url || paymentData?.payment_url || null,
         payment: paymentData,
       };
       return { success: true, data: normalized };
@@ -183,14 +291,43 @@ export async function placeOrderAction(payload: PlaceOrderPayload): Promise<Acti
   }
 }
 
-export async function buyNowQuoteAction(params: {
+export interface BuyNowQuoteParams {
   variant_id: number;
   quantity: number;
   district_id?: number;
   coupon_code?: string;
-}): Promise<ActionResponse<any>> {
+}
+
+export interface BuyNowPayload {
+  variant_id: number;
+  quantity: number;
+  name?: string;
+  phone?: string;
+  email?: string;
+  address_id?: number;
+  address?: CheckoutAddressPayload;
+  billing_address?: CheckoutAddressPayload;
+  coupon_code?: string;
+  payment_method: string;
+  note?: string;
+}
+
+/**
+ * Fetch instant Buy Now quote for a specific variant & quantity, including delivery to district_id
+ * Endpoint: POST /api/v1/buy-now/quote
+ */
+export async function buyNowQuoteAction(
+  params: BuyNowQuoteParams
+): Promise<ActionResponse<CheckoutQuoteResponse>> {
   try {
-    const res = await serverPost<any>("BUY_NOW_QUOTE", params);
+    const body: Record<string, any> = {
+      variant_id: Number(params.variant_id),
+      quantity: Number(params.quantity),
+    };
+    if (params.district_id) body.district_id = Number(params.district_id);
+    if (params.coupon_code) body.coupon_code = params.coupon_code.trim();
+
+    const res = await serverPost<any>("BUY_NOW_QUOTE", body);
     if (res.success && res.data) {
       return { success: true, data: res.data.data || res.data };
     }
@@ -206,17 +343,34 @@ export async function buyNowQuoteAction(params: {
   }
 }
 
-export async function buyNowAction(payload: any): Promise<ActionResponse<OrderPlacedResponse>> {
+/**
+ * Place instant Buy Now order
+ * Endpoint: POST /api/v1/buy-now
+ */
+export async function buyNowAction(
+  payload: BuyNowPayload
+): Promise<ActionResponse<OrderPlacedResponse>> {
   try {
-    const res = await serverPost<any>("BUY_NOW", payload);
+    const idempotencyKey =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `buynow_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+    const res = await serverPost<any>("BUY_NOW", payload, {
+      headers: {
+        "Idempotency-Key": idempotencyKey,
+      },
+    });
+
     if (res.success && res.data) {
       const orderData = res.data.data || res.data;
       const paymentData = res.data.payment;
       const normalized: OrderPlacedResponse = {
         ...orderData,
-        order_number: orderData.order_number || orderData.number || `#${orderData.id || ""}`,
-        total_amount: orderData.total_amount || orderData.totals?.grand_total || orderData.grand_total || 0,
-        gateway_url: paymentData?.payment_url || null,
+        number: orderData.number || orderData.order_number || `#${orderData.id || ""}`,
+        order_number: orderData.number || orderData.order_number || `#${orderData.id || ""}`,
+        total_amount: orderData.totals?.grand_total || orderData.total_amount || 0,
+        gateway_url: paymentData?.gateway_url || paymentData?.payment_url || null,
         payment: paymentData,
       };
       return { success: true, data: normalized };
@@ -232,3 +386,4 @@ export async function buyNowAction(payload: any): Promise<ActionResponse<OrderPl
     return handleActionError(error);
   }
 }
+
