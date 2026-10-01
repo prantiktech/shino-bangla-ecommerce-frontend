@@ -172,3 +172,52 @@ export async function deleteMyReviewAction(id: number | string): Promise<ActionR
     return handleActionError(error);
   }
 }
+
+export interface PublicReview {
+  id: number;
+  rating: number;
+  comment?: string | null;
+  customer_name?: string;
+  verified_purchase?: boolean;
+  created_at: string;
+  photos?: string[];
+}
+
+/**
+ * Fetch public approved customer reviews for a single product
+ * Endpoint: GET /api/v1/products/{slug}/reviews
+ */
+export async function getProductReviewsAction(
+  slug: string,
+  page: number = 1
+): Promise<ActionResponse<{ reviews: PublicReview[]; total: number }>> {
+  try {
+    const res = await serverGet<any>("GET_PRODUCT_REVIEWS", {
+      pathParams: { slug },
+      params: { page, per_page: 10 },
+    });
+
+    if (res.success && res.data) {
+      const list = Array.isArray(res.data.data) ? res.data.data : [];
+      const total = res.data.meta?.total || list.length;
+      return {
+        success: true,
+        data: {
+          reviews: list,
+          total,
+        },
+      };
+    }
+
+    return {
+      success: false,
+      error: {
+        message: !res.success ? (res.error?.message || "Failed to load product reviews") : "Failed to load reviews",
+        code: "GET_PRODUCT_REVIEWS_FAILED",
+      },
+    };
+  } catch (error) {
+    return handleActionError(error);
+  }
+}
+

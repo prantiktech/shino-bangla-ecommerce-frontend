@@ -12,6 +12,7 @@ import {
   RefreshCcw,
   Check,
   Share2,
+  Heart,
   Minus,
   Plus,
   Sparkles,
@@ -23,9 +24,12 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { ApiProduct, ApiProductVariant } from "@/app/(user)/actions/products";
+import { getProductReviewsAction, PublicReview } from "@/app/(user)/actions/reviews";
+import { recordProductViewAction, addToWishlistAction, removeFromWishlistAction } from "@/app/(user)/actions/wishlist";
 import { ProductCard } from "@/components/common/ProductCard";
 import { BuyNowModal } from "@/components/common/BuyNowModal";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { poishaToTaka, formatVatRate } from "@/lib/utils/money";
 import { mapApiProductToProduct } from "@/lib/utils/product-mapper";
 import { Product } from "@/types";
@@ -38,6 +42,8 @@ interface ProductDetailClientProps {
 export function ProductDetailClient({ product, similarProducts }: ProductDetailClientProps) {
   const router = useRouter();
   const { cart, addToCart, updateQuantity, removeFromCart, setIsCartOpen, showToast } = useCart();
+  const { isAuthenticated } = useAuth();
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const itemInCart = cart.find((item) => String(item.product.id) === String(product.id));
   const quantityInCart = itemInCart ? itemInCart.quantity : 0;
@@ -53,6 +59,30 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
 
   // Active Tab: description, specs, reviews
   const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">("description");
+  const [reviews, setReviews] = useState<PublicReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
+  const [hasLoadedReviews, setHasLoadedReviews] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (activeTab === "reviews" && !hasLoadedReviews) {
+      setReviewsLoading(true);
+      getProductReviewsAction(product.slug)
+        .then((res) => {
+          if (res.success && res.data) {
+            setReviews(res.data.reviews);
+          }
+          setHasLoadedReviews(true);
+        })
+        .finally(() => setReviewsLoading(false));
+    }
+  }, [activeTab, hasLoadedReviews, product.slug]);
+
+  // Track product view & recently viewed
+  React.useEffect(() => {
+    if (product?.id && product?.slug) {
+      recordProductViewAction(product.id, product.slug);
+    }
+  }, [product?.id, product?.slug]);
 
   // Main Image Active State
   const allImages = [
@@ -136,6 +166,22 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
     }
   };
 
+  const handleToggleWishlist = async () => {
+    if (!isAuthenticated) {
+      showToast("Please sign in to save products to your wishlist.");
+      return;
+    }
+    if (isWishlisted) {
+      setIsWishlisted(false);
+      await removeFromWishlistAction(product.id);
+      showToast("Removed from wishlist");
+    } else {
+      setIsWishlisted(true);
+      await addToWishlistAction(product.id);
+      showToast("Saved to your wishlist!");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FAFAFA] pb-20">
       {/* 1. Breadcrumbs */}
@@ -194,14 +240,27 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                 )}
               </div>
 
-              {/* Share button */}
-              <button
-                onClick={handleShare}
-                title="Copy link"
-                className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-white/90 hover:bg-white shadow-sm flex items-center justify-center text-gray-600 hover:text-[#FF5B00] transition-colors cursor-pointer"
-              >
-                <Share2 className="w-4 h-4" />
-              </button>
+              {/* Share & Wishlist buttons */}
+              <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+                <button
+                  onClick={handleToggleWishlist}
+                  title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                  className={`w-9 h-9 rounded-full shadow-sm flex items-center justify-center transition-colors cursor-pointer ${
+                    isWishlisted
+                      ? "bg-rose-50 text-rose-500"
+                      : "bg-white/90 hover:bg-white text-gray-600 hover:text-rose-500"
+                  }`}
+                >
+                  <Heart className={`w-4 h-4 ${isWishlisted ? "fill-rose-500 text-rose-500" : ""}`} />
+                </button>
+                <button
+                  onClick={handleShare}
+                  title="Copy link"
+                  className="w-9 h-9 rounded-full bg-white/90 hover:bg-white shadow-sm flex items-center justify-center text-gray-600 hover:text-[#FF5B00] transition-colors cursor-pointer"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+              </div>
 
               <Image
                 src={activeImage}
@@ -543,7 +602,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                       ))}
                     </div>
                     <span className="text-xs text-gray-500 mt-1 block">
-                      Based on {product.rating?.count || 0} reviews
+                      Based on {product.rating?.count || reviews.length} reviews
                     </span>
                   </div>
                   <div className="text-xs text-gray-600 space-y-1">
@@ -551,6 +610,62 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                     <p>All reviews are written by authentic store customers after receipt of goods.</p>
                   </div>
                 </div>
+
+                {reviewsLoading ? (
+                  <div className="py-8 text-center text-xs text-gray-500">
+                    Loading customer reviews...
+                  </div>
+                ) : reviews.length > 0 ? (
+                  <div className="divide-y divide-gray-100 space-y-4">
+                    {reviews.map((rev) => (
+                      <div key={rev.id} className="pt-4 first:pt-0 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-900">
+                              {rev.customer_name || "Verified Customer"}
+                            </span>
+                            {rev.verified_purchase && (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                Verified Purchase
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-gray-400">
+                            {new Date(rev.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-0.5 text-amber-400">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-3.5 h-3.5 ${
+                                i < rev.rating ? "fill-amber-400 text-amber-400" : "text-gray-200"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {rev.comment && (
+                          <p className="text-xs text-gray-700 leading-relaxed">
+                            {rev.comment}
+                          </p>
+                        )}
+                        {rev.photos && rev.photos.length > 0 && (
+                          <div className="flex items-center gap-2 pt-1">
+                            {rev.photos.map((p, pIdx) => (
+                              <div key={pIdx} className="w-14 h-14 rounded-lg bg-gray-50 relative overflow-hidden border border-gray-200">
+                                <Image src={p} alt="Review attachment" fill className="object-cover" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-xs text-gray-400">
+                    No customer reviews yet. Be the first verified buyer to share your feedback!
+                  </div>
+                )}
               </div>
             )}
           </div>

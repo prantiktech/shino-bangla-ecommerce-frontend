@@ -23,7 +23,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const LOCAL_KEY = "toy_house_cart";
+const LOCAL_KEY = "nogod_bazar_cart";
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);

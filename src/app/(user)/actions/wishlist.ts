@@ -102,3 +102,26 @@ export async function getRecentlyViewedAction(): Promise<ActionResponse<Wishlist
     return handleActionError(error);
   }
 }
+
+/**
+ * Record a product view for analytics and customer recently-viewed history
+ * Endpoint 1: POST /api/v1/track/view
+ * Endpoint 2: POST /api/v1/me/recently-viewed
+ */
+export async function recordProductViewAction(
+  productId: number,
+  slug: string
+): Promise<ActionResponse<boolean>> {
+  try {
+    // 1. Public view tracking
+    await serverPost("TRACK_VIEW", { product_slug: slug }).catch(() => {});
+
+    // 2. Customer recently viewed
+    await serverPost("ADD_RECENTLY_VIEWED", { product_id: Number(productId) }).catch(() => {});
+
+    return { success: true, data: true };
+  } catch (error) {
+    return handleActionError(error);
+  }
+}
+

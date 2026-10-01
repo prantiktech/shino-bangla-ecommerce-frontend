@@ -3,12 +3,14 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ShoppingCart, ShoppingBag, Eye, Plus, Minus } from "lucide-react";
+import { Star, ShoppingCart, ShoppingBag, Eye, Heart, Plus, Minus } from "lucide-react";
 import { Product } from "@/types";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { addToWishlistAction, removeFromWishlistAction } from "@/app/(user)/actions/wishlist";
 import { BuyNowModal } from "@/components/common/BuyNowModal";
 
 interface ProductCardProps {
@@ -17,11 +19,34 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "" }) => {
-  const { cart, addToCart, updateQuantity, removeFromCart, setIsCartOpen, setQuickViewProduct } = useCart();
+  const { cart, addToCart, updateQuantity, removeFromCart, setIsCartOpen, setQuickViewProduct, showToast } = useCart();
+  const { isAuthenticated } = useAuth();
   const [isBuyNowOpen, setIsBuyNowOpen] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const cartItem = cart.find((item) => String(item.product.id) === String(product.id));
   const quantityInCart = cartItem ? cartItem.quantity : 0;
+
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      showToast("Please sign in to save products to your wishlist.");
+      return;
+    }
+    const rawId = product.variantId || product.id;
+    const numId = typeof rawId === "number" ? rawId : parseInt(String(rawId).split("-")[0]);
+    if (!numId) return;
+
+    if (isWishlisted) {
+      setIsWishlisted(false);
+      await removeFromWishlistAction(numId);
+      showToast("Removed from wishlist");
+    } else {
+      setIsWishlisted(true);
+      await addToWishlistAction(numId);
+      showToast("Saved to your wishlist!");
+    }
+  };
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -53,14 +78,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
           </div>
         )}
 
-        {/* Quick View Button */}
-        <button
-          onClick={handleQuickView}
-          aria-label="Quick view product"
-          className="absolute top-2.5 right-2.5 z-10 h-8 w-8 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-gray-700 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-[#FF5B00] hover:text-white"
-        >
-          <Eye className="w-4 h-4" />
-        </button>
+        {/* Top Actions: Wishlist & Quick View */}
+        <div className="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200">
+          <button
+            onClick={handleToggleWishlist}
+            aria-label="Wishlist"
+            className={`h-8 w-8 rounded-full shadow-sm flex items-center justify-center transition-all ${
+              isWishlisted
+                ? "bg-rose-50 text-rose-500 fill-rose-500"
+                : "bg-white/90 text-gray-700 hover:bg-rose-50 hover:text-rose-500"
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${isWishlisted ? "fill-rose-500" : ""}`} />
+          </button>
+          <button
+            onClick={handleQuickView}
+            aria-label="Quick view product"
+            className="h-8 w-8 rounded-full bg-white/90 shadow-sm flex items-center justify-center text-gray-700 hover:bg-[#FF5B00] hover:text-white transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* Product Image */}
         <Link

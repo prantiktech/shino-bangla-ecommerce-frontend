@@ -7,9 +7,10 @@ import { Search, ShoppingCart, User, ShoppingBag } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { getProductsAction } from "@/app/(user)/actions/products";
+import { getProductsAction, getProductSuggestAction } from "@/app/(user)/actions/products";
 import { mapApiProductToProduct } from "@/lib/utils/product-mapper";
 import { Product } from "@/types";
+import { poishaToTaka } from "@/lib/utils/money";
 
 export const TopHeader: React.FC = () => {
   const router = useRouter();
@@ -17,24 +18,30 @@ export const TopHeader: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [productSuggestions, setProductSuggestions] = useState<any[]>([]);
+  const [categorySuggestions, setCategorySuggestions] = useState<any[]>([]);
+  const [brandSuggestions, setBrandSuggestions] = useState<any[]>([]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setSearchResults([]);
+      setProductSuggestions([]);
+      setCategorySuggestions([]);
+      setBrandSuggestions([]);
       return;
     }
 
     const timer = setTimeout(async () => {
       try {
-        const res = await getProductsAction({ q: searchQuery.trim(), per_page: 5 });
-        if (res.success && res.data.items) {
-          setSearchResults(res.data.items.map(mapApiProductToProduct));
+        const res = await getProductSuggestAction(searchQuery.trim());
+        if (res.success && res.data) {
+          setProductSuggestions(res.data.products || []);
+          setCategorySuggestions(res.data.categories || []);
+          setBrandSuggestions(res.data.brands || []);
         }
       } catch {
         // ignore
       }
-    }, 250);
+    }, 200);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -93,25 +100,87 @@ export const TopHeader: React.FC = () => {
           </form>
 
           {/* Search Live Dropdown Suggestions */}
-          {isSearchFocused && searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 overflow-hidden text-gray-800">
-              <div className="px-3 py-1 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-                Matching Products
-              </div>
-              {searchResults.map((product) => (
-                <div
-                  key={product.id}
-                  onMouseDown={() => setQuickViewProduct(product)}
-                  className="px-3 py-2 hover:bg-orange-50/70 cursor-pointer flex items-center justify-between text-xs transition-colors border-b last:border-0 border-gray-50"
-                >
-                  <span className="font-medium text-gray-800 line-clamp-1 flex-1 pr-2">
-                    {product.title}
-                  </span>
-                  <span className="font-bold text-[#FF5B00] shrink-0">
-                    {formatPrice(product.price)}
-                  </span>
+          {isSearchFocused && (productSuggestions.length > 0 || categorySuggestions.length > 0 || brandSuggestions.length > 0) && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2.5 z-50 overflow-hidden text-gray-800 divide-y divide-gray-100">
+              {/* Categories match */}
+              {categorySuggestions.length > 0 && (
+                <div className="pb-2">
+                  <div className="px-3.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Categories
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 px-3 pt-1">
+                    {categorySuggestions.map((cat: any) => (
+                      <Link
+                        key={cat.slug}
+                        href={`/category/${cat.slug}`}
+                        onMouseDown={() => {
+                          setIsSearchFocused(false);
+                          router.push(`/category/${cat.slug}`);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-orange-50 text-[#FF5B00] hover:bg-orange-100 text-xs font-bold transition-colors"
+                      >
+                        {cat.name}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
+
+              {/* Brands match */}
+              {brandSuggestions.length > 0 && (
+                <div className="py-2">
+                  <div className="px-3.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Brands
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 px-3 pt-1">
+                    {brandSuggestions.map((b: any) => (
+                      <Link
+                        key={b.slug}
+                        href={`/brand/${b.slug}`}
+                        onMouseDown={() => {
+                          setIsSearchFocused(false);
+                          router.push(`/brand/${b.slug}`);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-semibold transition-colors"
+                      >
+                        {b.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Products match */}
+              {productSuggestions.length > 0 && (
+                <div className="pt-2">
+                  <div className="px-3.5 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Products
+                  </div>
+                  {productSuggestions.map((p: any) => {
+                    const priceTaka = p.price ? (p.price.min ? poishaToTaka(p.price.min) : poishaToTaka(p.price)) : 0;
+                    return (
+                      <Link
+                        key={p.id}
+                        href={`/products/${p.slug}`}
+                        onMouseDown={() => {
+                          setIsSearchFocused(false);
+                          router.push(`/products/${p.slug}`);
+                        }}
+                        className="px-3.5 py-2 hover:bg-orange-50/70 cursor-pointer flex items-center justify-between text-xs transition-colors"
+                      >
+                        <span className="font-semibold text-gray-800 line-clamp-1 flex-1 pr-3">
+                          {p.name}
+                        </span>
+                        {priceTaka > 0 && (
+                          <span className="font-black text-[#FF5B00] shrink-0">
+                            {formatPrice(priceTaka)}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
