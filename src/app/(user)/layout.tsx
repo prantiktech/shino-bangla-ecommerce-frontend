@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { Header } from "@/components/layout/Header/Header";
 import { Footer } from "@/components/layout/Footer/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileNav/MobileBottomNav";
@@ -16,8 +16,12 @@ export default function UserLayout({
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-1">{children}</main>
-      <Footer />
-      <MobileBottomNav />
+      <Suspense fallback={<div className="h-64 bg-slate-900" aria-hidden="true" />}>
+        <Footer />
+      </Suspense>
+      <Suspense fallback={null}>
+        <MobileBottomNav />
+      </Suspense>
       <FloatingChat />
       <QuickViewModal />
       <CartDrawer />

@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, connection } from "next/server";
 import { getHealthAction } from "@/app/(user)/actions/content";
-
-export const dynamic = "force-dynamic";
 
 /**
  * GET /api/health — uptime check for the storefront and its API.
  * Returns 200 when the backend answers its health endpoint, 503 otherwise.
+ * `connection()` keeps this request-time (never cached or prerendered).
  */
 export async function GET() {
+  await connection();
   const started = Date.now();
   const res = await getHealthAction();
   const body = {
