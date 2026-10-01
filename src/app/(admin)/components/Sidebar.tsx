@@ -19,6 +19,7 @@ import {
   Image as ImageIcon,
   FolderTree,
   Boxes,
+  History,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -70,6 +71,7 @@ export function AdminSidebar({
         { label: "Customers", icon: Users, href: "/admin/customers" },
         { label: "Staff Members", icon: UserCheck, href: "/admin/staff" },
         { label: "Roles & Permissions", icon: ShieldCheck, href: "/admin/roles" },
+        { label: "Activity Logs", icon: History, href: "/admin/activity-log" },
         { label: "Settings", icon: Shield, href: "/admin/settings" },
       ],
     },

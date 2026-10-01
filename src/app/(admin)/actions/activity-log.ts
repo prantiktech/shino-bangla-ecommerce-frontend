@@ -50,7 +50,7 @@ export async function getActivityLogsAction(
     }
 
     const res = await serverGet<any>("GET_ADMIN_ACTIVITY_LOG", {
-      queryParams,
+      params: queryParams,
     });
 
     if (res.success && res.data) {
@@ -91,7 +91,7 @@ export async function getRecordActivityLogAction(
         type: encodeURIComponent(type),
         id: String(id),
       },
-      queryParams: page > 1 ? { page } : undefined,
+      params: page > 1 ? { page } : undefined,
     });
 
     if (res.success && res.data) {
