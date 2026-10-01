@@ -164,13 +164,13 @@ export const NavBar: React.FC = () => {
   return (
     <nav
       ref={navContainerRef}
-      className="bg-[#009cae] text-white relative z-40 select-none shadow-sm transition-colors overflow-visible"
+      className="bg-[#FF5B00] text-white relative z-40 select-none shadow-sm transition-colors overflow-visible"
       aria-label="Categories navigation"
     >
       <div className="max-w-7xl mx-auto px-2 sm:px-4 md:px-8 overflow-visible">
         <div className="flex items-center justify-between h-11 md:h-12 gap-1.5 md:gap-3">
           
-          {/* 1. Left Trigger: Categories Dropdown Button (matching screenshot) */}
+          {/* 1. Left Trigger: Categories Dropdown Button (matching brand theme) */}
           <div
             className="relative shrink-0 overflow-visible"
             onMouseEnter={handleAllCategoriesMouseEnter}
@@ -180,8 +180,8 @@ export const NavBar: React.FC = () => {
               onClick={() => setIsAllCategoriesOpen((prev) => !prev)}
               className={`flex items-center gap-2 px-3.5 py-1.5 md:py-2 rounded-md font-semibold text-xs md:text-sm tracking-wide transition-all ${
                 isAllCategoriesOpen
-                  ? "bg-[#008392] text-white ring-1 ring-white/30"
-                  : "bg-[#008ba0] hover:bg-[#008195] text-white"
+                  ? "bg-[#E05000] text-white ring-1 ring-white/30"
+                  : "bg-[#EA5400] hover:bg-[#E05000] text-white"
               }`}
               aria-expanded={isAllCategoriesOpen}
               aria-haspopup="true"
@@ -202,7 +202,7 @@ export const NavBar: React.FC = () => {
                 onMouseLeave={handleAllCategoriesMouseLeave}
               >
                 {/* Header Banner */}
-                <div className="bg-[#009cae] text-white px-4 py-2.5 rounded-t-xl font-bold text-xs md:text-sm flex items-center justify-between shadow-xs">
+                <div className="bg-[#FF5B00] text-white px-4 py-2.5 rounded-t-xl font-bold text-xs md:text-sm flex items-center justify-between shadow-xs">
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4" />
                     <span>All Categories</span>
@@ -233,15 +233,15 @@ export const NavBar: React.FC = () => {
                           }}
                           className={`flex items-center justify-between px-3.5 py-2 text-xs md:text-sm transition-colors ${
                             isHovered
-                              ? "bg-teal-50 text-[#009cae] font-semibold"
-                              : "text-gray-700 hover:bg-gray-50 hover:text-[#009cae]"
+                              ? "bg-orange-50 text-[#FF5B00] font-semibold"
+                              : "text-gray-700 hover:bg-gray-50 hover:text-[#FF5B00]"
                           }`}
                         >
                           <div className="flex items-center gap-2.5 truncate pr-2">
                             <div
                               className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${
                                 isHovered
-                                  ? "bg-teal-100 text-[#009cae]"
+                                  ? "bg-orange-100 text-[#FF5B00]"
                                   : "bg-gray-100 text-gray-500"
                               }`}
                             >
@@ -253,7 +253,7 @@ export const NavBar: React.FC = () => {
                           {hasSubs && (
                             <ChevronRight
                               className={`w-3.5 h-3.5 shrink-0 transition-transform ${
-                                isHovered ? "text-[#009cae] translate-x-0.5" : "text-gray-400"
+                                isHovered ? "text-[#FF5B00] translate-x-0.5" : "text-gray-400"
                               }`}
                             />
                           )}
@@ -280,17 +280,17 @@ export const NavBar: React.FC = () => {
                                       setIsAllCategoriesOpen(false);
                                       setActiveFlyoutCategory(null);
                                     }}
-                                    className="flex items-center justify-between px-3 py-2 rounded-lg text-xs text-gray-700 hover:bg-teal-50 hover:text-[#009cae] transition-colors group/item"
+                                    className="flex items-center justify-between px-3 py-2 rounded-lg text-xs text-gray-700 hover:bg-orange-50 hover:text-[#FF5B00] transition-colors group/item"
                                   >
                                     <div className="flex items-center gap-2.5 truncate">
                                       {sub.icon && (
-                                        <div className="w-6 h-6 rounded-md bg-gray-50 flex items-center justify-center text-gray-500 group-hover/item:text-[#009cae] group-hover/item:bg-teal-100/60 transition-colors shrink-0">
+                                        <div className="w-6 h-6 rounded-md bg-gray-50 flex items-center justify-center text-gray-500 group-hover/item:text-[#FF5B00] group-hover/item:bg-orange-100/60 transition-colors shrink-0">
                                           <CategoryIcon name={sub.icon} className="w-3.5 h-3.5" />
                                         </div>
                                       )}
                                       <span className="truncate font-medium">{sub.name}</span>
                                     </div>
-                                    <ChevronRight className="w-3 h-3 text-gray-300 group-hover/item:text-[#009cae] opacity-0 group-hover/item:opacity-100 transition-all shrink-0" />
+                                    <ChevronRight className="w-3 h-3 text-gray-300 group-hover/item:text-[#FF5B00] opacity-0 group-hover/item:opacity-100 transition-all shrink-0" />
                                   </Link>
                                 ))}
                               </div>
@@ -308,12 +308,12 @@ export const NavBar: React.FC = () => {
           {/* 2. Center Section: Sliding Nav Bar with White Circular Arrows */}
           <div className="flex-1 flex items-center min-w-0 mx-1 md:mx-2 relative">
             
-            {/* Left Scroll Arrow (White circle with teal arrow matching screenshot) */}
+            {/* Left Scroll Arrow (White circle with orange arrow) */}
             <button
               onClick={handleScrollLeft}
               disabled={!canScrollLeft}
               aria-label="Scroll categories left"
-              className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center bg-white text-[#009cae] hover:bg-white/90 active:scale-95 transition-all shrink-0 mr-1.5 shadow-sm ${
+              className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center bg-white text-[#FF5B00] hover:bg-white/90 active:scale-95 transition-all shrink-0 mr-1.5 shadow-sm ${
                 !canScrollLeft ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
               }`}
             >
@@ -351,12 +351,12 @@ export const NavBar: React.FC = () => {
               })}
             </div>
 
-            {/* Right Scroll Arrow (White circle with teal arrow matching screenshot) */}
+            {/* Right Scroll Arrow (White circle with orange arrow) */}
             <button
               onClick={handleScrollRight}
               disabled={!canScrollRight}
               aria-label="Scroll categories right"
-              className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center bg-white text-[#009cae] hover:bg-white/90 active:scale-95 transition-all shrink-0 ml-1.5 shadow-sm ${
+              className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center bg-white text-[#FF5B00] hover:bg-white/90 active:scale-95 transition-all shrink-0 ml-1.5 shadow-sm ${
                 !canScrollRight ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
               }`}
             >
@@ -364,7 +364,7 @@ export const NavBar: React.FC = () => {
             </button>
           </div>
 
-          {/* 3. Right Static Links: Products, New Arrivals, Blogs (matching screenshot icons & labels) */}
+          {/* 3. Right Static Links: Products, New Arrivals, Blogs */}
           <div className="hidden lg:flex items-center gap-1 md:gap-2 shrink-0 text-xs md:text-sm font-medium border-l border-white/20 pl-2 md:pl-3">
             <Link
               href="/products"
@@ -431,18 +431,18 @@ export const NavBar: React.FC = () => {
                   key={sub.id}
                   href={`/category/${hoveredCategory.slug}/${sub.slug}`}
                   onClick={() => setHoveredCategory(null)}
-                  className="flex items-center justify-between px-3 py-2 rounded-lg text-xs text-gray-700 hover:bg-teal-50 hover:text-[#009cae] transition-colors group/item"
+                  className="flex items-center justify-between px-3 py-2 rounded-lg text-xs text-gray-700 hover:bg-orange-50 hover:text-[#FF5B00] transition-colors group/item"
                 >
                   <div className="flex items-center gap-2.5 truncate">
                     {sub.icon && (
-                      <div className="w-6 h-6 rounded-md bg-gray-50 flex items-center justify-center text-gray-500 group-hover/item:text-[#009cae] group-hover/item:bg-teal-100/60 transition-colors shrink-0">
+                      <div className="w-6 h-6 rounded-md bg-gray-50 flex items-center justify-center text-gray-500 group-hover/item:text-[#FF5B00] group-hover/item:bg-orange-100/60 transition-colors shrink-0">
                         <CategoryIcon name={sub.icon} className="w-3.5 h-3.5" />
                       </div>
                     )}
                     <span className="truncate font-medium">{sub.name}</span>
                   </div>
 
-                  <ChevronRight className="w-3 h-3 text-gray-300 group-hover/item:text-[#009cae] opacity-0 group-hover/item:opacity-100 transition-all shrink-0" />
+                  <ChevronRight className="w-3 h-3 text-gray-300 group-hover/item:text-[#FF5B00] opacity-0 group-hover/item:opacity-100 transition-all shrink-0" />
                 </Link>
               ))}
             </div>

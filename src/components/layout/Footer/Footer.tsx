@@ -114,7 +114,7 @@ export const Footer: React.FC = () => {
           {/* Brand Info */}
           <div className="md:col-span-2 space-y-4">
             <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-[#009cae] flex items-center justify-center text-white font-extrabold text-base">
+              <div className="w-9 h-9 rounded-xl bg-[#FF5B00] flex items-center justify-center text-white font-extrabold text-base">
                 C
               </div>
               <span className="text-xl font-black text-white tracking-tight">

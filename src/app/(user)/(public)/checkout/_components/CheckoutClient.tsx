@@ -19,6 +19,7 @@ import {
   Clock,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { formatPrice } from "@/lib/utils";
 import {
   placeOrderAction,
@@ -37,6 +38,14 @@ interface CheckoutClientProps {
 export function CheckoutClient({ initialAddresses, locations }: CheckoutClientProps) {
   const router = useRouter();
   const { cart, subtotal, clearCart } = useCart();
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  // Redirect to login if user is not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/login?redirect=/checkout");
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   // Address Selection
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
@@ -50,6 +59,14 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
   const [line1, setLine1] = useState("");
   const [area, setArea] = useState("");
   const [districtId, setDistrictId] = useState<number>(locations[0]?.id || 1);
+
+  // Auto-fill user profile info if available
+  useEffect(() => {
+    if (user) {
+      setName((prev) => prev || user.name || "");
+      setPhone((prev) => prev || user.phone || "");
+    }
+  }, [user]);
 
   // Payment & Options
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "bank_transfer" | "sslcommerz">("cod");
@@ -84,12 +101,25 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Require authentication to confirm order
+    if (!isAuthenticated) {
+      router.push("/login?redirect=/checkout");
+      return;
+    }
+
     setIsPending(true);
 
     try {
       const payload: PlaceOrderPayload = {
         payment_method: paymentMethod,
         note: note.trim() || undefined,
+        items: cart
+          .filter((i) => i.product.variantId)
+          .map((i) => ({
+            variant_id: i.product.variantId!,
+            quantity: i.quantity,
+          })),
       };
 
       if (!useNewAddress && selectedAddressId) {
@@ -111,8 +141,12 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
 
       const res = await placeOrderAction(payload);
       if (res.success && res.data) {
-        setPlacedOrder(res.data);
         clearCart();
+        if (res.data.gateway_url) {
+          window.location.href = res.data.gateway_url;
+          return;
+        }
+        setPlacedOrder(res.data);
         try {
           confetti({
             particleCount: 100,
@@ -226,6 +260,23 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
           Complete your delivery details and choose a payment method.
         </p>
       </div>
+
+      {user && (
+        <div className="mb-6 p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl flex items-center justify-between text-xs text-emerald-900 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>
+              Signed in as <strong className="font-semibold text-emerald-950">{user.name || user.email || user.phone}</strong>
+            </span>
+          </div>
+          <Link
+            href="/login?redirect=/checkout"
+            className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 underline"
+          >
+            Switch Account
+          </Link>
+        </div>
+      )}
 
       {error && (
         <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center gap-3 text-xs font-semibold text-rose-700">

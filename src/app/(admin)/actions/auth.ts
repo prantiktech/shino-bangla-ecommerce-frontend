@@ -14,32 +14,63 @@ export interface AdminUser {
 
 export async function adminLoginAction(
   email: string,
-  password: string
+  password: string,
+  deviceName: string = "web"
 ): Promise<ActionResponse<{ user: AdminUser; token: string }>> {
   try {
-    const res = await serverPost<any>("ADMIN_LOGIN", { login: email, password });
+    const res = await serverPost<any>("ADMIN_LOGIN", {
+      login: email.trim(),
+      password,
+      device_name: deviceName,
+    });
 
     if (res.success && res.data) {
       const data = res.data.data || res.data;
       const rawToken = data.token?.token || data.token || data.access_token;
       const user = data.user || data;
 
+      // Verify that this user is staff or administrator
+      const isStaffOrAdmin =
+        user.is_staff ||
+        (Array.isArray(user.roles) && (user.roles.includes("super-admin") || user.roles.includes("admin")));
+
+      if (!isStaffOrAdmin) {
+        return {
+          success: false,
+          error: {
+            message: "Access denied. Administrator privileges are required to access this portal.",
+            code: "FORBIDDEN",
+          },
+        };
+      }
+
       if (rawToken) {
         const cookieStore = await cookies();
-        cookieStore.set("admin_token", rawToken, {
+        const cookieOpts = {
           path: "/",
-          httpOnly: true,
           secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
+          sameSite: "lax" as const,
           maxAge: 60 * 60 * 24 * 7,
+        };
+
+        cookieStore.set("admin_token", rawToken, {
+          ...cookieOpts,
+          httpOnly: true,
         });
 
         cookieStore.set("admin_client_token", rawToken, {
-          path: "/",
+          ...cookieOpts,
           httpOnly: false,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          maxAge: 60 * 60 * 24 * 7,
+        });
+
+        cookieStore.set("token", rawToken, {
+          ...cookieOpts,
+          httpOnly: true,
+        });
+
+        cookieStore.set("client-token", rawToken, {
+          ...cookieOpts,
+          httpOnly: false,
         });
       }
 

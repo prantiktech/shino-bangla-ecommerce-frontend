@@ -42,7 +42,7 @@ export async function loginAction(payload: {
     const loginData: LoginResponseData = data.data;
     const token = loginData.token.token;
 
-    // Securely set HttpOnly cookie in Next.js 16
+    // Securely set cookies
     const cookieStore = await cookies();
     cookieStore.set(COOKIE_NAME, token, {
       httpOnly: true,
@@ -51,6 +51,43 @@ export async function loginAction(payload: {
       path: "/",
       maxAge: 60 * 60 * 24 * 7 // 7 days
     });
+    cookieStore.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7
+    });
+    cookieStore.set("client-token", token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7
+    });
+
+    // If this account has staff or admin privileges, activate admin cookies as well
+    const isStaffOrAdmin =
+      loginData.user.is_staff ||
+      (Array.isArray(loginData.user.roles) &&
+        (loginData.user.roles.includes("super-admin") || loginData.user.roles.includes("admin")));
+
+    if (isStaffOrAdmin) {
+      cookieStore.set("admin_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+      cookieStore.set("admin_client_token", token, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+    }
 
     // If there is an existing guest cart token, claim it on the backend
     const guestCartToken = cookieStore.get(CART_COOKIE_NAME)?.value;
@@ -59,11 +96,11 @@ export async function loginAction(payload: {
         await fetch(`${API_BASE_URL}${API_ENDPOINTS.CART_CLAIM}`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Accept: "application/json",
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${token}`,
+            "X-Cart-Token": guestCartToken
           },
-          body: JSON.stringify({ token: guestCartToken })
+          cache: "no-store"
         });
         // Clear guest cart cookie once claimed
         cookieStore.delete(CART_COOKIE_NAME);
@@ -90,7 +127,7 @@ export async function loginAction(payload: {
  */
 export async function logoutAction(): Promise<{ success: boolean }> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
+  const token = cookieStore.get(COOKIE_NAME)?.value || cookieStore.get("token")?.value;
 
   if (token) {
     try {
@@ -107,6 +144,10 @@ export async function logoutAction(): Promise<{ success: boolean }> {
   }
 
   cookieStore.delete(COOKIE_NAME);
+  cookieStore.delete("token");
+  cookieStore.delete("client-token");
+  cookieStore.delete("admin_token");
+  cookieStore.delete("admin_client_token");
   return { success: true };
 }
 
@@ -118,7 +159,7 @@ export async function getCurrentUserAction(): Promise<{
   token: string | null;
 }> {
   const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value || null;
+  const token = cookieStore.get(COOKIE_NAME)?.value || cookieStore.get("token")?.value || null;
 
   if (!token) {
     return { user: null, token: null };
@@ -136,6 +177,8 @@ export async function getCurrentUserAction(): Promise<{
     if (!res.ok) {
       // Token is invalid/expired: delete cookie
       cookieStore.delete(COOKIE_NAME);
+      cookieStore.delete("token");
+      cookieStore.delete("client-token");
       return { user: null, token: null };
     }
 

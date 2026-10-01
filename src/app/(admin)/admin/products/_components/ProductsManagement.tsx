@@ -20,7 +20,12 @@ interface ProductItem {
   id: number;
   name: string;
   slug: string;
-  price: {
+  sku?: string;
+  status?: string;
+  min_price?: number;
+  max_price?: number;
+  stock_total?: number;
+  price?: {
     min: number;
     max?: number;
     compare_at?: number | null;
@@ -199,9 +204,10 @@ export function ProductsManagement({
               <tr>
                 <th className="px-5 py-3.5">ID</th>
                 <th className="px-5 py-3.5">Product Title</th>
-                <th className="px-5 py-3.5">Slug</th>
+                <th className="px-5 py-3.5">SKU / Slug</th>
+                <th className="px-5 py-3.5">Status</th>
                 <th className="px-5 py-3.5">Price (BDT)</th>
-                <th className="px-5 py-3.5">Stock</th>
+                <th className="px-5 py-3.5">Inventory</th>
                 <th className="px-5 py-3.5">Flags</th>
                 <th className="px-5 py-3.5 text-right">Actions</th>
               </tr>
@@ -209,75 +215,101 @@ export function ProductsManagement({
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-slate-400">
+                  <td colSpan={8} className="px-5 py-12 text-center text-slate-400">
                     No products found.
                   </td>
                 </tr>
               ) : (
-                products.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="px-5 py-3.5 font-mono text-slate-400">#{p.id}</td>
-                    <td className="px-5 py-3.5 font-semibold text-slate-900">{p.name}</td>
-                    <td className="px-5 py-3.5 font-mono text-slate-500 text-[11px]">{p.slug}</td>
-                    <td className="px-5 py-3.5 font-semibold text-slate-900">
-                      ৳ {poishaToTaka(p.price.min).toFixed(2)}
-                      {p.price.compare_at && (
-                        <span className="text-slate-400 line-through text-[10px] ml-1.5 font-normal">
-                          ৳ {poishaToTaka(p.price.compare_at).toFixed(2)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      {p.in_stock ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">
-                          In Stock
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700">
-                          Out of Stock
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <div className="flex gap-1 flex-wrap">
-                        {p.is_featured && (
-                          <span className="px-1.5 py-0.5 bg-orange-100 text-[#FF5B00] rounded text-[10px] font-bold">
-                            Featured
-                          </span>
-                        )}
-                        {p.is_best_seller && (
-                          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">
-                            Best Seller
-                          </span>
-                        )}
-                        {p.is_new_arrival && (
-                          <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">
-                            New
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/products/${p.slug}`}
-                          target="_blank"
-                          className="p-1.5 text-slate-400 hover:text-[#FF5B00] hover:bg-orange-50 rounded-lg transition-colors"
-                          title="View on storefront"
+                products.map((p) => {
+                  const minPrice = p.min_price ?? p.price?.min ?? 0;
+                  const comparePrice = p.price?.compare_at;
+                  const status = p.status || "active";
+
+                  return (
+                    <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-5 py-3.5 font-mono text-slate-400">#{p.id}</td>
+                      <td className="px-5 py-3.5 font-semibold text-slate-900">{p.name}</td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex flex-col">
+                          {p.sku && <span className="font-mono text-slate-700 text-[11px] font-bold">{p.sku}</span>}
+                          <span className="font-mono text-slate-400 text-[10px]">{p.slug}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                            status === "active"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : status === "draft"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-slate-100 text-slate-600 border border-slate-200"
+                          }`}
                         >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(p.id, p.name)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                          title="Delete product"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          {status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 font-semibold text-slate-900">
+                        ৳ {poishaToTaka(minPrice).toFixed(2)}
+                        {comparePrice && (
+                          <span className="text-slate-400 line-through text-[10px] ml-1.5 font-normal">
+                            ৳ {poishaToTaka(comparePrice).toFixed(2)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        {p.in_stock ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            {p.stock_total !== undefined ? `${p.stock_total} in stock` : "In Stock"}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                            Out of Stock
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex gap-1 flex-wrap">
+                          {p.is_featured && (
+                            <span className="px-1.5 py-0.5 bg-orange-100 text-[#FF5B00] rounded text-[10px] font-bold">
+                              Featured
+                            </span>
+                          )}
+                          {p.is_best_seller && (
+                            <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-bold">
+                              Best Seller
+                            </span>
+                          )}
+                          {p.is_new_arrival && (
+                            <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[10px] font-bold">
+                              New
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/products/${p.slug}`}
+                            target="_blank"
+                            className="p-1.5 text-slate-400 hover:text-[#FF5B00] hover:bg-orange-50 rounded-lg transition-colors"
+                            title="View on storefront"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </Link>
+                          <button
+                            onClick={() => handleDelete(p.id, p.name)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            title="Delete product"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

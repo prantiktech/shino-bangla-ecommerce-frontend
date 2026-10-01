@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { Star, ShoppingCart, ShoppingBag, Check, ShieldCheck, Truck, RefreshCw } from "lucide-react";
+import { Star, ShoppingCart, ShoppingBag, Check, ShieldCheck, Truck, RefreshCw, Plus, Minus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,32 +13,36 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
-import confetti from "canvas-confetti";
 
 export const QuickViewModal: React.FC = () => {
-  const { quickViewProduct, setQuickViewProduct, addToCart, setIsCartOpen } = useCart();
+  const {
+    quickViewProduct,
+    setQuickViewProduct,
+    cart,
+    addToCart,
+    updateQuantity,
+    removeFromCart,
+    setIsCartOpen,
+  } = useCart();
   const [qty, setQty] = useState(1);
 
   if (!quickViewProduct) return null;
 
+  const itemInCart = cart.find(
+    (item) => String(item.product.id) === String(quickViewProduct.id)
+  );
+  const quantityInCart = itemInCart ? itemInCart.quantity : 0;
+
   const handleBuyNow = () => {
-    addToCart(quickViewProduct, qty);
+    if (quantityInCart === 0) {
+      addToCart(quickViewProduct, qty);
+    }
     setQuickViewProduct(null);
     setIsCartOpen(true);
-    try {
-      confetti({
-        particleCount: 50,
-        spread: 70,
-        origin: { y: 0.7 },
-      });
-    } catch {
-      // ignore
-    }
   };
 
   const handleAddToCart = () => {
     addToCart(quickViewProduct, qty);
-    setQuickViewProduct(null);
   };
 
   return (
@@ -143,14 +147,45 @@ export const QuickViewModal: React.FC = () => {
                   <ShoppingBag className="w-4 h-4" />
                   Buy Now
                 </Button>
-                <Button
-                  onClick={handleAddToCart}
-                  variant="cartOutline"
-                  className="w-full text-xs font-semibold h-10 gap-2 border-gray-200"
-                >
-                  <ShoppingCart className="w-4 h-4 text-gray-600" />
-                  Add to Cart
-                </Button>
+                {quantityInCart > 0 ? (
+                  <div className="w-full h-10 rounded-md bg-orange-50/90 border border-[#FF5B00]/40 flex items-center justify-between px-2 shadow-2xs">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (quantityInCart <= 1) {
+                          removeFromCart(quickViewProduct.id);
+                        } else {
+                          updateQuantity(quickViewProduct.id, quantityInCart - 1);
+                        }
+                      }}
+                      className="w-7 h-7 rounded-md bg-white border border-gray-200 text-[#FF5B00] hover:bg-orange-100 flex items-center justify-center font-bold text-xs cursor-pointer active:scale-95 transition-colors"
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="flex items-center gap-1 text-xs font-bold text-gray-900 select-none">
+                      <span>{quantityInCart}</span>
+                      <span className="text-[11px] font-medium text-gray-500">in cart</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => updateQuantity(quickViewProduct.id, quantityInCart + 1)}
+                      className="w-7 h-7 rounded-md bg-[#FF5B00] hover:bg-[#E64E00] text-white flex items-center justify-center font-bold text-xs cursor-pointer active:scale-95 transition-colors"
+                      aria-label="Increase quantity"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={handleAddToCart}
+                    variant="cartOutline"
+                    className="w-full text-xs font-semibold h-10 gap-2 border-gray-200 hover:border-gray-300 hover:bg-gray-100/80 cursor-pointer"
+                  >
+                    <ShoppingCart className="w-4 h-4 text-gray-600" />
+                    Add to Cart
+                  </Button>
+                )}
               </div>
 
               {/* Perks */}

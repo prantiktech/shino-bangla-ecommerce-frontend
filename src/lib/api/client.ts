@@ -32,7 +32,15 @@ class ApiClient {
   private getAuthToken(): string | null {
     if (typeof window === "undefined") return null;
     try {
-      return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      // Primary: localStorage (legacy support)
+      const fromStorage = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+      if (fromStorage) return fromStorage;
+
+      // Fallback: read from the non-HttpOnly `client-token` cookie set by loginAction
+      const match = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("client-token="));
+      return match ? decodeURIComponent(match.split("=")[1]) : null;
     } catch {
       return null;
     }
@@ -41,11 +49,23 @@ class ApiClient {
   private getCartToken(): string | null {
     if (typeof window === "undefined") return null;
     try {
-      return localStorage.getItem(STORAGE_KEYS.CART_TOKEN);
+      // Primary: localStorage
+      const fromStorage =
+        localStorage.getItem(STORAGE_KEYS.CART_TOKEN) ||
+        localStorage.getItem("cart_token") ||
+        localStorage.getItem("shino_cart_token");
+      if (fromStorage) return fromStorage;
+
+      // Fallback: cart_token cookie
+      const match = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("cart_token=") || row.startsWith("shino_cart_token="));
+      return match ? decodeURIComponent(match.split("=")[1]) : null;
     } catch {
       return null;
     }
   }
+
 
   private buildUrl(endpoint: string, params?: Record<string, any>): string {
     const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;

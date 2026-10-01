@@ -13,6 +13,10 @@ export function mapApiProductToProduct(apiProd: ApiProduct): Product {
     discountBadge = `৳${Math.round(compareTaka - minTaka)} OFF`;
   }
 
+  // Use the default variant's ID (or first variant) for API cart sync
+  const variants = apiProd.variants || [];
+  const defaultVariant = variants.find((v) => v.is_default) || variants[0];
+
   return {
     id: String(apiProd.id),
     title: apiProd.name,
@@ -30,5 +34,7 @@ export function mapApiProductToProduct(apiProd: ApiProduct): Product {
     isNewArrival: apiProd.is_new_arrival || false,
     isFlashDeal: apiProd.is_trending || Boolean(apiProd.price?.discount_percent),
     description: apiProd.short_description || apiProd.description || "",
+    variantId: defaultVariant?.id,
   };
 }
+

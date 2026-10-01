@@ -74,26 +74,35 @@ export const ApiEndpoints = {
   // 06 & 07 · Checkout & Buy Now
   CHECKOUT_QUOTE: '/checkout/quote',
   CHECKOUT: '/checkout',
+  BUY_NOW_QUOTE: '/buy-now/quote',
   BUY_NOW: '/buy-now',
 
-  // 08 · My Orders
+  // 08 · My Orders & Tracking
   GET_ORDERS: '/me/orders',
   GET_ORDER: '/me/orders/:orderNumber',
   GET_ORDER_INVOICE: '/me/orders/:orderNumber/invoice',
   CANCEL_ORDER: '/me/orders/:orderNumber/cancel',
+  TRACK_ORDER: '/orders/track',
+  ORDER_PAY: '/orders/:number/pay',
 
   // 09 · My Reviews
   GET_MY_REVIEWS: '/me/reviews',
-  SUBMIT_PRODUCT_REVIEW: '/products/:slug/reviews',
+  SUBMIT_REVIEW: '/me/reviews',
+  SUBMIT_PRODUCT_REVIEW: '/me/reviews',
+  GET_REVIEWABLE_ITEMS: '/me/reviewable-items',
+  UPLOAD_REVIEW_PHOTO: '/me/reviews/photos',
+  UPDATE_MY_REVIEW: '/me/reviews/:id',
   DELETE_MY_REVIEW: '/me/reviews/:id',
 
   // 10 · Contact & Newsletter
   CONTACT_SUBMIT: '/contact',
   NEWSLETTER_SUBSCRIBE: '/newsletter/subscribe',
+  NEWSLETTER_UNSUBSCRIBE: '/newsletter/unsubscribe',
 
   // 12 · Back Office: Auth, Settings, Media
   ADMIN_LOGIN: '/auth/login',
   ADMIN_LOGOUT: '/auth/logout',
+  GET_ADMIN_ME: '/me',
   GET_ADMIN_SETTINGS: '/admin/settings',
   UPDATE_ADMIN_SETTINGS: '/admin/settings',
   UPLOAD_ADMIN_LOGO: '/admin/settings/assets/logo',
@@ -128,17 +137,24 @@ export const ApiEndpoints = {
   LINK_ADMIN_PRODUCT: '/admin/products/:id/links',
   DELETE_ADMIN_PRODUCT: '/admin/products/:id',
   BULK_ADMIN_PRODUCTS: '/admin/products/bulk',
+  EXPORT_ADMIN_PRODUCTS: '/admin/products/export',
 
   // 14 · Back Office: Inventory
   GET_ADMIN_INVENTORY: '/admin/inventory',
-  UPDATE_ADMIN_INVENTORY_STOCK: '/admin/inventory/:variantId/stock',
-  GET_ADMIN_LOW_STOCK: '/admin/inventory/low-stock',
+  GET_ADMIN_INVENTORY_SUMMARY: '/admin/inventory/summary',
+  GET_ADMIN_INVENTORY_MOVEMENTS: '/admin/inventory/movements',
+  ADMIN_INVENTORY_ADJUSTMENTS: '/admin/inventory/adjustments',
+  ADMIN_INVENTORY_PURCHASES: '/admin/inventory/purchases',
+  ADMIN_INVENTORY_PURCHASE: '/admin/inventory/purchases/:id',
+  UPDATE_ADMIN_INVENTORY_STOCK: '/admin/inventory/adjustments',
+  GET_ADMIN_LOW_STOCK: '/admin/inventory/summary',
 
   // 15 · Back Office: Orders
   GET_ADMIN_ORDERS: '/admin/orders',
   CREATE_ADMIN_ORDER: '/admin/orders',
   GET_ADMIN_ORDER: '/admin/orders/:id',
   UPDATE_ADMIN_ORDER_STATUS: '/admin/orders/:id/status',
+  UPDATE_ADMIN_ORDER_PAYMENT: '/admin/orders/:id/payment',
   GET_ADMIN_ORDER_INVOICE: '/admin/orders/:id/invoice',
   GET_ADMIN_ORDER_REFUNDS: '/admin/orders/:id/refunds',
   CREATE_ADMIN_ORDER_REFUND: '/admin/orders/:id/refunds',
@@ -233,6 +249,7 @@ export const ApiEndpoints = {
   GET_ADMIN_REPORTS_TAX: '/admin/reports/tax',
   GET_ADMIN_REPORTS_REVENUE: '/admin/reports/revenue',
   GET_ADMIN_ACTIVITY_LOG: '/admin/activity-log',
+  GET_ADMIN_RECORD_ACTIVITY_LOG: '/admin/activity-log/:type/:id',
 
   // 24 · Back Office: Roles & Staff
   GET_ADMIN_PERMISSIONS: '/permissions',

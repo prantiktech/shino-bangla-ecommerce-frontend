@@ -4,7 +4,7 @@ import { ApiError } from './error';
 export interface AuthInterceptorOptions {
   tokenName?: string;
   adminTokenName?: string;
-  tokenProvider?: () => Promise<string | null | undefined> | string | null | undefined;
+  tokenProvider?: (config?: RequestConfig) => Promise<string | null | undefined> | string | null | undefined;
 }
 
 function getCookie(name: string): string | undefined {
@@ -34,12 +34,16 @@ export function authInterceptor(options: AuthInterceptorOptions = {}) {
   const adminTokenName = options.adminTokenName || 'admin_token';
 
   return async (config: RequestConfig): Promise<RequestConfig> => {
+    if (config.skipAuth || config.url?.includes('/auth/login')) {
+      return config;
+    }
+
     const headers = new Headers(config.headers);
 
     let token: string | null | undefined = null;
 
     if (options.tokenProvider) {
-      token = await options.tokenProvider();
+      token = await options.tokenProvider(config);
     } else {
       if (typeof window === 'undefined') {
         try {
@@ -84,7 +88,11 @@ export function authInterceptor(options: AuthInterceptorOptions = {}) {
           // ignore
         }
       } else {
-        cartToken = localStorage.getItem('cart_token') || getCookie('cart_token');
+        cartToken =
+          localStorage.getItem('cart_token') ||
+          localStorage.getItem('shino_cart_token') ||
+          getCookie('cart_token') ||
+          getCookie('shino_cart_token');
       }
 
       if (cartToken) {

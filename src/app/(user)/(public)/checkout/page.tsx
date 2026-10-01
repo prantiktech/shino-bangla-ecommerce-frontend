@@ -1,5 +1,6 @@
-import React from "react";
-import { Metadata } from "next";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getCurrentUserAction } from "@/lib/actions/auth.actions";
 import { getAddressesAction } from "@/app/(user)/actions/addresses";
 import { getCheckoutLocationsAction } from "@/app/(user)/actions/checkout";
 import { CheckoutClient } from "./_components/CheckoutClient";
@@ -10,6 +11,12 @@ export const metadata: Metadata = {
 };
 
 export default async function CheckoutPage() {
+  const { user } = await getCurrentUserAction();
+
+  if (!user) {
+    redirect("/login?redirect=/checkout");
+  }
+
   const [addressesRes, locationsRes] = await Promise.all([
     getAddressesAction(),
     getCheckoutLocationsAction(),
@@ -22,14 +29,14 @@ export default async function CheckoutPage() {
         name: l.name,
       }))
     : [
-        { id: 1, name: "Dhaka" },
-        { id: 2, name: "Chattogram" },
-        { id: 3, name: "Sylhet" },
-        { id: 4, name: "Rajshahi" },
-        { id: 5, name: "Khulna" },
-        { id: 6, name: "Barishal" },
-        { id: 7, name: "Rangpur" },
-        { id: 8, name: "Mymensingh" },
+        { id: 21, name: "Dhaka" },
+        { id: 9, name: "Chattogram" },
+        { id: 69, name: "Sylhet" },
+        { id: 51, name: "Rajshahi" },
+        { id: 35, name: "Khulna" },
+        { id: 3, name: "Barishal" },
+        { id: 60, name: "Rangpur" },
+        { id: 46, name: "Mymensingh" },
       ];
 
   return <CheckoutClient initialAddresses={initialAddresses} locations={locations} />;

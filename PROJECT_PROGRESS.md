@@ -99,4 +99,49 @@ src/
 
 ### Admin Portal ([`src/app/(admin)/admin/`](file:///home/dtid/fronted/src/app/(admin)/admin/))
 - Fully decoupled admin layout with collapsible dark sidebar, topbar search, and staff profile widget.
-- Real-time catalog management for Products, Categories, Orders, and Customers.
+- **Categories Management Module** ([`src/app/(admin)/admin/categories/page.tsx`](file:///home/dtid/fronted/src/app/(admin)/admin/categories/page.tsx)):
+  - Category Hierarchy & Listing: `GET /api/v1/admin/categories` displaying depth, product counts, VAT basis points, and visual media assets.
+  - Create Category: `POST /api/v1/admin/categories` with slug generation, parent selection, SEO metadata (`seo_title`, `seo_description`, `seo_keywords`), and icon/banner uploads (`icon_image_id`, `banner_image_id`).
+  - View Category Detail: `GET /api/v1/admin/categories/{category}` with full resource shape.
+  - Edit Category: `PUT /api/v1/admin/categories/{category}` for live updates to names, SEO, VAT and media.
+  - Move Category: `PUT /api/v1/admin/categories/{category}/move` to re-parent categories and re-order sort positions.
+  - Delete Category: `DELETE /api/v1/admin/categories/{category}` with safety verification.
+- **Banners & Promos Management Module** ([`src/app/(admin)/admin/banners/page.tsx`](file:///home/dtid/fronted/src/app/(admin)/admin/banners/page.tsx)):
+  - Visual Banner Roster: `GET /api/v1/admin/banners` displaying visual cards with type badges (`slider`, `hero`, `promo`), position indicators, status, schedule windows, and desktop/mobile media previews.
+  - Create Banner: `POST /api/v1/admin/banners` supporting type selection, title, subtitle, CTA button label, destination link URL, position ordering, starts/ends ISO datetime scheduling, and image uploads via `uploadAdminMediaAction` (`image_id`, `mobile_image_id`).
+  - Edit Banner: `PUT /api/v1/admin/banners/{banner}` enabling full updates to media assets, scheduling timestamps, and link destinations.
+  - Delete Banner: `DELETE /api/v1/admin/banners/{banner}` with interactive confirmation modal.
+  - Live Viewport Preview Modal: Real-time simulation of desktop (21:9 hero canvas) and mobile (9:16 portrait viewport) renderings before publishing.
+  - Fast search by title/subtitle/type, with type filters (Slider, Hero, Promo) and status filters (All, Live Now, Active, Inactive).
+
+- **Inventory & Stock Control Module** ([`src/app/(admin)/admin/inventory/page.tsx`](file:///home/dtid/fronted/src/app/(admin)/admin/inventory/page.tsx)):
+  - KPI Dashboard Cards: Units on hand, total tracked variants, cost valuation, low stock alerts, and depleted out-of-stock items (`GET /api/v1/admin/inventory/summary`).
+  - Variant Stock Listing: Lowest stock first sorting, SKU search, stock status filter pills, category filter, and threshold indicators (`GET /api/v1/admin/inventory`).
+  - Live Stocktake Adjustments: Set absolute counts or add increments with validation, real-time projection preview, and 500-character audit note with `409 INSUFFICIENT_STOCK` error handling (`POST /api/v1/admin/inventory/adjustments`).
+  - Stock Movements & History Audit Trail: Chronological logs tracking sales, purchases, adjustments, customer returns, delta changes, and balance-after values with user attribution (`GET /api/v1/admin/inventory/movements`).
+
+### Customer Order History ([`src/app/(user)/(private)/account/page.tsx`](file:///home/dtid/fronted/src/app/(user)/(private)/account/page.tsx) & `/orders`)
+- Direct endpoint integration: `GET /api/v1/me/orders` with bearer authentication.
+- Full support for `OrderSummaryResource` specification:
+  - Order numbers, placement timestamp, grand totals in integer poisha (`formatPoisha`).
+  - All 9 backend order lifecycle statuses: `pending`, `confirmed`, `processing`, `packed`, `shipped`, `delivered`, `cancelled`, `returned`, `refunded`.
+  - Item preview cards with product thumbnail image, variant label, and item quantity.
+  - Interactive status filter pills: All, Pending, Confirmed, Processing, Packed, Shipped, Delivered, Cancelled, Returned, Refunded.
+  - Direct actions: View full order details, download invoice PDF, live order tracking, and modal cancellation for eligible orders (`can_cancel: true`).
+  - Dedicated `/orders` entry point routing directly to customer orders history.
+
+### Customer Single Order View ([`src/app/(user)/(private)/orders/[number]/page.tsx`](file:///home/dtid/fronted/src/app/(user)/(private)/orders/[number]/page.tsx))
+- Direct endpoint integration: `GET /api/v1/me/orders/{number}` (`GET_ORDER` endpoint).
+- Matches full payload response:
+  - Header: Order `#`, lifecycle status badge, placed date, source, payment method label & status.
+  - Payment expiry alert if unpaid with `payment_expires_at`.
+  - Interactive chronological timeline stepper with notes and timestamps.
+  - Complete line items table: Product image, name, variant label, SKU, unit price, quantity, discount, VAT rate (`vat_rate_bp`), line total.
+  - Financial breakdown: Subtotal, coupon discount with `coupon_code` badge, VAT, delivery fee, grand total in BDT (`formatPoisha`).
+  - Delivery logistics: Zone name and estimated business days window (`days_min` - `days_max`).
+  - Contact & addresses: Customer name, phone, email, formatted shipping destination, billing address.
+  - Order note / special delivery instructions.
+  - **Order Cancellation**: `POST /api/v1/me/orders/{number}/cancel` with `{ reason: string }`. Strictly enforced to orders before packing begins; returns updated order object or descriptive rejection message when packing has started.
+
+
+

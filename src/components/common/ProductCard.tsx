@@ -3,13 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, ShoppingCart, ShoppingBag, Eye } from "lucide-react";
+import { Star, ShoppingCart, ShoppingBag, Eye, Plus, Minus } from "lucide-react";
 import { Product } from "@/types";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
-import confetti from "canvas-confetti";
 
 interface ProductCardProps {
   product: Product;
@@ -17,21 +16,17 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "" }) => {
-  const { addToCart, setIsCartOpen, setQuickViewProduct, showToast } = useCart();
+  const { cart, addToCart, updateQuantity, removeFromCart, setIsCartOpen, setQuickViewProduct } = useCart();
+
+  const cartItem = cart.find((item) => String(item.product.id) === String(product.id));
+  const quantityInCart = cartItem ? cartItem.quantity : 0;
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToCart(product, 1);
-    setIsCartOpen(true);
-    try {
-      confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: { y: 0.8 },
-      });
-    } catch {
-      // ignore
+    if (quantityInCart === 0) {
+      addToCart(product, 1);
     }
+    setIsCartOpen(true);
   };
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -132,16 +127,54 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
             Buy Now
           </Button>
 
-          {/* Add to Cart Button */}
-          <Button
-            onClick={handleAddToCart}
-            variant="cartOutline"
-            size="sm"
-            className="w-full text-xs font-medium py-2 h-8 rounded-lg flex items-center justify-center gap-1.5 border-gray-200 hover:border-gray-300 hover:bg-gray-100/80 transition-colors"
-          >
-            <ShoppingCart className="w-3.5 h-3.5 text-gray-600" />
-            Add to Cart
-          </Button>
+          {/* Add to Cart / Quantity Controller Button */}
+          {quantityInCart > 0 ? (
+            <div
+              className="w-full h-8 rounded-lg bg-orange-50/90 border border-[#FF5B00]/40 flex items-center justify-between px-1.5 shadow-2xs transition-all"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (quantityInCart <= 1) {
+                    removeFromCart(product.id);
+                  } else {
+                    updateQuantity(product.id, quantityInCart - 1);
+                  }
+                }}
+                aria-label="Decrease quantity"
+                className="w-6 h-6 rounded-md bg-white border border-gray-200 hover:bg-orange-100 text-[#FF5B00] hover:text-[#E64E00] flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+              <div className="flex items-center gap-1 text-xs font-bold text-gray-900 select-none">
+                <span>{quantityInCart}</span>
+                <span className="text-[10px] font-medium text-gray-500">in cart</span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateQuantity(product.id, quantityInCart + 1);
+                }}
+                aria-label="Increase quantity"
+                className="w-6 h-6 rounded-md bg-[#FF5B00] hover:bg-[#E64E00] text-white flex items-center justify-center font-bold text-xs transition-colors cursor-pointer active:scale-95"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <Button
+              onClick={handleAddToCart}
+              variant="cartOutline"
+              size="sm"
+              className="w-full text-xs font-medium py-2 h-8 rounded-lg flex items-center justify-center gap-1.5 border-gray-200 hover:border-gray-300 hover:bg-gray-100/80 transition-colors cursor-pointer"
+            >
+              <ShoppingCart className="w-3.5 h-3.5 text-gray-600" />
+              Add to Cart
+            </Button>
+          )}
         </div>
       </div>
     </div>

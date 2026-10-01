@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Star,
   ShoppingCart,
@@ -21,7 +22,6 @@ import {
   ArrowRight,
   CheckCircle2,
 } from "lucide-react";
-import confetti from "canvas-confetti";
 import { ApiProduct, ApiProductVariant } from "@/app/(user)/actions/products";
 import { ProductCard } from "@/components/common/ProductCard";
 import { useCart } from "@/context/CartContext";
@@ -35,7 +35,11 @@ interface ProductDetailClientProps {
 }
 
 export function ProductDetailClient({ product, similarProducts }: ProductDetailClientProps) {
-  const { addToCart, setIsCartOpen, showToast } = useCart();
+  const router = useRouter();
+  const { cart, addToCart, updateQuantity, removeFromCart, setIsCartOpen, showToast } = useCart();
+
+  const itemInCart = cart.find((item) => String(item.product.id) === String(product.id));
+  const quantityInCart = itemInCart ? itemInCart.quantity : 0;
 
   // Active Variant State (if variants exist)
   const variants = product.variants || [];
@@ -99,8 +103,11 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
       inStock: isCurrentlyInStock,
       isNewArrival: product.is_new_arrival,
       isFlashDeal: product.is_trending,
+      // Pass variantId so CartContext can sync with the API
+      variantId: selectedVariant ? selectedVariant.id : variants[0]?.id,
     };
   };
+
 
   const handleAddToCart = () => {
     if (!isCurrentlyInStock) {
@@ -112,23 +119,14 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
     setIsCartOpen(true);
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (!isCurrentlyInStock) {
       showToast("This item is currently out of stock.");
       return;
     }
     const item = getUiProduct();
-    addToCart(item, quantity);
-    setIsCartOpen(true);
-    try {
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.7 },
-      });
-    } catch {
-      // ignore
-    }
+    await addToCart(item, quantity);
+    router.push("/checkout");
   };
 
   const handleShare = () => {
@@ -382,15 +380,46 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
                     </button>
                   </div>
 
-                  {/* Add to Cart Button */}
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={!isCurrentlyInStock}
-                    className="flex-1 min-w-[160px] h-11 px-5 bg-white border-2 border-[#FF5B00] text-[#FF5B00] hover:bg-[#FF5B00] hover:text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                    <span>Add to Cart</span>
-                  </button>
+                  {/* Add to Cart / Quantity Controller Button */}
+                  {quantityInCart > 0 ? (
+                    <div className="flex-1 min-w-[160px] h-11 px-3 bg-orange-50/90 border-2 border-[#FF5B00] rounded-xl flex items-center justify-between shadow-xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (quantityInCart <= 1) {
+                            removeFromCart(String(product.id));
+                          } else {
+                            updateQuantity(String(product.id), quantityInCart - 1);
+                          }
+                        }}
+                        className="w-8 h-8 rounded-lg bg-white border border-gray-200 text-[#FF5B00] hover:bg-orange-100 flex items-center justify-center font-bold transition-all cursor-pointer active:scale-95"
+                        aria-label="Decrease quantity"
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900 select-none">
+                        <ShoppingCart className="w-3.5 h-3.5 text-[#FF5B00]" />
+                        <span>{quantityInCart} In Cart</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => updateQuantity(String(product.id), quantityInCart + 1)}
+                        className="w-8 h-8 rounded-lg bg-[#FF5B00] hover:bg-[#E64E00] text-white flex items-center justify-center font-bold transition-all cursor-pointer active:scale-95"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleAddToCart}
+                      disabled={!isCurrentlyInStock}
+                      className="flex-1 min-w-[160px] h-11 px-5 bg-white border-2 border-[#FF5B00] text-[#FF5B00] hover:bg-[#FF5B00] hover:text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      <span>Add to Cart</span>
+                    </button>
+                  )}
 
                   {/* Buy Now Button */}
                   <button

@@ -34,6 +34,8 @@ export interface Product {
   description?: string;
   inStock?: boolean;
   features?: string[];
+  /** The API variant ID — required for syncing with the backend cart */
+  variantId?: number;
 }
 
 export interface BannerSlide {
@@ -72,6 +74,8 @@ export interface PromoBanner {
 export interface CartItem {
   product: Product;
   quantity: number;
+  /** The backend cart-item ID returned by POST /cart/items — used for PATCH/DELETE */
+  apiCartItemId?: number;
 }
 
 export interface NavItem {

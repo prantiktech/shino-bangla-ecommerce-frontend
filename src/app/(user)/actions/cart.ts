@@ -1,156 +1,151 @@
 "use server";
 
-import { serverGet, serverPost, serverPut, serverDelete } from "@/lib/api-client/server";
-import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
 import { cookies } from "next/headers";
+import { API_BASE_URL, API_ENDPOINTS } from "@/lib/api/config";
 
-export interface ApiCartItem {
-  id: number;
-  product_id: number;
-  variant_id: number;
-  name: string;
-  sku: string;
-  image?: string | null;
-  price: number; // in poisha
-  quantity: number;
-  subtotal: number; // in poisha
-  in_stock: boolean;
+const CART_COOKIE_NAME = "cart_token";
+const CUSTOMER_COOKIE_NAME = "customer_token";
+
+function getAuthHeaders(token: string): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    Authorization: `Bearer ${token}`,
+  };
 }
 
-export interface ApiCart {
-  items: ApiCartItem[];
-  subtotal: number; // in poisha
-  shipping_cost: number;
-  discount: number;
-  total: number; // in poisha
-  coupon?: { code: string; discount_amount: number } | null;
-  token?: string; // guest cart token
+function getGuestHeaders(cartToken?: string): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    ...(cartToken ? { "X-Cart-Token": cartToken } : {}),
+  };
 }
 
-export async function getCartAction(locationId?: number): Promise<ActionResponse<ApiCart>> {
-  try {
-    const res = await serverGet<any>("GET_CART", {
-      params: locationId ? { location_id: locationId } : undefined,
-    });
-
-    if (res.success && res.data) {
-      const data = res.data.data || res.data;
-      return { success: true, data };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: !res.success ? (res.error?.message || "Failed to load cart") : "Failed to load cart",
-        code: "GET_CART_FAILED",
-      },
-    };
-  } catch (error) {
-    return handleActionError(error);
-  }
-}
-
-export async function addToCartAction(
+/**
+ * Add an item to the API cart.
+ * - Authenticated: uses Bearer token
+ * - Guest: uses X-Cart-Token; saves returned token in cookie
+ */
+export async function apiAddCartItemAction(
   variantId: number,
-  quantity: number = 1
-): Promise<ActionResponse<ApiCart>> {
-  try {
-    const res = await serverPost<any>("ADD_CART_ITEM", {
-      variant_id: variantId,
-      quantity,
-    });
-
-    if (res.success && res.data) {
-      const data = res.data.data || res.data;
-      // If guest token returned in response, save into server cookie
-      if (data.token) {
-        try {
-          const cookieStore = await cookies();
-          cookieStore.set("cart_token", data.token, {
-            path: "/",
-            maxAge: 60 * 60 * 24 * 30, // 30 days
-            sameSite: "lax",
-          });
-        } catch {
-          // ignore
-        }
-      }
-      return { success: true, data };
-    }
-
-    return {
-      success: false,
-      error: {
-        message: !res.success ? (res.error?.message || "Failed to add item to cart") : "Failed to add item",
-        code: "ADD_CART_FAILED",
-      },
-    };
-  } catch (error) {
-    return handleActionError(error);
-  }
-}
-
-export async function updateCartItemAction(
-  itemId: number,
   quantity: number
-): Promise<ActionResponse<ApiCart>> {
+): Promise<{ success: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const authToken =
+    cookieStore.get(CUSTOMER_COOKIE_NAME)?.value ||
+    cookieStore.get("token")?.value;
+
   try {
-    const res = await serverPut<any>("UPDATE_CART_ITEM", { quantity }, {
-      pathParams: { id: itemId },
-    });
+    const body = JSON.stringify({ variant_id: variantId, quantity });
 
-    if (res.success && res.data) {
-      return { success: true, data: res.data.data || res.data };
+    if (authToken) {
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CART_ITEMS}`, {
+        method: "POST",
+        headers: getAuthHeaders(authToken),
+        body,
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return { success: false, error: data.message || "Failed to add item to cart" };
+      }
+      return { success: true };
+    } else {
+      // Guest flow
+      const cartToken = cookieStore.get(CART_COOKIE_NAME)?.value;
+      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CART_ITEMS}`, {
+        method: "POST",
+        headers: getGuestHeaders(cartToken),
+        body,
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return { success: false, error: data.message || "Failed to add item to cart" };
+      }
+      // Save guest cart token returned on first call
+      const newToken = data?.data?.token || data?.token;
+      if (newToken && !cartToken) {
+        cookieStore.set(CART_COOKIE_NAME, newToken, {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 60 * 60 * 24 * 30,
+        });
+      }
+      return { success: true };
     }
-
-    return {
-      success: false,
-      error: {
-        message: !res.success ? (res.error?.message || "Failed to update item") : "Failed to update item",
-        code: "UPDATE_CART_FAILED",
-      },
-    };
-  } catch (error) {
-    return handleActionError(error);
+  } catch {
+    return { success: false, error: "Network error while adding to cart" };
   }
 }
 
-export async function removeCartItemAction(itemId: number): Promise<ActionResponse<ApiCart>> {
+/**
+ * Update the quantity of an item in the API cart by its cart-item ID.
+ */
+export async function apiUpdateCartItemAction(
+  cartItemId: number,
+  quantity: number
+): Promise<{ success: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const authToken =
+    cookieStore.get(CUSTOMER_COOKIE_NAME)?.value ||
+    cookieStore.get("token")?.value;
+
   try {
-    const res = await serverDelete<any>("REMOVE_CART_ITEM", {
-      pathParams: { id: itemId },
+    const url = `${API_BASE_URL}${API_ENDPOINTS.CART_ITEM_BY_ID(cartItemId)}`;
+    const headers = authToken
+      ? getAuthHeaders(authToken)
+      : getGuestHeaders(cookieStore.get(CART_COOKIE_NAME)?.value);
+
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ quantity }),
+      cache: "no-store",
     });
 
-    if (res.success && res.data) {
-      return { success: true, data: res.data.data || res.data };
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { success: false, error: data.message || "Failed to update cart item" };
     }
-
-    return {
-      success: false,
-      error: {
-        message: !res.success ? (res.error?.message || "Failed to remove item") : "Failed to remove item",
-        code: "REMOVE_CART_FAILED",
-      },
-    };
-  } catch (error) {
-    return handleActionError(error);
+    return { success: true };
+  } catch {
+    return { success: false, error: "Network error while updating cart" };
   }
 }
 
-export async function clearCartAction(): Promise<ActionResponse<boolean>> {
+/**
+ * Remove an item from the API cart by its cart-item ID.
+ */
+export async function apiRemoveCartItemAction(
+  cartItemId: number
+): Promise<{ success: boolean; error?: string }> {
+  const cookieStore = await cookies();
+  const authToken =
+    cookieStore.get(CUSTOMER_COOKIE_NAME)?.value ||
+    cookieStore.get("token")?.value;
+
   try {
-    const res = await serverDelete<any>("CLEAR_CART");
-    if (res.success) {
-      return { success: true, data: true };
+    const url = `${API_BASE_URL}${API_ENDPOINTS.CART_ITEM_BY_ID(cartItemId)}`;
+    const headers = authToken
+      ? getAuthHeaders(authToken)
+      : getGuestHeaders(cookieStore.get(CART_COOKIE_NAME)?.value);
+
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers,
+      cache: "no-store",
+    });
+
+    if (!res.ok && res.status !== 204) {
+      const data = await res.json().catch(() => ({}));
+      return { success: false, error: data.message || "Failed to remove cart item" };
     }
-    return {
-      success: false,
-      error: {
-        message: !res.success ? (res.error?.message || "Failed to clear cart") : "Failed to clear cart",
-        code: "CLEAR_CART_FAILED",
-      },
-    };
-  } catch (error) {
-    return handleActionError(error);
+    return { success: true };
+  } catch {
+    return { success: false, error: "Network error while removing cart item" };
   }
 }

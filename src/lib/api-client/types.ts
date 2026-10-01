@@ -12,6 +12,7 @@ export interface RequestConfig extends Omit<RequestInit, 'body' | 'method'> {
   retryDelay?: number; // In milliseconds
   responseType?: 'json' | 'text' | 'blob' | 'arrayBuffer' | 'formData';
   validateStatus?: (status: number) => boolean;
+  skipAuth?: boolean;
 
   // Next.js specific fetch features
   cache?: RequestCache;

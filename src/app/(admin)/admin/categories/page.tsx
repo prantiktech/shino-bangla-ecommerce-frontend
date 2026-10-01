@@ -1,14 +1,16 @@
 import React from "react";
-import { getCategoriesAction } from "@/app/(user)/actions/categories";
+import { Metadata } from "next";
+import { getAdminCategoriesAction } from "@/app/(admin)/actions/categories";
 import { CategoriesManagement } from "./_components/CategoriesManagement";
 
-export const metadata = {
-  title: "Admin Categories | Store Management",
+export const metadata: Metadata = {
+  title: "Categories Architecture | Store Management",
+  description: "Manage store taxonomy, nested subcategories, VAT rates, media banners and SEO configurations.",
 };
 
 export default async function AdminCategoriesPage() {
-  const res = await getCategoriesAction();
-  const categories = res.success ? res.data : [];
+  const res = await getAdminCategoriesAction();
+  const categories = res.success && res.data ? res.data : [];
 
   return <CategoriesManagement initialCategories={categories} />;
 }

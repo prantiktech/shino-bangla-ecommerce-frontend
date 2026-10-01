@@ -1,15 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { ApiError } from "@/lib/api";
 import { Lock, Mail, ArrowRight, ShieldCheck, Sparkles, AlertCircle, CheckCircle2 } from "lucide-react";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, isAuthenticated } = useAuth();
+
+  const rawRedirect = searchParams.get("redirect");
+  const redirectTarget =
+    rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
+      ? rawRedirect
+      : "/account";
+
+  const isCheckoutRedirect = redirectTarget === "/checkout";
 
   const [form, setForm] = useState({
     login: "",
@@ -19,12 +28,12 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // If already logged in, redirect
+  // If already logged in, redirect to destination
   React.useEffect(() => {
     if (isAuthenticated) {
-      router.push("/account");
+      router.push(redirectTarget);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, redirectTarget, router]);
 
   const handleFillDemo = () => {
     setForm({
@@ -53,7 +62,7 @@ export default function LoginPage() {
       });
       setSuccessMsg("Signed in successfully! Redirecting...");
       setTimeout(() => {
-        router.push("/account");
+        router.push(redirectTarget);
       }, 700);
     } catch (err: any) {
       if (err instanceof ApiError) {
@@ -86,6 +95,17 @@ export default function LoginPage() {
             Access your orders, track shipments, and manage wishlist
           </p>
         </div>
+
+        {/* Checkout Authentication Alert Banner */}
+        {isCheckoutRedirect && (
+          <div className="bg-amber-50 border border-amber-200/90 rounded-xl p-3.5 flex items-center gap-3 text-xs text-amber-900 shadow-2xs">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <span className="font-bold">Authentication Required: </span>
+              <span>Please sign in with your customer account to confirm and place your order. You will be redirected right back to checkout.</span>
+            </div>
+          </div>
+        )}
 
         {/* Demo Credentials Quick-Fill Banner */}
         <div className="bg-teal-50/80 border border-teal-200/80 rounded-xl p-3.5 flex items-center justify-between text-xs text-teal-900 shadow-2xs">
@@ -188,7 +208,7 @@ export default function LoginPage() {
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
-                    <span>Sign In</span>
+                    <span>{isCheckoutRedirect ? "Sign In & Proceed to Checkout" : "Sign In"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -200,7 +220,10 @@ export default function LoginPage() {
           <div className="mt-6 pt-5 border-t border-gray-100 text-center">
             <p className="text-xs text-gray-600">
               Don&apos;t have an account yet?{" "}
-              <Link href="/register" className="font-bold text-[#009cae] hover:underline">
+              <Link
+                href={rawRedirect ? `/register?redirect=${encodeURIComponent(rawRedirect)}` : "/register"}
+                className="font-bold text-[#009cae] hover:underline"
+              >
                 Create Account
               </Link>
             </p>
@@ -219,5 +242,19 @@ export default function LoginPage() {
 
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[75vh] flex items-center justify-center py-12 px-4">
+          <div className="w-8 h-8 border-2 border-[#009cae] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

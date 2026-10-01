@@ -14,7 +14,10 @@ export function proxy(request: NextRequest) {
     pathname.startsWith('/checkout')
   ) {
     const hasUserToken =
-      request.cookies.has('token') || request.cookies.has('client-token');
+      request.cookies.has('token') ||
+      request.cookies.has('client-token') ||
+      request.cookies.has('customer_token') ||
+      request.cookies.has('admin_token');
 
     if (!hasUserToken) {
       const loginUrl = new URL('/login', request.url);

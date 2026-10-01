@@ -13,15 +13,21 @@ import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import confetti from "canvas-confetti";
 
 export const CartDrawer: React.FC = () => {
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const { cart, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, subtotal, totalItems } = useCart();
 
   const handleCheckout = () => {
     setIsCartOpen(false);
-    router.push("/checkout");
+    if (!isAuthenticated) {
+      router.push("/login?redirect=/checkout");
+    } else {
+      router.push("/checkout");
+    }
   };
 
   return (

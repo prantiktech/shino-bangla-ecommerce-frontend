@@ -141,29 +141,67 @@ export interface ProductFilterParams {
 // 5. Cart
 export interface ApiCartItem {
   id: number;
-  product_id: number;
+  product_id?: number;
   variant_id?: number | null;
-  product_name: string;
-  product_slug: string;
-  image: string | null;
+  product?: {
+    id: number;
+    name: string;
+    slug: string;
+    thumbnail_url?: string | null;
+    image?: string | null;
+  };
+  product_name?: string;
+  product_slug?: string;
+  image?: string | null;
+  sku?: string;
+  label?: string | null;
   unit_price: number; // in poisha
   quantity: number;
-  subtotal: number; // in poisha
+  subtotal?: number; // in poisha
+  line_subtotal?: number; // in poisha
+  line_total?: number; // in poisha
+  is_saved_for_later?: boolean;
+  saved_for_later?: boolean;
   options?: Record<string, string>;
 }
 
-export interface ApiCart {
-  token?: string;
-  items: ApiCartItem[];
-  item_count: number;
+export interface ApiCartTotals {
   subtotal: number; // in poisha
-  discount_total: number; // in poisha
-  vat_total: number; // in poisha
-  shipping_total: number; // in poisha
-  grand_total: number; // in poisha
-  coupon: {
+  discount?: number; // in poisha
+  discount_total?: number;
+  shipping?: number; // in poisha
+  shipping_total?: number;
+  vat?: number;
+  vat_total?: number;
+  tax?: number;
+  total?: number; // in poisha
+  grand_total?: number; // in poisha
+}
+
+export interface ApiCart {
+  id?: number | null;
+  token?: string | null;
+  items: ApiCartItem[];
+  saved_for_later?: ApiCartItem[];
+  item_count?: number;
+  totals?: ApiCartTotals;
+  subtotal?: number; // in poisha
+  discount_total?: number; // in poisha
+  vat_total?: number; // in poisha
+  shipping_total?: number; // in poisha
+  grand_total?: number; // in poisha
+  coupon?: {
     code: string;
-    discount_amount: number; // in poisha
+    discount?: number; // in poisha
+    discount_amount?: number; // in poisha
+  } | null;
+  shipping?: {
+    zone_id?: number;
+    zone_name?: string;
+    charge?: number;
+    free_applied?: boolean;
+    delivery_days_min?: number;
+    delivery_days_max?: number;
   } | null;
 }
 
@@ -172,6 +210,8 @@ export interface ShippingLocation {
   id: number;
   name: string;
   parent_id?: number | null;
+  division_id?: number;
+  zone_id?: number;
 }
 
 export interface ShippingMethod {
@@ -179,58 +219,89 @@ export interface ShippingMethod {
   name: string;
   rate: number; // in poisha
   estimated_days?: string;
+  delivery_days_min?: number;
+  delivery_days_max?: number;
 }
 
 export interface CheckoutPayload {
-  customer_name: string;
-  customer_email?: string;
-  customer_phone: string;
-  shipping_address: {
-    address: string;
-    city: string;
-    state?: string;
-    postal_code?: string;
-    country?: string;
+  address_id?: number;
+  billing_address_id?: number | null;
+  address?: {
+    name: string;
+    phone: string;
+    line1: string;
+    line2?: string | null;
+    area?: string | null;
+    district_id: number;
+    postcode?: string | null;
   };
-  location_id?: number;
-  shipping_method_id: number;
+  billing_address?: any;
   payment_method: "cod" | "sslcommerz" | "bank_transfer";
-  notes?: string;
+  note?: string;
 }
 
 export interface OrderItem {
   id: number;
-  product_name: string;
+  product_id?: number;
+  variant_id?: number;
+  product_name?: string;
+  name?: string;
+  label?: string | null;
+  sku?: string;
   quantity: number;
   unit_price: number; // in poisha
-  subtotal: number; // in poisha
+  subtotal?: number; // in poisha
+  line_total?: number; // in poisha
 }
 
 export interface Order {
-  id: number;
-  order_number: string;
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
-  payment_status: "pending" | "paid" | "failed";
+  id?: number;
+  number?: string;
+  order_number?: string;
+  status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded" | string;
+  payment_status: "pending" | "unpaid" | "paid" | "failed" | string;
   payment_method: string;
-  items: OrderItem[];
-  subtotal: number; // in poisha
-  discount_total: number; // in poisha
-  vat_total: number; // in poisha
-  shipping_total: number; // in poisha
-  grand_total: number; // in poisha
-  shipping_address: Record<string, any>;
-  created_at: string;
+  payment_method_label?: string;
+  source?: string;
+  contact?: {
+    name: string;
+    phone: string;
+    email?: string | null;
+  };
+  items?: OrderItem[];
+  preview?: Array<{
+    name: string;
+    label?: string | null;
+    image?: string | null;
+    quantity: number;
+  }>;
+  subtotal?: number; // in poisha
+  discount_total?: number; // in poisha
+  vat_total?: number; // in poisha
+  shipping_total?: number; // in poisha
+  grand_total?: number; // in poisha
+  total_amount?: number; // in poisha
+  totals?: ApiCartTotals;
+  shipping_address?: Record<string, any>;
+  billing_address?: Record<string, any>;
+  can_cancel?: boolean;
+  placed_at?: string;
+  created_at?: string;
 }
 
 // 7. Store Public Settings
 export interface StoreSettings {
   store_name: string;
-  store_email: string;
+  store_email?: string;
   store_phone: string;
-  store_address: string;
+  store_address?: string;
+  default_vat_rate_bp?: number;
+  vat_on_shipping?: boolean;
   cod_enabled: boolean;
   bank_transfer_enabled: boolean;
-  bank_transfer_instructions: string | null;
-  logo_url: string | null;
-  favicon_url: string | null;
+  bank_transfer_instructions?: string | null;
+  low_stock_threshold?: number;
+  order_payment_timeout_minutes?: number;
+  logo_url?: string | null;
+  favicon_url?: string | null;
 }

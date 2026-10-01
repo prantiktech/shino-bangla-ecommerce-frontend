@@ -1,17 +1,74 @@
 "use server";
 
-import { serverGet, serverPost, serverDelete } from "@/lib/api-client/server";
+import { serverGet, serverPost, serverPut, serverDelete } from "@/lib/api-client/server";
 import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
+
+export interface ReviewableItem {
+  order_number: string;
+  order_id: number;
+  delivered_at: string;
+  product_id: number;
+  name: string;
+  slug: string;
+  image?: string | null;
+}
 
 export interface CustomerReview {
   id: number;
-  product_id: number;
-  product_name?: string;
   rating: number;
-  review?: string;
+  comment?: string | null;
+  photos?: string[];
+  is_edited: boolean;
   created_at: string;
+  status: "pending" | "approved" | "rejected" | string;
+  rejection_reason?: string | null;
+  product: {
+    id: number;
+    name: string;
+    slug: string;
+  };
 }
 
+export interface SubmitReviewPayload {
+  product_id: number;
+  order_id: number;
+  rating: number;
+  comment?: string;
+  photo_ids?: number[];
+}
+
+export interface UpdateReviewPayload {
+  rating?: number;
+  comment?: string;
+}
+
+/**
+ * Fetch delivered items awaiting customer review
+ * Requires: Bearer token
+ */
+export async function getReviewableItemsAction(): Promise<ActionResponse<ReviewableItem[]>> {
+  try {
+    const res = await serverGet<any>("GET_REVIEWABLE_ITEMS");
+    if (res.success && res.data) {
+      const items = Array.isArray(res.data.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
+      return { success: true, data: items };
+    }
+    return {
+      success: false,
+      error: {
+        message: !res.success ? (res.error?.message || "Failed to load reviewable items") : "Failed to load reviewable items",
+        code: "GET_REVIEWABLE_ITEMS_FAILED",
+      },
+    };
+  } catch (error) {
+    return handleActionError(error);
+  }
+}
+
+/**
+ * Fetch list of reviews submitted by this customer
+ * Requires: Bearer token
+ */
 export async function getMyReviewsAction(): Promise<ActionResponse<CustomerReview[]>> {
   try {
     const res = await serverGet<any>("GET_MY_REVIEWS");
@@ -22,7 +79,7 @@ export async function getMyReviewsAction(): Promise<ActionResponse<CustomerRevie
     return {
       success: false,
       error: {
-        message: !res.success ? (res.error?.message || "Failed to load reviews") : "Failed to load reviews",
+        message: !res.success ? (res.error?.message || "Failed to load customer reviews") : "Failed to load customer reviews",
         code: "GET_REVIEWS_FAILED",
       },
     };
@@ -31,14 +88,21 @@ export async function getMyReviewsAction(): Promise<ActionResponse<CustomerRevie
   }
 }
 
-export async function submitProductReviewAction(
-  slug: string,
-  payload: { rating: number; review?: string; order_item_id?: number }
-): Promise<ActionResponse<any>> {
+/**
+ * Submit a new product review (held for admin moderation)
+ * Requires: Bearer token
+ */
+export async function submitReviewAction(payload: SubmitReviewPayload): Promise<ActionResponse<CustomerReview>> {
   try {
-    const res = await serverPost<any>("SUBMIT_PRODUCT_REVIEW", payload, {
-      pathParams: { slug },
-    });
+    const body: any = {
+      product_id: Number(payload.product_id),
+      order_id: Number(payload.order_id),
+      rating: Number(payload.rating),
+    };
+    if (payload.comment) body.comment = payload.comment.trim();
+    if (payload.photo_ids && payload.photo_ids.length > 0) body.photo_ids = payload.photo_ids;
+
+    const res = await serverPost<any>("SUBMIT_REVIEW", body);
     if (res.success && res.data) {
       return { success: true, data: res.data.data || res.data };
     }
@@ -54,6 +118,41 @@ export async function submitProductReviewAction(
   }
 }
 
+/**
+ * Update a review while it is still pending admin approval
+ * Requires: Bearer token
+ */
+export async function updateReviewAction(
+  id: number | string,
+  payload: UpdateReviewPayload
+): Promise<ActionResponse<CustomerReview>> {
+  try {
+    const body: any = {};
+    if (payload.rating !== undefined) body.rating = Number(payload.rating);
+    if (payload.comment !== undefined) body.comment = payload.comment.trim();
+
+    const res = await serverPut<any>("UPDATE_MY_REVIEW", body, {
+      pathParams: { id },
+    });
+    if (res.success && res.data) {
+      return { success: true, data: res.data.data || res.data };
+    }
+    return {
+      success: false,
+      error: {
+        message: !res.success ? (res.error?.message || "Failed to update review") : "Failed to update review",
+        code: "UPDATE_REVIEW_FAILED",
+      },
+    };
+  } catch (error) {
+    return handleActionError(error);
+  }
+}
+
+/**
+ * Delete / take back a customer review
+ * Requires: Bearer token
+ */
 export async function deleteMyReviewAction(id: number | string): Promise<ActionResponse<boolean>> {
   try {
     const res = await serverDelete<any>("DELETE_MY_REVIEW", {

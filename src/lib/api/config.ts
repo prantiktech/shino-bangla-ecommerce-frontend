@@ -17,58 +17,78 @@ export const API_ENDPOINTS = {
   BRANDS: "/brands",
   BRAND_BY_SLUG: (slug: string) => `/brands/${slug}`,
   PRODUCTS: "/products",
+  PRODUCT_FACETS: "/products/facets",
+  PRODUCT_SUGGEST: "/products/suggest",
   PRODUCT_BY_SLUG: (slug: string) => `/products/${slug}`,
   PRODUCT_RELATED: (slug: string) => `/products/${slug}/related`,
+  PRODUCT_REVIEWS: (slug: string) => `/products/${slug}/reviews`,
+  HOME: "/home",
+  PAGES: "/pages",
+  PAGE_BY_SLUG: (slug: string) => `/pages/${slug}`,
+  FAQS: "/faqs",
+  SITEMAP: "/sitemap",
 
   // 02 · Auth & Account
   AUTH_LOGIN: "/auth/login",
   AUTH_REGISTER: "/auth/register",
   AUTH_OTP_VERIFY: "/auth/otp/verify",
   AUTH_OTP_RESEND: "/auth/otp/resend",
-  AUTH_FORGOT_PASSWORD: "/auth/password/forgot",
-  AUTH_RESET_PASSWORD: "/auth/password/reset",
+  AUTH_FORGOT_PASSWORD: "/auth/forgot-password",
+  AUTH_RESET_PASSWORD: "/auth/reset-password",
+  AUTH_CHANGE_PASSWORD: "/auth/password",
   AUTH_LOGOUT: "/auth/logout",
+  AUTH_LOGOUT_ALL: "/auth/logout-all",
+  AUTH_GOOGLE: "/auth/google",
+  AUTH_TOKENS: "/auth/tokens",
   ME: "/me",
+  ME_CONTACT: "/me/contact",
+  ME_CONTACT_VERIFY: "/me/contact/verify",
 
   // 03 · Addresses
-  ADDRESSES: "/account/addresses",
-  ADDRESS_BY_ID: (id: number) => `/account/addresses/${id}`,
-  ADDRESS_DEFAULT: (id: number) => `/account/addresses/${id}/default`,
+  ADDRESSES: "/me/addresses",
+  ADDRESS_BY_ID: (id: number | string) => `/me/addresses/${id}`,
 
   // 04 · Wishlist & Recently Viewed
-  WISHLIST: "/account/wishlist",
-  WISHLIST_ADD: "/account/wishlist",
-  WISHLIST_ITEM: (productId: number) => `/account/wishlist/${productId}`,
-  RECENTLY_VIEWED: "/account/recently-viewed",
+  WISHLIST: "/me/wishlist",
+  WISHLIST_ITEM: (productId: number | string) => `/me/wishlist/${productId}`,
+  RECENTLY_VIEWED: "/me/recently-viewed",
 
   // 05 · Cart
   CART: "/cart",
   CART_ITEMS: "/cart/items",
-  CART_ITEM_BY_ID: (id: number) => `/cart/items/${id}`,
-  CART_COUPON: "/cart/coupons",
-  CART_ESTIMATE: "/cart/estimate-delivery",
+  CART_ITEM_BY_ID: (id: number | string) => `/cart/items/${id}`,
+  CART_ITEM_SAVE_FOR_LATER: (id: number | string) => `/cart/items/${id}/save-for-later`,
+  CART_ITEM_MOVE_TO_CART: (id: number | string) => `/cart/items/${id}/move-to-cart`,
+  CART_COUPON: "/cart/coupon",
   CART_CLAIM: "/cart/claim",
 
-  // 06 · Checkout
-  CHECKOUT_LOCATIONS: "/checkout/locations",
-  CHECKOUT_SHIPPING_METHODS: "/checkout/shipping-methods",
+  // 06 · Checkout & Buy Now
+  CHECKOUT_LOCATIONS: "/locations",
+  CHECKOUT_SHIPPING_METHODS: "/shipping/zones",
+  CHECKOUT_QUOTE: "/checkout/quote",
   CHECKOUT: "/checkout",
-
-  // 07 · Buy Now
+  BUY_NOW_QUOTE: "/buy-now/quote",
   BUY_NOW: "/buy-now",
 
   // 08 · Orders
-  MY_ORDERS: "/account/orders",
-  ORDER_BY_NUMBER: (orderNumber: string) => `/account/orders/${orderNumber}`,
+  MY_ORDERS: "/me/orders",
+  ORDER_BY_NUMBER: (orderNumber: string) => `/me/orders/${orderNumber}`,
+  ORDER_CANCEL: (orderNumber: string) => `/me/orders/${orderNumber}/cancel`,
+  ORDER_INVOICE: (orderNumber: string) => `/me/orders/${orderNumber}/invoice`,
   TRACK_ORDER: "/orders/track",
+  ORDER_PAY: (orderNumber: string) => `/orders/${orderNumber}/pay`,
 
   // 09 · Reviews
-  REVIEWS: "/reviews",
-  MY_REVIEWS: "/account/reviews",
+  MY_REVIEWS: "/me/reviews",
+  REVIEW_BY_ID: (id: number | string) => `/me/reviews/${id}`,
+  REVIEWABLE_ITEMS: "/me/reviewable-items",
+  REVIEW_PHOTOS: "/me/reviews/photos",
 
   // 10 · Contact & Newsletter
   CONTACT: "/contact",
-  NEWSLETTER_SUBSCRIBE: "/newsletter/subscribe"
+  NEWSLETTER_SUBSCRIBE: "/newsletter/subscribe",
+  NEWSLETTER_UNSUBSCRIBE: "/newsletter/unsubscribe",
+  TRACK_VIEW: "/track/view"
 } as const;
 
 export const STORAGE_KEYS = {

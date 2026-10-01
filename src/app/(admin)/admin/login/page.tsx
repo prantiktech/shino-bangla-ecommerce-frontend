@@ -1,29 +1,47 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Lock, Mail, AlertCircle, ArrowRight } from "lucide-react";
+import React, { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Lock, Mail, AlertCircle, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 import { adminLoginAction } from "@/app/(admin)/actions/auth";
 
-export default function AdminLoginPage() {
+function AdminLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawRedirect = searchParams.get("redirect");
+  const redirectTarget =
+    rawRedirect && rawRedirect.startsWith("/admin") && !rawRedirect.startsWith("//")
+      ? rawRedirect
+      : "/admin";
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+
+  const handleFillOwnerDemo = () => {
+    setEmail("owner@example.com");
+    setPassword("rRE%++8YrP!%yLcTNAgB");
+    setError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setIsPending(true);
 
     try {
-      const res = await adminLoginAction(email, password);
+      const res = await adminLoginAction(email, password, "web");
       if (res.success) {
-        router.push("/admin");
-        router.refresh();
+        setSuccess("Signed in successfully as administrator! Redirecting...");
+        setTimeout(() => {
+          router.push(redirectTarget);
+          router.refresh();
+        }, 500);
       } else {
-        setError(res.error.message || "Invalid admin credentials");
+        setError(res.error?.message || "Invalid admin credentials");
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -43,10 +61,37 @@ export default function AdminLoginPage() {
           <p className="text-xs text-slate-400">Sign in with your staff or administrator account.</p>
         </div>
 
+        {/* Owner Credentials Quick-Fill Banner */}
+        <div className="bg-slate-700/60 border border-slate-600 rounded-xl p-3.5 flex items-center justify-between text-xs text-slate-200 shadow-2xs">
+          <div className="space-y-0.5">
+            <span className="font-bold flex items-center gap-1 text-[#FF5B00]">
+              <Sparkles className="w-3.5 h-3.5" />
+              Owner Account Demo:
+            </span>
+            <div className="text-[11px] text-slate-300 font-mono">
+              owner@example.com / rRE%++8YrP!%yLcTNAgB
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleFillOwnerDemo}
+            className="px-3 py-1.5 bg-[#FF5B00] hover:bg-[#E64E00] text-white font-semibold rounded-lg text-xs transition-colors shadow-2xs shrink-0 active:scale-95 cursor-pointer"
+          >
+            Auto Fill
+          </button>
+        </div>
+
         {error && (
           <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center gap-2.5 text-xs font-semibold text-rose-400">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {success && (
+          <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2.5 text-xs font-semibold text-emerald-400">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{success}</span>
           </div>
         )}
 
@@ -92,5 +137,19 @@ export default function AdminLoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-900">
+          <div className="w-8 h-8 border-2 border-[#FF5B00] border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <AdminLoginForm />
+    </Suspense>
   );
 }

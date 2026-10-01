@@ -1,7 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { Product, CartItem } from "@/types";
+import { cartService } from "@/lib/api/services/cart.service";
+import { poishaToTaka } from "@/lib/utils/money";
 
 interface CartContextType {
   cart: CartItem[];
@@ -21,75 +23,213 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const LOCAL_KEY = "toy_house_cart";
+
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Read from localStorage on mount if available
+  // Helper to map backend items to CartItem[]
+  const mapApiCartToItems = (apiCart: any): CartItem[] => {
+    const rawCart = apiCart?.data || apiCart;
+    if (!rawCart || !Array.isArray(rawCart.items)) return [];
+    return rawCart.items.map((item: any) => ({
+      product: {
+        id: `${item.product?.id || item.variant_id}-${item.variant_id}`,
+        title: item.product?.name
+          ? item.label
+            ? `${item.product.name} (${item.label})`
+            : item.product.name
+          : "Product",
+        slug: item.product?.slug || "",
+        image: item.product?.image || "/images/placeholder.svg",
+        price: poishaToTaka(item.unit_price),
+        originalPrice: item.compare_at ? poishaToTaka(item.compare_at) : undefined,
+        rating: 5,
+        reviewCount: 0,
+        soldCount: 0,
+        category: "General",
+        inStock: item.available ?? true,
+        variantId: item.variant_id,
+      },
+      quantity: item.quantity,
+      apiCartItemId: item.id,
+    }));
+  };
+
+  // ─── Hydrate from localStorage and API on mount ───────────────────────────
   useEffect(() => {
+    let localItems: CartItem[] = [];
     try {
-      const stored = localStorage.getItem("toy_house_cart");
+      const stored = localStorage.getItem(LOCAL_KEY);
       if (stored) {
-        setCart(JSON.parse(stored));
+        localItems = JSON.parse(stored);
+        if (Array.isArray(localItems) && localItems.length > 0) {
+          setCart(localItems);
+        }
       }
     } catch {
       // ignore
     }
+    setIsInitialized(true);
+
+    // Fetch live cart from backend API (works for both guests via X-Cart-Token and logged-in customers)
+    cartService
+      .getCart()
+      .then((apiCart) => {
+        const serverItems = mapApiCartToItems(apiCart);
+        if (serverItems.length > 0) {
+          setCart(serverItems);
+          try {
+            localStorage.setItem(LOCAL_KEY, JSON.stringify(serverItems));
+          } catch {}
+        }
+      })
+      .catch(() => {
+        // Backend unavailable or network error, keep localItems
+      });
   }, []);
 
-  // Save to localStorage on change
+  // ─── Persist to localStorage on change only after initialization ──────────
   useEffect(() => {
+    if (!isInitialized) return;
     try {
-      localStorage.setItem("toy_house_cart", JSON.stringify(cart));
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(cart));
     } catch {
       // ignore
     }
-  }, [cart]);
+  }, [cart, isInitialized]);
 
-  const showToast = (message: string) => {
+  // ─── Toast ────────────────────────────────────────────────────────────────
+  const showToast = useCallback((message: string) => {
     setToastMessage(message);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3000);
-  };
+    setTimeout(() => setToastMessage(null), 3000);
+  }, []);
 
-  const addToCart = (product: Product, quantity: number = 1) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
+  // ─── Add to cart ──────────────────────────────────────────────────────────
+  const addToCart = useCallback(
+    async (product: Product, quantity: number = 1) => {
+      // 1. Optimistic local update
+      setCart((prev) => {
+        const existing = prev.find((item) => item.product.id === product.id);
+        if (existing) {
+          return prev.map((item) =>
+            item.product.id === product.id
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          );
+        }
+        return [...prev, { product, quantity }];
+      });
+
+      showToast(`Added "${product.title.slice(0, 24)}..." to cart!`);
+
+      // 2. Resolve variant ID if not present on product card
+      let variantId = product.variantId;
+      if (!variantId && product.slug) {
+        try {
+          const detailRes: any = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || "http://13.140.181.253/api/v1"}/products/${product.slug}`
+          ).then((r) => r.json());
+          const variants = detailRes?.data?.variants || [];
+          const defaultVar = variants.find((v: any) => v.is_default) || variants[0];
+          if (defaultVar?.id) {
+            variantId = defaultVar.id;
+          }
+        } catch {
+          // ignore
+        }
       }
-      return [...prev, { product, quantity }];
-    });
-    showToast(`Added "${product.title.slice(0, 24)}..." to cart!`);
-  };
 
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
-    showToast("Item removed from cart");
-  };
+      // 3. API sync with resolved variantId
+      if (variantId) {
+        try {
+          const apiCart = await cartService.addItem({
+            variant_id: variantId,
+            quantity
+          });
 
-  const updateQuantity = (productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-    setCart((prev) =>
-      prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
-      )
-    );
-  };
+          // Sync whole cart from server response if available
+          const serverItems = mapApiCartToItems(apiCart);
+          if (serverItems.length > 0) {
+            setCart(serverItems);
+            try {
+              localStorage.setItem(LOCAL_KEY, JSON.stringify(serverItems));
+            } catch {}
+          } else {
+            const apiItemId =
+              apiCart?.item?.id ||
+              apiCart?.data?.item?.id ||
+              apiCart?.items?.find((i: any) => i.variant_id === variantId)?.id ||
+              apiCart?.data?.items?.find((i: any) => i.variant_id === variantId)?.id;
 
-  const clearCart = () => {
+            if (apiItemId) {
+              setCart((prev) =>
+                prev.map((item) =>
+                  item.product.id === product.id
+                    ? {
+                        ...item,
+                        apiCartItemId: apiItemId,
+                        product: { ...item.product, variantId }
+                      }
+                    : item
+                )
+              );
+            }
+          }
+        } catch {
+          // local cart still works even if network hiccup
+        }
+      }
+    },
+    [showToast]
+  );
+
+  // ─── Remove from cart ─────────────────────────────────────────────────────
+  const removeFromCart = useCallback(
+    (productId: string) => {
+      setCart((prev) => {
+        const item = prev.find((i) => i.product.id === productId);
+        if (item?.apiCartItemId) {
+          cartService.removeItem(item.apiCartItemId).catch(() => {});
+        }
+        return prev.filter((i) => i.product.id !== productId);
+      });
+      showToast("Item removed from cart");
+    },
+    [showToast]
+  );
+
+  // ─── Update quantity ──────────────────────────────────────────────────────
+  const updateQuantity = useCallback(
+    (productId: string, quantity: number) => {
+      if (quantity <= 0) {
+        removeFromCart(productId);
+        return;
+      }
+      setCart((prev) => {
+        const updated = prev.map((item) => {
+          if (item.product.id !== productId) return item;
+          if (item.apiCartItemId) {
+            cartService.updateItem(item.apiCartItemId, quantity).catch(() => {});
+          }
+          return { ...item, quantity };
+        });
+        return updated;
+      });
+    },
+    [removeFromCart]
+  );
+
+  const clearCart = useCallback(() => {
     setCart([]);
-  };
+    try {
+      localStorage.removeItem(LOCAL_KEY);
+    } catch {}
+  }, []);
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cart.reduce(

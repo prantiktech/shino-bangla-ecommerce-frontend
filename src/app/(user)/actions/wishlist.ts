@@ -3,7 +3,31 @@
 import { serverGet, serverPost, serverDelete } from "@/lib/api-client/server";
 import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
 
-export async function getWishlistAction(): Promise<ActionResponse<any[]>> {
+export interface WishlistProduct {
+  id: number;
+  name: string;
+  slug: string;
+  image?: string | null;
+  brand?: { id: number; name: string } | null;
+  price?: {
+    min: number;
+    max: number;
+    compare_at?: number | null;
+    discount_percent?: number | null;
+  };
+  has_options?: boolean;
+  in_stock?: boolean;
+  rating?: {
+    average: number;
+    count: number;
+  };
+  is_featured?: boolean;
+  is_trending?: boolean;
+  is_new_arrival?: boolean;
+  is_best_seller?: boolean;
+}
+
+export async function getWishlistAction(): Promise<ActionResponse<WishlistProduct[]>> {
   try {
     const res = await serverGet<any>("GET_WISHLIST");
     if (res.success && res.data) {
@@ -60,7 +84,7 @@ export async function removeFromWishlistAction(productId: number | string): Prom
   }
 }
 
-export async function getRecentlyViewedAction(): Promise<ActionResponse<any[]>> {
+export async function getRecentlyViewedAction(): Promise<ActionResponse<WishlistProduct[]>> {
   try {
     const res = await serverGet<any>("GET_RECENTLY_VIEWED");
     if (res.success && res.data) {

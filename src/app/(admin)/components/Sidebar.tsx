@@ -8,14 +8,17 @@ import {
   Layers,
   ShoppingBag,
   Users,
+  UserCheck,
   Percent,
   BarChart3,
   ArrowLeft,
   X,
+  ShieldCheck,
   Shield,
   Tag,
   Image as ImageIcon,
   FolderTree,
+  Boxes,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -56,6 +59,8 @@ export function AdminSidebar({
       items: [
         { label: "Products", icon: Layers, href: "/admin/products" },
         { label: "Categories", icon: FolderTree, href: "/admin/categories" },
+        { label: "Inventory", icon: Boxes, href: "/admin/inventory" },
+        { label: "Banners & Promos", icon: ImageIcon, href: "/admin/banners" },
       ],
     },
     {
@@ -63,6 +68,8 @@ export function AdminSidebar({
       items: [
         { label: "Orders", icon: ShoppingBag, href: "/admin/orders" },
         { label: "Customers", icon: Users, href: "/admin/customers" },
+        { label: "Staff Members", icon: UserCheck, href: "/admin/staff" },
+        { label: "Roles & Permissions", icon: ShieldCheck, href: "/admin/roles" },
         { label: "Settings", icon: Shield, href: "/admin/settings" },
       ],
     },

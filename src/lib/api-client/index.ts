@@ -1,5 +1,6 @@
 import { HttpClient } from './client';
 import { authInterceptor } from './interceptors';
+import { RequestConfig } from './types';
 
 // Export all types and classes
 export * from './types';
@@ -27,7 +28,7 @@ export const apiClient = new HttpClient({
 
 apiClient.interceptors.request.use(
   authInterceptor({
-    tokenProvider: async () => {
+    tokenProvider: async (config?: RequestConfig) => {
       if (typeof window === 'undefined') {
         try {
           const { cookies, headers } = await import('next/headers');
@@ -35,15 +36,43 @@ apiClient.interceptors.request.use(
           const reqHeaders = await headers();
           const referer = reqHeaders.get('referer') || '';
 
-          if (referer.includes('/admin')) {
-            return cookieStore.get('admin_token')?.value;
+          const isAdminRequest =
+            referer.includes('/admin') ||
+            Boolean(
+              config?.url &&
+                (config.url.includes('/admin') ||
+                  config.url.includes('ADMIN_') ||
+                  config.url.includes('/staff') ||
+                  config.url.includes('/roles') ||
+                  config.url.includes('/permissions'))
+            );
+
+          if (isAdminRequest) {
+            return (
+              cookieStore.get('admin_token')?.value ||
+              cookieStore.get('token')?.value ||
+              cookieStore.get('customer_token')?.value
+            );
           }
-          return cookieStore.get('token')?.value;
+          return (
+            cookieStore.get('customer_token')?.value ||
+            cookieStore.get('token')?.value ||
+            cookieStore.get('admin_token')?.value
+          );
         } catch {
           return undefined;
         }
       } else {
-        const isAdmin = window.location.pathname.startsWith('/admin');
+        const isAdmin =
+          window.location.pathname.startsWith('/admin') ||
+          Boolean(
+            config?.url &&
+              (config.url.includes('/admin') ||
+                config.url.includes('ADMIN_') ||
+                config.url.includes('/staff') ||
+                config.url.includes('/roles') ||
+                config.url.includes('/permissions'))
+          );
         const cookieName = isAdmin ? 'admin_client_token' : 'client-token';
 
         const value = `; ${document.cookie}`;
