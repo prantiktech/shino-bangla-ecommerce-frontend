@@ -41,11 +41,11 @@ export interface BuyNowModalProps {
   onClose: () => void;
   variantId: number;
   productTitle: string;
-  productImage?: string;
+  productImage?: string | null;
   initialQuantity?: number;
   initialPrice?: number;
-  variantLabel?: string;
-  sku?: string;
+  variantLabel?: string | null;
+  sku?: string | null;
 }
 
 export function BuyNowModal({

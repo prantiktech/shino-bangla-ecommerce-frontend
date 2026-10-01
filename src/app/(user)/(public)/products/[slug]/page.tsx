@@ -16,13 +16,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const res = await getProductBySlugAction(slug);
   if (!res.success || !res.data) {
     return {
-      title: "Product Details | Demo Safety Store",
-      description: "Buy genuine safety equipment and hardware products online.",
+      title: "Product Details | Nogod Bazar",
+      description: "Buy genuine products and hardware online at Nogod Bazar.",
     };
   }
 
   const product = res.data;
-  const title = `${product.name} | Demo Safety Store`;
+  const title = `${product.name} | Nogod Bazar`;
   const priceTaka = poishaToTaka(product.price.min);
   const description = product.short_description || `Buy ${product.name} online for ৳${priceTaka.toFixed(2)}. 100% genuine products with fast delivery in Bangladesh.`;
   const imageUrl = product.image || product.main_image || `${baseUrl}/placeholder.svg`;
@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       url: `${baseUrl}/products/${product.slug}`,
-      siteName: "Demo Safety Store",
+      siteName: "Nogod Bazar",
       locale: "en_BD",
       type: "website",
       images: [
@@ -102,7 +102,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
     "sku": product.variants?.[0]?.sku || String(product.id),
     "brand": {
       "@type": "Brand",
-      "name": product.brand?.name || "Demo Safety Store",
+      "name": product.brand?.name || "Nogod Bazar",
     },
     "offers": {
       "@type": "Offer",
@@ -112,7 +112,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
       "availability": product.in_stock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "seller": {
         "@type": "Organization",
-        "name": "Demo Safety Store",
+        "name": "Nogod Bazar",
       },
     },
   };

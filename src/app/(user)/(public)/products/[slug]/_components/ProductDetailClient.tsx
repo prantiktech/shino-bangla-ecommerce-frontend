@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { ApiProduct, ApiProductVariant } from "@/app/(user)/actions/products";
 import { ProductCard } from "@/components/common/ProductCard";
+import { BuyNowModal } from "@/components/common/BuyNowModal";
 import { useCart } from "@/context/CartContext";
 import { poishaToTaka, formatVatRate } from "@/lib/utils/money";
 import { mapApiProductToProduct } from "@/lib/utils/product-mapper";
@@ -48,6 +49,7 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
 
   // Quantity State
   const [quantity, setQuantity] = useState<number>(1);
+  const [isBuyNowOpen, setIsBuyNowOpen] = useState<boolean>(false);
 
   // Active Tab: description, specs, reviews
   const [activeTab, setActiveTab] = useState<"description" | "specs" | "reviews">("description");
@@ -119,14 +121,12 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
     setIsCartOpen(true);
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = () => {
     if (!isCurrentlyInStock) {
       showToast("This item is currently out of stock.");
       return;
     }
-    const item = getUiProduct();
-    await addToCart(item, quantity);
-    router.push("/checkout");
+    setIsBuyNowOpen(true);
   };
 
   const handleShare = () => {
@@ -585,6 +585,18 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
           </div>
         )}
 
+        {/* 5. Buy Now Instant Modal */}
+        <BuyNowModal
+          isOpen={isBuyNowOpen}
+          onClose={() => setIsBuyNowOpen(false)}
+          variantId={selectedVariant?.id || product.variants?.[0]?.id || 0}
+          productTitle={product.name}
+          productImage={activeImage || product.image || product.main_image}
+          initialQuantity={quantity}
+          initialPrice={currentPriceTaka}
+          variantLabel={selectedVariant?.label || selectedVariant?.value}
+          sku={selectedVariant?.sku}
+        />
       </div>
     </div>
   );

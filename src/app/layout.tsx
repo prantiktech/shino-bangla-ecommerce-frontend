@@ -11,9 +11,9 @@ const fontSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Demo Safety Store - Safety Equipment & Hardware Store",
+  title: "Nogod Bazar - Trusted Online Shopping in Bangladesh",
   description:
-    "Discover the finest collection of safety equipment, fire extinguishers, hardware, and safety manuals with fast delivery across Bangladesh.",
+    "Discover the finest collection of products, safety equipment, hardware, and books with instant delivery and cash on delivery at Nogod Bazar.",
 };
 
 export default function RootLayout({

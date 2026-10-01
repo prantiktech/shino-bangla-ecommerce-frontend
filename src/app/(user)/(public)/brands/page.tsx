@@ -5,8 +5,8 @@ import { Sparkles, Package } from "lucide-react";
 import { getBrandsAction } from "@/app/(user)/actions/brands";
 
 export const metadata = {
-  title: "All Brands | Demo Safety Store",
-  description: "Explore genuine equipment and hardware brands available at Demo Safety Store.",
+  title: "All Brands | Nogod Bazar",
+  description: "Explore genuine equipment and hardware brands available at Nogod Bazar.",
 };
 
 export default async function AllBrandsPage() {

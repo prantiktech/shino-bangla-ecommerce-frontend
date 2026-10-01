@@ -42,16 +42,16 @@ export const HeroSection: React.FC = () => {
               href="/category/industrial-boiler"
               className="flex-1 group relative rounded-2xl overflow-hidden border border-gray-200/90 bg-white p-3 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[190px] sm:min-h-[200px]"
             >
-              {/* Card Header: Cyan Badge & Cembula Logo */}
+              {/* Card Header: Badge & Nogod Bazar Logo */}
               <div className="relative z-10 flex items-start justify-between gap-2">
                 <span className="inline-block bg-[#009cae] text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded leading-tight shadow-2xs">
                   Durable & Energy-Efficient<br />Heating Solutions
                 </span>
                 
-                {/* Small Cembula watermark logo */}
+                {/* Small Nogod Bazar watermark logo */}
                 <div className="flex items-center text-[11px] font-black text-gray-800">
-                  <span className="text-[#009cae] font-black text-sm leading-none mr-0.5">C</span>
-                  <span>embula</span>
+                  <span className="text-[#FF5B00] font-black text-xs leading-none mr-0.5">nogod</span>
+                  <span>bazar</span>
                 </div>
               </div>
 
@@ -69,7 +69,7 @@ export const HeroSection: React.FC = () => {
               {/* Card Footer URL Watermark */}
               <div className="relative z-10 text-right">
                 <span className="text-[10px] text-gray-400 font-medium">
-                  www.fembula.com
+                  www.nogodbazar.com
                 </span>
               </div>
             </Link>
@@ -79,16 +79,16 @@ export const HeroSection: React.FC = () => {
               href="/category/sensors"
               className="flex-1 group relative rounded-2xl overflow-hidden border border-gray-200/90 bg-white p-3 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[190px] sm:min-h-[200px]"
             >
-              {/* Card Header: Blue Badge & Cembula Logo */}
+              {/* Card Header: Badge & Nogod Bazar Logo */}
               <div className="relative z-10 flex items-start justify-between gap-2">
                 <span className="inline-block bg-[#0066cc] text-white text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded leading-tight shadow-2xs">
                   PROXIMITY<br />SENSOR
                 </span>
                 
-                {/* Small Cembula watermark logo */}
+                {/* Small Nogod Bazar watermark logo */}
                 <div className="flex items-center text-[11px] font-black text-gray-800">
-                  <span className="text-[#009cae] font-black text-sm leading-none mr-0.5">C</span>
-                  <span>embula</span>
+                  <span className="text-[#FF5B00] font-black text-xs leading-none mr-0.5">nogod</span>
+                  <span>bazar</span>
                 </div>
               </div>
 
@@ -106,7 +106,7 @@ export const HeroSection: React.FC = () => {
               {/* Card Footer URL Watermark */}
               <div className="relative z-10 text-right">
                 <span className="text-[10px] text-gray-400 font-medium">
-                  www.fembula.com
+                  www.nogodbazar.com
                 </span>
               </div>
             </Link>

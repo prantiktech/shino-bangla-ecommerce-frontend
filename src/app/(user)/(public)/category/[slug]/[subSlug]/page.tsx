@@ -22,8 +22,8 @@ export async function generateMetadata({ params }: SubCategoryPageProps): Promis
   const name = subSlug.replace(/-/g, " ");
 
   return {
-    title: `${name} | Demo Safety Store`,
-    description: `Shop authentic ${name} products with fast delivery in Bangladesh.`,
+    title: `${name} | Nogod Bazar`,
+    description: `Shop authentic ${name} products with fast delivery in Bangladesh at Nogod Bazar.`,
   };
 }
 

@@ -6,8 +6,8 @@ import { getCheckoutLocationsAction } from "@/app/(user)/actions/checkout";
 import { CheckoutClient } from "./_components/CheckoutClient";
 
 export const metadata: Metadata = {
-  title: "Secure Checkout | Demo Safety Store",
-  description: "Complete your order with cash on delivery or bank transfer.",
+  title: "Secure Checkout | Nogod Bazar",
+  description: "Complete your order with cash on delivery or instant digital payment.",
 };
 
 export default async function CheckoutPage() {

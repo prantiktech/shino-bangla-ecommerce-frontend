@@ -23,16 +23,16 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const resolved = await searchParams;
   const { category, q } = resolved;
 
-  let title = "All Products & Equipment | Demo Safety Store";
+  let title = "All Products & Equipment | Nogod Bazar";
   if (category) {
-    title = `${category.replace(/-/g, " ").toUpperCase()} Products | Demo Safety Store`;
+    title = `${category.replace(/-/g, " ").toUpperCase()} Products | Nogod Bazar`;
   } else if (q) {
-    title = `Search results for "${q}" | Demo Safety Store`;
+    title = `Search results for "${q}" | Nogod Bazar`;
   }
 
   return {
     title,
-    description: "Browse our genuine selection of safety equipment, fire extinguishers, hardware, and safety manuals in Bangladesh.",
+    description: "Browse our genuine selection of quality products, hardware, safety gear, and books in Bangladesh at Nogod Bazar.",
   };
 }
 

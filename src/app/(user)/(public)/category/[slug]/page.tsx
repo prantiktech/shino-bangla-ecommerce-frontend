@@ -22,8 +22,8 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   const name = res.success ? res.data.name : slug.replace(/-/g, " ");
 
   return {
-    title: `${name} | Demo Safety Store`,
-    description: `Shop authentic ${name} products with fast delivery in Bangladesh.`,
+    title: `${name} | Nogod Bazar`,
+    description: `Shop authentic ${name} products with fast delivery in Bangladesh at Nogod Bazar.`,
   };
 }
 

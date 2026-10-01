@@ -52,25 +52,22 @@ export const TopHeader: React.FC = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 md:gap-8">
         
         {/* Brand Logo matching the primary brand color (#FF5B00) */}
-        <Link href="/" className="flex items-center gap-1 group shrink-0 select-none">
-          <div className="flex items-center">
-            {/* Orange cart 'C' icon */}
-            <div className="relative flex items-center justify-center mr-0.5">
-              <span className="text-3xl md:text-4xl font-black text-[#FF5B00] leading-none tracking-tighter">
-                C
+        <Link href="/" className="flex items-center gap-2 group shrink-0 select-none">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#FF5B00] to-[#FF8433] flex items-center justify-center text-white font-black text-xl shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
+            N
+          </div>
+          <div className="flex flex-col">
+            <div className="flex items-baseline leading-none">
+              <span className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+                nogod
               </span>
-              {/* Cart wheels */}
-              <span className="absolute -bottom-1 left-1 w-1.5 h-1.5 rounded-full bg-[#FF5B00]" />
-              <span className="absolute -bottom-1 right-0.5 w-1.5 h-1.5 rounded-full bg-[#FF5B00]" />
-            </div>
-            <div className="flex items-baseline">
-              <span className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
-                embula
-              </span>
-              <span className="text-[11px] font-semibold text-gray-400 ml-0.5">
-                .com
+              <span className="text-xl md:text-2xl font-black text-[#FF5B00] tracking-tight ml-0.5">
+                bazar
               </span>
             </div>
+            <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase mt-0.5">
+              Online Store
+            </span>
           </div>
         </Link>
 

@@ -82,13 +82,13 @@ export function AdminSidebar({
       {/* Brand Logo Container */}
       <div className="p-5 border-b border-slate-700/60 flex items-center justify-between">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="w-8 h-8 rounded-lg bg-[#FF5B00] flex items-center justify-center text-white font-extrabold text-base shrink-0 shadow-sm">
-            A
+          <div className="w-8 h-8 rounded-lg bg-[#FF5B00] flex items-center justify-center text-white font-black text-base shrink-0 shadow-sm">
+            N
           </div>
           {showText && (
             <div className="flex flex-col text-left">
-              <span className="text-white font-black text-sm leading-none tracking-tight">Admin Portal</span>
-              <span className="text-[10px] text-orange-400 font-bold tracking-widest mt-0.5 uppercase">Store Manager</span>
+              <span className="text-white font-black text-sm leading-none tracking-tight">Nogod Bazar</span>
+              <span className="text-[10px] text-orange-400 font-bold tracking-widest mt-0.5 uppercase">Admin Portal</span>
             </div>
           )}
         </div>

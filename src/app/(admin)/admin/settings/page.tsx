@@ -9,7 +9,7 @@ export const metadata = {
 export default async function AdminSettingsPage() {
   const res = await getAdminSettingsAction();
   const settings: StoreSettings = res.success && res.data ? res.data : {
-    store_name: "Demo Safety Store",
+    store_name: "Nogod Bazar",
     store_phone: "+8801700000000",
     default_vat_rate_bp: 1500,
     vat_on_shipping: false,

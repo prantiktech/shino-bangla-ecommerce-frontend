@@ -23,8 +23,8 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
   const name = res.success ? res.data.name : slug.replace(/-/g, " ");
 
   return {
-    title: `${name} | Demo Safety Store`,
-    description: `Shop authentic ${name} products at Demo Safety Store.`,
+    title: `${name} | Nogod Bazar`,
+    description: `Shop authentic ${name} products at Nogod Bazar.`,
   };
 }
 

@@ -29,8 +29,8 @@ interface HeroSlideItem {
 
 const HERO_SLIDES_DATA: HeroSlideItem[] = [
   {
-    id: "slide-kitchen-cembula",
-    brandTitle: "Cembula",
+    id: "slide-kitchen-nogodbazar",
+    brandTitle: "Nogod Bazar",
     titleLine1: "Elevate Every Meal,",
     titleLine2: "Enrich Every Moment.",
     subtitle: "Premium Kitchen Essentials for a Beautiful Life",
@@ -56,13 +56,13 @@ const HERO_SLIDES_DATA: HeroSlideItem[] = [
         line2: "EVERY HOME"
       }
     ],
-    websiteUrl: "www.fembula.com",
+    websiteUrl: "www.nogodbazar.com",
     image: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=1000&auto=format&fit=crop&q=80",
     link: "/products"
   },
   {
     id: "slide-cookware-modern",
-    brandTitle: "Cembula",
+    brandTitle: "Nogod Bazar",
     titleLine1: "Cook with Passion,",
     titleLine2: "Serve with Elegance.",
     subtitle: "Artisan Cookware Crafted for Everyday Masterpieces",
@@ -88,7 +88,7 @@ const HERO_SLIDES_DATA: HeroSlideItem[] = [
         line2: "CLEAN"
       }
     ],
-    websiteUrl: "www.fembula.com",
+    websiteUrl: "www.nogodbazar.com",
     image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1000&auto=format&fit=crop&q=80",
     link: "/products"
   }

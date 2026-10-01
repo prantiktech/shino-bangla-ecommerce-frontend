@@ -9,6 +9,7 @@ Following the architecture audit of `/home/dtid/Projects/pharmacy` and the API s
 - Central Type-Safe Endpoints Registry across all modules.
 - Dynamic JWT Bearer token and guest `X-Cart-Token` interceptors.
 - Live integer poisha money formatting (৳1.00 = 100 poisha).
+- **Brand Identity**: Website name configured as **Nogod Bazar** (`nogod bazar`) with primary brand color `#FF5B00`, custom monogram badge, modernized headers/footers, and unified SEO metadata.
 - **Zero mock data**: all mock catalogs removed and replaced with live endpoints from `http://13.140.181.253/api/v1`.
 
 ---
@@ -167,3 +168,15 @@ src/
   - Generates secure `Idempotency-Key` headers for safe, duplicate-free order creation.
   - Returns placed order record (`number`, `status`, `totals`, `items`, `timeline`) and immediate payment details (`tran_id`, `gateway_url`, `amount`, `expires_at`).
   - Seamlessly redirects customers to `gateway_url` for online payments (bKash/Nagad/Cards) or presents the confirmation receipt with confetti for COD/offline methods.
+
+### Buy Now Instant Quote & Placement ([`src/components/common/BuyNowModal.tsx`](file:///home/dtid/fronted/src/components/common/BuyNowModal.tsx))
+- **Item Instant Quote**: `POST /api/v1/buy-now/quote`
+  - Calculates exact line total, delivery charge, VAT, and coupon discounts for a specific variant & quantity destined for `district_id`, without modifying the user's shopping cart.
+  - Returns itemized pricing, weight in grams, delivery zone estimate, and dynamic `payment_methods` on offer (`cod`, `bank_transfer`, `sslcommerz`).
+- **Direct Order Placement**: `POST /api/v1/buy-now`
+  - Body: `{ variant_id, quantity, name, phone, email, address_id, address, billing_address, coupon_code, payment_method, note }`.
+  - Fully supports authenticated saved address selection (`address_id`) and guest/inline delivery addresses.
+  - Automatically generates `Idempotency-Key` header for safe, idempotent order creation.
+  - Integrates direct gateway redirection (`gateway_url`) and in-app order confirmation celebration.
+  - Integrated across Product Details page (`ProductDetailClient.tsx`), Product Cards (`ProductCard.tsx`), and Quick View modal (`QuickViewModal.tsx`).
+

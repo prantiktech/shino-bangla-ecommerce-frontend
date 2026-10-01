@@ -113,16 +113,21 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 lg:gap-12">
           {/* Brand Info */}
           <div className="md:col-span-2 space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-[#FF5B00] flex items-center justify-center text-white font-extrabold text-base">
-                C
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-[#FF5B00] flex items-center justify-center text-white font-black text-lg shadow-sm">
+                N
               </div>
-              <span className="text-xl font-black text-white tracking-tight">
-                Cembula Store
-              </span>
+              <div className="flex items-baseline leading-none">
+                <span className="text-xl font-black text-white tracking-tight">
+                  nogod
+                </span>
+                <span className="text-xl font-black text-[#FF5B00] tracking-tight ml-0.5">
+                  bazar
+                </span>
+              </div>
             </Link>
             <p className="text-xs text-gray-400 max-w-sm leading-relaxed">
-              Bangladesh&apos;s premier destination for genuine safety equipment, certified fire extinguishers, industrial hardware, and safety handbooks.
+              Bangladesh&apos;s premier destination for genuine products, industrial hardware, safety equipment, and rapid delivery right to your doorstep.
             </p>
 
             <div className="space-y-2 text-xs text-gray-300">
@@ -194,7 +199,7 @@ export const Footer: React.FC = () => {
 
       {/* Copyright */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-gray-500 gap-2">
-        <p>© 2026 Demo Safety Store. All rights reserved.</p>
+        <p>© 2026 Nogod Bazar. All rights reserved.</p>
         <p className="flex items-center gap-2">
           <span>Safe & Secure Payments</span>
           <span>•</span>

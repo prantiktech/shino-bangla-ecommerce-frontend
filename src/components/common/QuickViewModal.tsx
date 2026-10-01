@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/context/CartContext";
+import { BuyNowModal } from "@/components/common/BuyNowModal";
 
 export const QuickViewModal: React.FC = () => {
   const {
@@ -25,29 +26,41 @@ export const QuickViewModal: React.FC = () => {
     setIsCartOpen,
   } = useCart();
   const [qty, setQty] = useState(1);
+  const [buyNowData, setBuyNowData] = useState<{
+    variantId: number;
+    productTitle: string;
+    productImage?: string;
+    initialQuantity: number;
+    initialPrice?: number;
+  } | null>(null);
 
-  if (!quickViewProduct) return null;
-
-  const itemInCart = cart.find(
-    (item) => String(item.product.id) === String(quickViewProduct.id)
-  );
+  const itemInCart = quickViewProduct
+    ? cart.find((item) => String(item.product.id) === String(quickViewProduct.id))
+    : null;
   const quantityInCart = itemInCart ? itemInCart.quantity : 0;
 
   const handleBuyNow = () => {
-    if (quantityInCart === 0) {
-      addToCart(quickViewProduct, qty);
-    }
+    if (!quickViewProduct) return;
+    setBuyNowData({
+      variantId: quickViewProduct.variantId ? Number(quickViewProduct.variantId) : Number(quickViewProduct.id),
+      productTitle: quickViewProduct.title,
+      productImage: quickViewProduct.image,
+      initialQuantity: qty,
+      initialPrice: quickViewProduct.price,
+    });
     setQuickViewProduct(null);
-    setIsCartOpen(true);
   };
 
   const handleAddToCart = () => {
+    if (!quickViewProduct) return;
     addToCart(quickViewProduct, qty);
   };
 
   return (
-    <Dialog open={!!quickViewProduct} onOpenChange={(open) => !open && setQuickViewProduct(null)}>
-      <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-white">
+    <>
+      {quickViewProduct && (
+        <Dialog open={!!quickViewProduct} onOpenChange={(open) => !open && setQuickViewProduct(null)}>
+          <DialogContent className="sm:max-w-3xl p-0 overflow-hidden bg-white">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
           {/* Product Image preview */}
           <div className="relative bg-gray-50 p-6 flex items-center justify-center min-h-[300px]">
@@ -208,5 +221,19 @@ export const QuickViewModal: React.FC = () => {
         </div>
       </DialogContent>
     </Dialog>
+    )}
+
+    {buyNowData && (
+      <BuyNowModal
+        isOpen={!!buyNowData}
+        onClose={() => setBuyNowData(null)}
+        variantId={buyNowData.variantId}
+        productTitle={buyNowData.productTitle}
+        productImage={buyNowData.productImage}
+        initialQuantity={buyNowData.initialQuantity}
+        initialPrice={buyNowData.initialPrice}
+      />
+    )}
+  </>
   );
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Star, ShoppingCart, ShoppingBag, Eye, Plus, Minus } from "lucide-react";
@@ -9,6 +9,7 @@ import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/context/CartContext";
+import { BuyNowModal } from "@/components/common/BuyNowModal";
 
 interface ProductCardProps {
   product: Product;
@@ -17,16 +18,14 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "" }) => {
   const { cart, addToCart, updateQuantity, removeFromCart, setIsCartOpen, setQuickViewProduct } = useCart();
+  const [isBuyNowOpen, setIsBuyNowOpen] = useState(false);
 
   const cartItem = cart.find((item) => String(item.product.id) === String(product.id));
   const quantityInCart = cartItem ? cartItem.quantity : 0;
 
   const handleBuyNow = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (quantityInCart === 0) {
-      addToCart(product, 1);
-    }
-    setIsCartOpen(true);
+    setIsBuyNowOpen(true);
   };
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -177,6 +176,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
           )}
         </div>
       </div>
+      {/* Buy Now Modal */}
+      <BuyNowModal
+        isOpen={isBuyNowOpen}
+        onClose={() => setIsBuyNowOpen(false)}
+        variantId={product.variantId ? Number(product.variantId) : (typeof product.id === "number" ? product.id : 0)}
+        productTitle={product.title}
+        productImage={product.image}
+        initialQuantity={1}
+        initialPrice={product.price}
+      />
     </div>
   );
 };
