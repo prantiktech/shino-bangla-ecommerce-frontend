@@ -98,18 +98,23 @@ export const cartService = {
   /**
    * Apply promotional coupon matching PUT /cart/coupon
    */
-  async applyCoupon(code: string): Promise<any> {
-    const res = await apiClient.put<ApiResponse<any>>(API_ENDPOINTS.CART_COUPON, {
-      coupon_code: code
-    });
+  async applyCoupon(code: string, locationId?: number): Promise<any> {
+    const res = await apiClient.put<ApiResponse<any>>(
+      API_ENDPOINTS.CART_COUPON,
+      { code },
+      { params: locationId ? { location_id: locationId } : undefined }
+    );
     return res?.data || res;
   },
 
   /**
    * Remove coupon matching DELETE /cart/coupon
    */
-  async removeCoupon(): Promise<any> {
-    const res = await apiClient.delete<ApiResponse<any>>(API_ENDPOINTS.CART_COUPON);
+  async removeCoupon(locationId?: number): Promise<any> {
+    const res = await apiClient.delete<ApiResponse<any>>(
+      API_ENDPOINTS.CART_COUPON,
+      { params: locationId ? { location_id: locationId } : undefined }
+    );
     return res?.data || res;
   },
 

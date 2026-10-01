@@ -42,7 +42,7 @@ export const ApiEndpoints = {
   CHANGE_PASSWORD: '/auth/password',
   AUTH_GOOGLE: '/auth/google',
   AUTH_TOKENS: '/auth/tokens',
-  REVOKE_TOKEN: '/auth/tokens/:id',
+  REVOKE_TOKEN: '/auth/tokens/:token',
   CHANGE_CONTACT: '/me/contact',
   VERIFY_CONTACT: '/me/contact/verify',
 

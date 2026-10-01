@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { useAuth } from "@/context/AuthContext";
-import { formatPoisha, takaToPoisha } from "@/lib/utils/money";
+import { formatPoisha, takaToPoisha, poishaToTaka } from "@/lib/utils/money";
 import {
   buyNowQuoteAction,
   buyNowAction,
@@ -35,35 +35,48 @@ import {
   BuyNowPayload,
 } from "@/app/(user)/actions/checkout";
 import { getAddressesAction, Address } from "@/app/(user)/actions/addresses";
+import { getProductBySlugAction, ApiProductVariant } from "@/app/(user)/actions/products";
 
 export interface BuyNowModalProps {
   isOpen: boolean;
   onClose: () => void;
-  variantId: number;
+  variantId?: number;
+  productSlug?: string;
   productTitle: string;
   productImage?: string | null;
   initialQuantity?: number;
   initialPrice?: number;
   variantLabel?: string | null;
   sku?: string | null;
+  variants?: ApiProductVariant[];
+  optionName?: string | null;
 }
 
 export function BuyNowModal({
   isOpen,
   onClose,
   variantId,
+  productSlug,
   productTitle,
   productImage,
   initialQuantity = 1,
   initialPrice = 0,
   variantLabel,
   sku,
+  variants,
+  optionName,
 }: BuyNowModalProps) {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
 
   // State
   const [quantity, setQuantity] = useState(initialQuantity);
+  const [activeVariantId, setActiveVariantId] = useState<number>(variantId || 0);
+  const [resolvedVariants, setResolvedVariants] = useState<ApiProductVariant[]>(variants || []);
+  const [resolvedOptionName, setResolvedOptionName] = useState<string | null>(optionName || null);
+  const [selectedVariant, setSelectedVariant] = useState<ApiProductVariant | null>(null);
+  const [variantLoading, setVariantLoading] = useState(false);
+
   const [locations, setLocations] = useState<Array<{ id: number; name: string }>>([]);
   const [districtId, setDistrictId] = useState<number>(21); // Default to Dhaka (21)
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
@@ -100,14 +113,71 @@ export function BuyNowModal({
   const [orderError, setOrderError] = useState<string | null>(null);
   const [placedOrder, setPlacedOrder] = useState<OrderPlacedResponse | null>(null);
 
-  // Reset quantity when modal opens with new initialQuantity
+  // Initialize/Resolve variant and quantity when modal opens
   useEffect(() => {
-    if (isOpen) {
-      setQuantity(initialQuantity || 1);
-      setPlacedOrder(null);
-      setOrderError(null);
+    if (!isOpen) return;
+
+    let isMounted = true;
+    setQuantity(initialQuantity || 1);
+    setPlacedOrder(null);
+    setOrderError(null);
+
+    // If variants were provided via props directly
+    if (variants && variants.length > 0) {
+      setResolvedVariants(variants);
+      if (optionName) setResolvedOptionName(optionName);
+
+      const targetId = variantId && variantId > 0
+        ? variantId
+        : (variants.find((v) => v.is_default) || variants[0])?.id || 0;
+
+      setActiveVariantId(targetId);
+      const chosen = variants.find((v) => v.id === targetId) || variants[0] || null;
+      setSelectedVariant(chosen);
+      return;
     }
-  }, [isOpen, initialQuantity]);
+
+    // If a valid variantId was provided directly
+    if (variantId && variantId > 0) {
+      setActiveVariantId(variantId);
+    }
+
+    // If productSlug is present, fetch the full product details to get variants
+    if (productSlug) {
+      setVariantLoading(true);
+      getProductBySlugAction(productSlug)
+        .then((res) => {
+          if (!isMounted) return;
+          if (res.success && res.data) {
+            const apiVariants = res.data.variants || [];
+            setResolvedVariants(apiVariants);
+            if (res.data.option?.name) {
+              setResolvedOptionName(res.data.option.name);
+            }
+
+            const currentValid = apiVariants.some((v) => v.id === variantId);
+            const chosen = currentValid
+              ? apiVariants.find((v) => v.id === variantId)
+              : (apiVariants.find((v) => v.is_default) || apiVariants[0]);
+
+            if (chosen) {
+              setActiveVariantId(chosen.id);
+              setSelectedVariant(chosen);
+            }
+          }
+        })
+        .catch(() => {
+          // ignore
+        })
+        .finally(() => {
+          if (isMounted) setVariantLoading(false);
+        });
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, variantId, productSlug, variants, optionName, initialQuantity]);
 
   // Load locations and user addresses
   useEffect(() => {
@@ -174,9 +244,9 @@ export function BuyNowModal({
     }
   };
 
-  // Fetch Quote when variantId, quantity, districtId, or appliedCoupon changes
+  // Fetch Quote when activeVariantId, quantity, districtId, or appliedCoupon changes
   useEffect(() => {
-    if (!isOpen || !variantId) return;
+    if (!isOpen || !activeVariantId || activeVariantId <= 0) return;
 
     let isCancelled = false;
 
@@ -186,7 +256,7 @@ export function BuyNowModal({
 
       try {
         const res = await buyNowQuoteAction({
-          variant_id: variantId,
+          variant_id: activeVariantId,
           quantity: quantity,
           district_id: districtId,
           coupon_code: appliedCoupon || undefined,
@@ -223,10 +293,15 @@ export function BuyNowModal({
     return () => {
       isCancelled = true;
     };
-  }, [isOpen, variantId, quantity, districtId, appliedCoupon]);
+  }, [isOpen, activeVariantId, quantity, districtId, appliedCoupon]);
 
   // Calculations in poisha
-  const rawSubtotal = initialPrice ? takaToPoisha(initialPrice * quantity) : 0;
+  const currentVariantPricePoisha = selectedVariant?.price
+    ? selectedVariant.price
+    : initialPrice
+    ? takaToPoisha(initialPrice)
+    : 0;
+  const rawSubtotal = currentVariantPricePoisha ? currentVariantPricePoisha * quantity : 0;
   const subtotalPoisha = quote?.totals?.subtotal ?? rawSubtotal;
   const discountPoisha = quote?.totals?.discount ?? 0;
   const vatPoisha = quote?.totals?.vat ?? 0;
@@ -260,11 +335,17 @@ export function BuyNowModal({
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setOrderError(null);
+
+    if (!activeVariantId || activeVariantId <= 0) {
+      setOrderError("Please select a product variant before confirming your order.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const payload: BuyNowPayload = {
-        variant_id: Number(variantId),
+        variant_id: Number(activeVariantId),
         quantity: Number(quantity),
         payment_method: paymentMethod,
         note: note.trim() || undefined,
@@ -455,57 +536,111 @@ export function BuyNowModal({
             )}
 
             {/* Product Snapshot & Quantity */}
-            <div className="p-4 bg-slate-50/70 border border-slate-200/80 rounded-2xl flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 relative overflow-hidden shrink-0">
-                  <Image
-                    src={productImage || "/placeholder.svg"}
-                    alt={productTitle}
-                    fill
-                    className="object-cover"
-                  />
+            <div className="space-y-3">
+              <div className="p-4 bg-slate-50/70 border border-slate-200/80 rounded-2xl flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 relative overflow-hidden shrink-0">
+                    <Image
+                      src={selectedVariant?.image || productImage || "/placeholder.svg"}
+                      alt={productTitle}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-bold text-slate-900 truncate">
+                      {productTitle}
+                    </h4>
+                    {(selectedVariant?.label || selectedVariant?.value || variantLabel) && (
+                      <span className="text-[10px] text-slate-500 font-medium block">
+                        Variant: {selectedVariant?.label || selectedVariant?.value || variantLabel}
+                      </span>
+                    )}
+                    {(selectedVariant?.sku || sku) && (
+                      <span className="text-[10px] text-slate-400 font-mono block">
+                        SKU: {selectedVariant?.sku || sku}
+                      </span>
+                    )}
+                    <span className="text-xs font-black text-[#FF5B00] block mt-0.5">
+                      {formatPoisha(
+                        selectedVariant?.price
+                          ? selectedVariant.price
+                          : quote?.items?.[0]?.unit_price
+                          ? quote.items[0].unit_price
+                          : initialPrice
+                          ? takaToPoisha(initialPrice)
+                          : 0
+                      )}
+                    </span>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-bold text-slate-900 truncate">
-                    {productTitle}
-                  </h4>
-                  {variantLabel && (
-                    <span className="text-[10px] text-slate-500 font-medium block">
-                      Variant: {variantLabel}
-                    </span>
-                  )}
-                  {sku && (
-                    <span className="text-[10px] text-slate-400 font-mono block">
-                      SKU: {sku}
-                    </span>
-                  )}
-                  <span className="text-xs font-black text-[#FF5B00] block mt-0.5">
-                    {formatPoisha(initialPrice ? takaToPoisha(initialPrice) : (quote?.items[0]?.unit_price || 0))}
+
+                {/* Quantity Counter */}
+                <div className="flex items-center border border-slate-200 bg-white rounded-xl overflow-hidden shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    disabled={quantity <= 1}
+                    className="w-7 h-7 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </button>
+                  <span className="w-8 text-center text-xs font-bold text-slate-900">
+                    {quantity}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setQuantity((q) => q + 1)}
+                    className="w-7 h-7 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
                 </div>
               </div>
 
-              {/* Quantity Counter */}
-              <div className="flex items-center border border-slate-200 bg-white rounded-xl overflow-hidden shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  disabled={quantity <= 1}
-                  className="w-7 h-7 flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Minus className="w-3 h-3" />
-                </button>
-                <span className="w-8 text-center text-xs font-bold text-slate-900">
-                  {quantity}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="w-7 h-7 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                </button>
-              </div>
+              {/* Variant Selector Pills if product has multiple variants */}
+              {resolvedVariants.length > 1 && (
+                <div className="p-3 bg-orange-50/50 border border-orange-200/70 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5 text-[#FF5B00]" />
+                      <span>Choose {resolvedOptionName || "Variant"}:</span>
+                    </span>
+                    {selectedVariant && (
+                      <span className="text-[11px] font-semibold text-[#FF5B00]">
+                        {selectedVariant.label || selectedVariant.value}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {resolvedVariants.map((v) => {
+                      const isSelected = activeVariantId === v.id;
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => {
+                            setActiveVariantId(v.id);
+                            setSelectedVariant(v);
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer flex items-center gap-1.5 ${
+                            isSelected
+                              ? "bg-[#FF5B00] text-white border-[#FF5B00] shadow-xs scale-[1.02]"
+                              : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                          } ${!v.in_stock ? "opacity-50 line-through" : ""}`}
+                        >
+                          <span>{v.label || v.value || `Variant #${v.id}`}</span>
+                          {v.price && (
+                            <span className={`text-[10px] ${isSelected ? "text-orange-100" : "text-slate-500"}`}>
+                              ৳{poishaToTaka(v.price).toFixed(0)}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Address Selection or Entry */}
@@ -779,13 +914,23 @@ export function BuyNowModal({
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting || quoteLoading}
-                className="flex-1 py-3 rounded-xl bg-[#FF5B00] text-white text-xs font-bold hover:bg-[#e05000] disabled:opacity-50 transition-colors shadow-md flex items-center justify-center gap-2"
+                disabled={isSubmitting || quoteLoading || variantLoading || !activeVariantId || activeVariantId <= 0}
+                className="flex-1 py-3 rounded-xl bg-[#FF5B00] text-white text-xs font-bold hover:bg-[#e05000] disabled:opacity-50 transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
                     <span>Placing Order...</span>
+                  </>
+                ) : variantLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Loading options...</span>
+                  </>
+                ) : quoteLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Calculating delivery...</span>
                   </>
                 ) : (
                   <>

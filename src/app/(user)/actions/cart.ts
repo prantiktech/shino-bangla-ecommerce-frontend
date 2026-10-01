@@ -6,99 +6,150 @@ import { API_BASE_URL, API_ENDPOINTS } from "@/lib/api/config";
 const CART_COOKIE_NAME = "cart_token";
 const CUSTOMER_COOKIE_NAME = "customer_token";
 
-function getAuthHeaders(token: string): Record<string, string> {
+async function getCartRequestHeaders(): Promise<{
+  headers: Record<string, string>;
+  isGuest: boolean;
+  cartToken?: string;
+  authToken?: string;
+}> {
+  const cookieStore = await cookies();
+  const authToken =
+    cookieStore.get(CUSTOMER_COOKIE_NAME)?.value ||
+    cookieStore.get("token")?.value;
+  const cartToken = cookieStore.get(CART_COOKIE_NAME)?.value;
+
+  if (authToken) {
+    return {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      isGuest: false,
+      authToken,
+      cartToken,
+    };
+  }
+
   return {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    Authorization: `Bearer ${token}`,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...(cartToken ? { "X-Cart-Token": cartToken } : {}),
+    },
+    isGuest: true,
+    cartToken,
   };
 }
 
-function getGuestHeaders(cartToken?: string): Record<string, string> {
-  return {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-    ...(cartToken ? { "X-Cart-Token": cartToken } : {}),
-  };
+function buildUrl(path: string, locationId?: number): string {
+  const baseUrl = `${API_BASE_URL}${path}`;
+  if (locationId) {
+    return `${baseUrl}?location_id=${locationId}`;
+  }
+  return baseUrl;
+}
+
+/**
+ * Fetch the user's or guest's current cart.
+ * GET /api/v1/cart
+ */
+export async function getCartAction(
+  locationId?: number
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const { headers, isGuest } = await getCartRequestHeaders();
+    const url = buildUrl(API_ENDPOINTS.CART, locationId);
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers,
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { success: false, error: data.message || "Failed to fetch cart" };
+    }
+
+    // Save token if guest received a token
+    const token = data?.data?.token || data?.token;
+    if (isGuest && token) {
+      const cookieStore = await cookies();
+      cookieStore.set(CART_COOKIE_NAME, token, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30,
+      });
+    }
+
+    return { success: true, data: data?.data || data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Network error while fetching cart" };
+  }
 }
 
 /**
  * Add an item to the API cart.
+ * POST /api/v1/cart/items
  * - Authenticated: uses Bearer token
  * - Guest: uses X-Cart-Token; saves returned token in cookie
  */
 export async function apiAddCartItemAction(
   variantId: number,
-  quantity: number
-): Promise<{ success: boolean; error?: string }> {
-  const cookieStore = await cookies();
-  const authToken =
-    cookieStore.get(CUSTOMER_COOKIE_NAME)?.value ||
-    cookieStore.get("token")?.value;
-
+  quantity: number = 1,
+  locationId?: number
+): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
+    const { headers, isGuest, cartToken } = await getCartRequestHeaders();
+    const url = buildUrl(API_ENDPOINTS.CART_ITEMS, locationId);
     const body = JSON.stringify({ variant_id: variantId, quantity });
 
-    if (authToken) {
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CART_ITEMS}`, {
-        method: "POST",
-        headers: getAuthHeaders(authToken),
-        body,
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        return { success: false, error: data.message || "Failed to add item to cart" };
-      }
-      return { success: true };
-    } else {
-      // Guest flow
-      const cartToken = cookieStore.get(CART_COOKIE_NAME)?.value;
-      const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CART_ITEMS}`, {
-        method: "POST",
-        headers: getGuestHeaders(cartToken),
-        body,
-        cache: "no-store",
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        return { success: false, error: data.message || "Failed to add item to cart" };
-      }
-      // Save guest cart token returned on first call
-      const newToken = data?.data?.token || data?.token;
-      if (newToken && !cartToken) {
-        cookieStore.set(CART_COOKIE_NAME, newToken, {
-          httpOnly: false,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/",
-          maxAge: 60 * 60 * 24 * 30,
-        });
-      }
-      return { success: true };
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body,
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { success: false, error: data.message || "Failed to add item to cart" };
     }
-  } catch {
-    return { success: false, error: "Network error while adding to cart" };
+
+    // Save guest cart token returned on first call
+    const newToken = data?.data?.token || data?.token;
+    if (isGuest && newToken && !cartToken) {
+      const cookieStore = await cookies();
+      cookieStore.set(CART_COOKIE_NAME, newToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30,
+      });
+    }
+
+    return { success: true, data: data?.data || data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Network error while adding to cart" };
   }
 }
 
 /**
  * Update the quantity of an item in the API cart by its cart-item ID.
+ * PATCH /api/v1/cart/items/{item}
  */
 export async function apiUpdateCartItemAction(
   cartItemId: number,
-  quantity: number
-): Promise<{ success: boolean; error?: string }> {
-  const cookieStore = await cookies();
-  const authToken =
-    cookieStore.get(CUSTOMER_COOKIE_NAME)?.value ||
-    cookieStore.get("token")?.value;
-
+  quantity: number,
+  locationId?: number
+): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    const url = `${API_BASE_URL}${API_ENDPOINTS.CART_ITEM_BY_ID(cartItemId)}`;
-    const headers = authToken
-      ? getAuthHeaders(authToken)
-      : getGuestHeaders(cookieStore.get(CART_COOKIE_NAME)?.value);
+    const { headers } = await getCartRequestHeaders();
+    const url = buildUrl(API_ENDPOINTS.CART_ITEM_BY_ID(cartItemId), locationId);
 
     const res = await fetch(url, {
       method: "PATCH",
@@ -107,32 +158,28 @@ export async function apiUpdateCartItemAction(
       cache: "no-store",
     });
 
+    const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
       return { success: false, error: data.message || "Failed to update cart item" };
     }
-    return { success: true };
-  } catch {
-    return { success: false, error: "Network error while updating cart" };
+
+    return { success: true, data: data?.data || data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Network error while updating cart" };
   }
 }
 
 /**
  * Remove an item from the API cart by its cart-item ID.
+ * DELETE /api/v1/cart/items/{item}
  */
 export async function apiRemoveCartItemAction(
-  cartItemId: number
-): Promise<{ success: boolean; error?: string }> {
-  const cookieStore = await cookies();
-  const authToken =
-    cookieStore.get(CUSTOMER_COOKIE_NAME)?.value ||
-    cookieStore.get("token")?.value;
-
+  cartItemId: number,
+  locationId?: number
+): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    const url = `${API_BASE_URL}${API_ENDPOINTS.CART_ITEM_BY_ID(cartItemId)}`;
-    const headers = authToken
-      ? getAuthHeaders(authToken)
-      : getGuestHeaders(cookieStore.get(CART_COOKIE_NAME)?.value);
+    const { headers } = await getCartRequestHeaders();
+    const url = buildUrl(API_ENDPOINTS.CART_ITEM_BY_ID(cartItemId), locationId);
 
     const res = await fetch(url, {
       method: "DELETE",
@@ -140,12 +187,182 @@ export async function apiRemoveCartItemAction(
       cache: "no-store",
     });
 
-    if (!res.ok && res.status !== 204) {
-      const data = await res.json().catch(() => ({}));
+    if (res.status === 204) {
+      return { success: true };
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
       return { success: false, error: data.message || "Failed to remove cart item" };
     }
-    return { success: true };
-  } catch {
-    return { success: false, error: "Network error while removing cart item" };
+
+    return { success: true, data: data?.data || data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Network error while removing cart item" };
+  }
+}
+
+/**
+ * Move an item to save for later.
+ * POST /api/v1/cart/items/{item}/save-for-later
+ */
+export async function saveForLaterAction(
+  cartItemId: number,
+  locationId?: number
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const { headers } = await getCartRequestHeaders();
+    const url = buildUrl(API_ENDPOINTS.CART_ITEM_SAVE_FOR_LATER(cartItemId), locationId);
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { success: false, error: data.message || "Failed to save item for later" };
+    }
+
+    return { success: true, data: data?.data || data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Network error while saving for later" };
+  }
+}
+
+/**
+ * Move a saved-for-later item back to the active cart.
+ * POST /api/v1/cart/items/{item}/move-to-cart
+ */
+export async function moveToCartAction(
+  cartItemId: number,
+  locationId?: number
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const { headers } = await getCartRequestHeaders();
+    const url = buildUrl(API_ENDPOINTS.CART_ITEM_MOVE_TO_CART(cartItemId), locationId);
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { success: false, error: data.message || "Failed to move item to cart" };
+    }
+
+    return { success: true, data: data?.data || data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Network error while moving to cart" };
+  }
+}
+
+/**
+ * Apply a coupon code to the cart.
+ * PUT /api/v1/cart/coupon
+ * Body: { code: string }
+ */
+export async function applyCouponAction(
+  code: string,
+  locationId?: number
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const { headers } = await getCartRequestHeaders();
+    const url = buildUrl(API_ENDPOINTS.CART_COUPON, locationId);
+
+    const res = await fetch(url, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ code: code.trim() }),
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { success: false, error: data.message || "Invalid coupon code" };
+    }
+
+    return { success: true, data: data?.data || data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Network error while applying coupon" };
+  }
+}
+
+/**
+ * Remove an applied coupon from the cart.
+ * DELETE /api/v1/cart/coupon
+ */
+export async function removeCouponAction(
+  locationId?: number
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const { headers } = await getCartRequestHeaders();
+    const url = buildUrl(API_ENDPOINTS.CART_COUPON, locationId);
+
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers,
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { success: false, error: data.message || "Failed to remove coupon" };
+    }
+
+    return { success: true, data: data?.data || data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Network error while removing coupon" };
+  }
+}
+
+/**
+ * Claim guest cart when user logs in.
+ * POST /api/v1/cart/claim
+ * Requires Authorization Bearer header + X-Cart-Token header
+ */
+export async function claimCartAction(
+  guestTokenParam?: string
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const cookieStore = await cookies();
+    const authToken =
+      cookieStore.get(CUSTOMER_COOKIE_NAME)?.value ||
+      cookieStore.get("token")?.value;
+
+    if (!authToken) {
+      return { success: false, error: "Authentication required to claim cart" };
+    }
+
+    const guestToken = guestTokenParam || cookieStore.get(CART_COOKIE_NAME)?.value;
+    if (!guestToken) {
+      return { success: true, data: null }; // Nothing to claim
+    }
+
+    const res = await fetch(`${API_BASE_URL}${API_ENDPOINTS.CART_CLAIM}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${authToken}`,
+        "X-Cart-Token": guestToken,
+      },
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { success: false, error: data.message || "Failed to claim cart" };
+    }
+
+    // Clear guest cart cookie upon successful claim
+    cookieStore.delete(CART_COOKIE_NAME);
+
+    return { success: true, data: data?.data || data };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Network error while claiming cart" };
   }
 }

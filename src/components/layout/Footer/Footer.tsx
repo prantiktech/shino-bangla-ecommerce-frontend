@@ -13,6 +13,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { subscribeNewsletterAction } from "@/app/(user)/actions/content";
 
 const FOOTER_SECTIONS = [
   {
@@ -49,16 +50,29 @@ const FOOTER_SECTIONS = [
 
 export const Footer: React.FC = () => {
   const [email, setEmail] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
   const { showToast } = useCart();
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes("@")) {
       showToast("Please enter a valid email address.");
       return;
     }
-    showToast("Thank you for subscribing to our newsletter!");
-    setEmail("");
+    setSubscribing(true);
+    try {
+      const res = await subscribeNewsletterAction(email, "footer");
+      if (res.success) {
+        showToast(res.data?.message || "Thank you for subscribing to our newsletter!");
+        setEmail("");
+      } else {
+        showToast(res.error?.message || "Failed to subscribe. Please try again.");
+      }
+    } catch {
+      showToast("Failed to subscribe. Please try again.");
+    } finally {
+      setSubscribing(false);
+    }
   };
 
   return (
@@ -183,14 +197,16 @@ export const Footer: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={subscribing}
               placeholder="Enter your email..."
-              className="px-3.5 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] flex-1"
+              className="px-3.5 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-[#FF5B00] flex-1 disabled:opacity-50"
             />
             <button
               type="submit"
-              className="px-4 py-2 bg-[#FF5B00] hover:bg-[#E64E00] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer"
+              disabled={subscribing}
+              className="px-4 py-2 bg-[#FF5B00] hover:bg-[#E64E00] text-white text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
             >
-              <span>Subscribe</span>
+              <span>{subscribing ? "Subscribing..." : "Subscribe"}</span>
               <Send className="w-3.5 h-3.5" />
             </button>
           </form>

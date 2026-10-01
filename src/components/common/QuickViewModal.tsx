@@ -27,7 +27,8 @@ export const QuickViewModal: React.FC = () => {
   } = useCart();
   const [qty, setQty] = useState(1);
   const [buyNowData, setBuyNowData] = useState<{
-    variantId: number;
+    variantId?: number;
+    productSlug?: string;
     productTitle: string;
     productImage?: string;
     initialQuantity: number;
@@ -42,7 +43,8 @@ export const QuickViewModal: React.FC = () => {
   const handleBuyNow = () => {
     if (!quickViewProduct) return;
     setBuyNowData({
-      variantId: quickViewProduct.variantId ? Number(quickViewProduct.variantId) : Number(quickViewProduct.id),
+      variantId: quickViewProduct.variantId ? Number(quickViewProduct.variantId) : undefined,
+      productSlug: quickViewProduct.slug,
       productTitle: quickViewProduct.title,
       productImage: quickViewProduct.image,
       initialQuantity: qty,
@@ -228,6 +230,7 @@ export const QuickViewModal: React.FC = () => {
         isOpen={!!buyNowData}
         onClose={() => setBuyNowData(null)}
         variantId={buyNowData.variantId}
+        productSlug={buyNowData.productSlug}
         productTitle={buyNowData.productTitle}
         productImage={buyNowData.productImage}
         initialQuantity={buyNowData.initialQuantity}

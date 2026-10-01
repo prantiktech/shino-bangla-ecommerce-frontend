@@ -215,15 +215,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className = "
         </div>
       </div>
       {/* Buy Now Modal */}
-      <BuyNowModal
-        isOpen={isBuyNowOpen}
-        onClose={() => setIsBuyNowOpen(false)}
-        variantId={product.variantId ? Number(product.variantId) : (typeof product.id === "number" ? product.id : 0)}
-        productTitle={product.title}
-        productImage={product.image}
-        initialQuantity={1}
-        initialPrice={product.price}
-      />
+      {isBuyNowOpen && (
+        <BuyNowModal
+          isOpen={isBuyNowOpen}
+          onClose={() => setIsBuyNowOpen(false)}
+          variantId={product.variantId ? Number(product.variantId) : undefined}
+          productSlug={product.slug}
+          productTitle={product.title}
+          productImage={product.image}
+          initialQuantity={1}
+          initialPrice={product.price}
+        />
+      )}
     </div>
   );
 };

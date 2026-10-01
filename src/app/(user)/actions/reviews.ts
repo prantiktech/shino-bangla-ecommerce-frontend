@@ -1,7 +1,9 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { serverGet, serverPost, serverPut, serverDelete } from "@/lib/api-client/server";
 import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
+import { API_BASE_URL } from "@/lib/api/config";
 
 export interface ReviewableItem {
   order_number: string;
@@ -220,4 +222,85 @@ export async function getProductReviewsAction(
     return handleActionError(error);
   }
 }
+
+export interface ReviewPhotoUploadResult {
+  id: number;
+  url: string;
+  sizes: {
+    thumb: string;
+    card: string;
+    full: string;
+  };
+  width?: number;
+  height?: number;
+  alt?: string | null;
+}
+
+/**
+ * Upload a photo to attach to a review.
+ * Endpoint: POST /api/v1/me/reviews/photos
+ * Requires: Bearer token, multipart/form-data
+ */
+export async function uploadReviewPhotoAction(
+  formData: FormData
+): Promise<ActionResponse<ReviewPhotoUploadResult>> {
+  try {
+    const cookieStore = await cookies();
+    const token =
+      cookieStore.get("customer_token")?.value ||
+      cookieStore.get("token")?.value;
+
+    if (!token) {
+      return {
+        success: false,
+        error: {
+          message: "You must be signed in to upload review photos.",
+          code: "UNAUTHENTICATED",
+        },
+      };
+    }
+
+    const file = formData.get("file") || formData.get("photo");
+    if (!file) {
+      return {
+        success: false,
+        error: {
+          message: "Please choose an image file to upload.",
+          code: "MISSING_FILE",
+        },
+      };
+    }
+
+    const outgoingFormData = new FormData();
+    outgoingFormData.append("file", file);
+
+    const res = await fetch(`${API_BASE_URL}/me/reviews/photos`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+      body: outgoingFormData,
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        success: false,
+        error: {
+          message: data.message || "Failed to upload photo",
+          code: data.code || "UPLOAD_FAILED",
+        },
+      };
+    }
+
+    return {
+      success: true,
+      data: data.data || data,
+    };
+  } catch (error) {
+    return handleActionError(error);
+  }
+}
+
 

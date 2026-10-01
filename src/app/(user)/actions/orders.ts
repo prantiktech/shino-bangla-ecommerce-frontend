@@ -227,3 +227,58 @@ export async function checkoutAction(payload: any): Promise<ActionResponse<Order
     return handleActionError(error);
   }
 }
+
+/**
+ * Start or retry an online payment for an order.
+ * POST /api/v1/orders/{number}/pay
+ * Returns { gateway_url: string }
+ */
+export async function payOrderAction(
+  orderNumber: string,
+  phone?: string
+): Promise<ActionResponse<{ gateway_url: string }>> {
+  try {
+    const payload = phone?.trim() ? { phone: phone.trim() } : {};
+    const res = await serverPost<any>(
+      "ORDER_PAY",
+      payload,
+      {
+        pathParams: {
+          number: orderNumber.trim(),
+          orderNumber: orderNumber.trim(),
+        },
+      }
+    );
+
+    if (res.success && res.data) {
+      return { success: true, data: res.data.data || res.data };
+    }
+
+    return {
+      success: false,
+      error: {
+        message:
+          !res.success && res.error?.message
+            ? res.error.message
+            : "Payment initiation failed or order is no longer payable online.",
+        code: res.success ? "PAYMENT_FAILED" : res.error?.code || "PAYMENT_FAILED",
+      },
+    };
+  } catch (error) {
+    return handleActionError(error);
+  }
+}
+
+/**
+ * Helper to get the authenticated download URL for an order invoice.
+ * GET /api/orders/[orderNumber]/invoice
+ */
+export async function getOrderInvoiceUrlAction(
+  orderNumber: string
+): Promise<{ success: boolean; url: string }> {
+  return {
+    success: true,
+    url: `/api/orders/${encodeURIComponent(orderNumber)}/invoice`,
+  };
+}
+

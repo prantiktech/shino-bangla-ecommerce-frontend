@@ -100,6 +100,31 @@ export async function getAddressesAction(): Promise<ActionResponse<Address[]>> {
   }
 }
 
+/**
+ * Fetch a single address by id.
+ * GET /api/v1/me/addresses/{id}
+ */
+export async function getAddressByIdAction(id: number | string): Promise<ActionResponse<Address>> {
+  try {
+    const res = await serverGet<any>("GET_ADDRESS", {
+      pathParams: { id },
+    });
+    if (res.success && res.data) {
+      const item = res.data.data || res.data;
+      return { success: true, data: normalizeAddress(item) };
+    }
+    return {
+      success: false,
+      error: {
+        message: !res.success ? (res.error?.message || "Address not found") : "Address not found",
+        code: "ADDRESS_NOT_FOUND",
+      },
+    };
+  } catch (error) {
+    return handleActionError(error);
+  }
+}
+
 export async function createAddressAction(payload: AddressInput): Promise<ActionResponse<Address>> {
   try {
     const backendPayload: any = {
@@ -118,6 +143,9 @@ export async function createAddressAction(payload: AddressInput): Promise<Action
       backendPayload.is_default_shipping = Boolean(payload.is_default_shipping);
     } else if (payload.is_default !== undefined) {
       backendPayload.is_default_shipping = Boolean(payload.is_default);
+    }
+    if (payload.is_default_billing !== undefined) {
+      backendPayload.is_default_billing = Boolean(payload.is_default_billing);
     }
 
     const res = await serverPost<any>("CREATE_ADDRESS", backendPayload);
@@ -158,6 +186,9 @@ export async function updateAddressAction(
       backendPayload.is_default_shipping = Boolean(payload.is_default_shipping);
     } else if (payload.is_default !== undefined) {
       backendPayload.is_default_shipping = Boolean(payload.is_default);
+    }
+    if (payload.is_default_billing !== undefined) {
+      backendPayload.is_default_billing = Boolean(payload.is_default_billing);
     }
 
     const res = await serverPut<any>("UPDATE_ADDRESS", backendPayload, {

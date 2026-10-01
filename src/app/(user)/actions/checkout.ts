@@ -180,6 +180,48 @@ export async function getCheckoutLocationsAction(): Promise<ActionResponse<any[]
   }
 }
 
+export interface ShippingRate {
+  from: number;
+  to: number | null;
+  charge: number;
+  per_extra_kg: number | null;
+}
+
+export interface ShippingZone {
+  id: number;
+  name: string;
+  type: string;
+  rate_basis: string;
+  free_above?: number | null;
+  delivery_days_min: number;
+  delivery_days_max: number;
+  districts: string[];
+  rates: ShippingRate[];
+}
+
+/**
+ * Fetch delivery zones, charges and estimated days.
+ * Endpoint: GET /api/v1/shipping/zones
+ */
+export async function getShippingZonesAction(): Promise<ActionResponse<ShippingZone[]>> {
+  try {
+    const res = await serverGet<any>("GET_SHIPPING_ZONES");
+    if (res.success && res.data) {
+      const zones = Array.isArray(res.data.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
+      return { success: true, data: zones };
+    }
+    return {
+      success: false,
+      error: {
+        message: !res.success ? (res.error?.message || "Failed to load shipping zones") : "Failed to load shipping zones",
+        code: "GET_SHIPPING_ZONES_FAILED",
+      },
+    };
+  } catch (error) {
+    return handleActionError(error);
+  }
+}
+
 /**
  * Fetch checkout quote (lines, discount, VAT, delivery fee, grand total, and payment methods on offer)
  * Endpoint: POST /api/v1/checkout/quote
@@ -320,9 +362,20 @@ export async function buyNowQuoteAction(
   params: BuyNowQuoteParams
 ): Promise<ActionResponse<CheckoutQuoteResponse>> {
   try {
+    const variantId = Number(params.variant_id);
+    if (!variantId || variantId <= 0 || isNaN(variantId)) {
+      return {
+        success: false,
+        error: {
+          message: "Please select a valid product variant.",
+          code: "INVALID_VARIANT_ID",
+        },
+      };
+    }
+
     const body: Record<string, any> = {
-      variant_id: Number(params.variant_id),
-      quantity: Number(params.quantity),
+      variant_id: variantId,
+      quantity: Math.max(1, Number(params.quantity) || 1),
     };
     if (params.district_id) body.district_id = Number(params.district_id);
     if (params.coupon_code) body.coupon_code = params.coupon_code.trim();
@@ -351,6 +404,17 @@ export async function buyNowAction(
   payload: BuyNowPayload
 ): Promise<ActionResponse<OrderPlacedResponse>> {
   try {
+    const variantId = Number(payload.variant_id);
+    if (!variantId || variantId <= 0 || isNaN(variantId)) {
+      return {
+        success: false,
+        error: {
+          message: "Please select a valid product variant before placing your order.",
+          code: "INVALID_VARIANT_ID",
+        },
+      };
+    }
+
     const idempotencyKey =
       typeof crypto !== "undefined" && crypto.randomUUID
         ? crypto.randomUUID()

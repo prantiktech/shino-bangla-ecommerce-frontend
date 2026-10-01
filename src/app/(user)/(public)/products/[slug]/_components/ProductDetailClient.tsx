@@ -701,17 +701,22 @@ export function ProductDetailClient({ product, similarProducts }: ProductDetailC
         )}
 
         {/* 5. Buy Now Instant Modal */}
-        <BuyNowModal
-          isOpen={isBuyNowOpen}
-          onClose={() => setIsBuyNowOpen(false)}
-          variantId={selectedVariant?.id || product.variants?.[0]?.id || 0}
-          productTitle={product.name}
-          productImage={activeImage || product.image || product.main_image}
-          initialQuantity={quantity}
-          initialPrice={currentPriceTaka}
-          variantLabel={selectedVariant?.label || selectedVariant?.value}
-          sku={selectedVariant?.sku}
-        />
+        {isBuyNowOpen && (
+          <BuyNowModal
+            isOpen={isBuyNowOpen}
+            onClose={() => setIsBuyNowOpen(false)}
+            variantId={selectedVariant?.id || product.variants?.[0]?.id}
+            productSlug={product.slug}
+            productTitle={product.name}
+            productImage={selectedVariant?.image || activeImage || product.image || product.main_image}
+            initialQuantity={quantity}
+            initialPrice={currentPriceTaka}
+            variantLabel={selectedVariant?.label || selectedVariant?.value}
+            sku={selectedVariant?.sku}
+            variants={product.variants}
+            optionName={product.option?.name}
+          />
+        )}
       </div>
     </div>
   );
