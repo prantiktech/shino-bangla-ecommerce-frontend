@@ -35,6 +35,8 @@ import {
   getActivityLogsAction,
   getRecordActivityLogAction,
 } from "@/app/(admin)/actions/activity-log";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 interface ActivityLogManagementProps {
   initialData: ActivityLogListResponse;
@@ -493,11 +495,10 @@ export function ActivityLogManagement({
             <label className="block text-[11px] font-bold text-slate-600 mb-1">
               From Date
             </label>
-            <input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-[#FF5B00]"
+            <DatePicker
+              date={fromDate ? new Date(fromDate) : null}
+              onChange={(d) => setFromDate(d ? format(d, "yyyy-MM-dd") : "")}
+              placeholder="From date"
             />
           </div>
 
@@ -506,11 +507,10 @@ export function ActivityLogManagement({
             <label className="block text-[11px] font-bold text-slate-600 mb-1">
               To Date
             </label>
-            <input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="w-full px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-[#FF5B00]"
+            <DatePicker
+              date={toDate ? new Date(toDate) : null}
+              onChange={(d) => setToDate(d ? format(d, "yyyy-MM-dd") : "")}
+              placeholder="To date"
             />
           </div>
 

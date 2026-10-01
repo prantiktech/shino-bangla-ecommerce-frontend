@@ -34,6 +34,7 @@ import {
   getAdminBannersAction,
 } from "@/app/(admin)/actions/banners";
 import { uploadAdminMediaAction } from "@/app/(admin)/actions/media";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 interface BannersManagementProps {
   initialBanners: AdminBannerResource[];
@@ -134,8 +135,8 @@ export function BannersManagement({ initialBanners }: BannersManagementProps) {
     setLinkUrl(banner.link_url || "");
     setIsActive(banner.is_active ?? true);
     setPosition(banner.position || 0);
-    setStartsAt(toLocalInputValue(banner.starts_at));
-    setEndsAt(toLocalInputValue(banner.ends_at));
+    setStartsAt(banner.starts_at || "");
+    setEndsAt(banner.ends_at || "");
     setImageId(banner.image?.id || null);
     setImagePreviewUrl(banner.image?.url || null);
     setMobileImageId(banner.mobile_image?.id || null);
@@ -215,8 +216,8 @@ export function BannersManagement({ initialBanners }: BannersManagementProps) {
       link_url: linkUrl.trim(),
       is_active: isActive,
       position: Number(position),
-      starts_at: toIsoValue(startsAt),
-      ends_at: toIsoValue(endsAt),
+      starts_at: startsAt || null,
+      ends_at: endsAt || null,
       image_id: imageId,
       mobile_image_id: mobileImageId,
     });
@@ -257,8 +258,8 @@ export function BannersManagement({ initialBanners }: BannersManagementProps) {
       link_url: linkUrl.trim(),
       is_active: isActive,
       position: Number(position),
-      starts_at: toIsoValue(startsAt),
-      ends_at: toIsoValue(endsAt),
+      starts_at: startsAt || null,
+      ends_at: endsAt || null,
       image_id: imageId,
       mobile_image_id: mobileImageId,
     });
@@ -927,11 +928,10 @@ export function BannersManagement({ initialBanners }: BannersManagementProps) {
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
                     Starts At
                   </label>
-                  <input
-                    type="datetime-local"
+                  <DateTimePicker
                     value={startsAt}
-                    onChange={(e) => setStartsAt(e.target.value)}
-                    className="w-full px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-[#FF5B00]"
+                    onChange={(val) => setStartsAt(val || "")}
+                    placeholder="Pick start date & time"
                   />
                 </div>
 
@@ -939,11 +939,10 @@ export function BannersManagement({ initialBanners }: BannersManagementProps) {
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
                     Ends At
                   </label>
-                  <input
-                    type="datetime-local"
+                  <DateTimePicker
                     value={endsAt}
-                    onChange={(e) => setEndsAt(e.target.value)}
-                    className="w-full px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:border-[#FF5B00]"
+                    onChange={(val) => setEndsAt(val || "")}
+                    placeholder="Pick end date & time"
                   />
                 </div>
 

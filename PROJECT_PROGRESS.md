@@ -114,6 +114,12 @@ src/
   - Live Viewport Preview Modal: Real-time simulation of desktop (21:9 hero canvas) and mobile (9:16 portrait viewport) renderings before publishing.
   - Fast search by title/subtitle/type, with type filters (Slider, Hero, Promo) and status filters (All, Live Now, Active, Inactive).
 
+- **Audit & Activity Log Module** ([`src/app/(admin)/admin/activity-log/page.tsx`](file:///home/dtid/fronted/src/app/(admin)/admin/activity-log/page.tsx)):
+  - Global Activity Trail: `GET /api/v1/admin/activity-log` sorted newest first with rich filtering by channel (`log`), event type (`event`), actor (`causer_id`), entity target (`subject_type`, `subject_id`), date windows (`from`, `to`), and freeform search (`q`).
+  - Single Record Audit History: `GET /api/v1/admin/activity-log/{type}/{id}` displaying full chronological lifecycles for any individual record (orders, products, reviews, categories) with timeline stepper.
+  - Side-by-side JSON diff inspection modal showing previous (`old`) vs subsequent (`new`) states with request context (IP, user agent, request ID).
+  - Navigation integrated into Admin Sidebar under Operations (`/admin/activity-log`).
+
 - **Inventory & Stock Control Module** ([`src/app/(admin)/admin/inventory/page.tsx`](file:///home/dtid/fronted/src/app/(admin)/admin/inventory/page.tsx)):
   - KPI Dashboard Cards: Units on hand, total tracked variants, cost valuation, low stock alerts, and depleted out-of-stock items (`GET /api/v1/admin/inventory/summary`).
   - Variant Stock Listing: Lowest stock first sorting, SKU search, stock status filter pills, category filter, and threshold indicators (`GET /api/v1/admin/inventory`).

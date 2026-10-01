@@ -38,6 +38,8 @@ import {
 } from "@/types/inventory";
 import { adjustAdminInventoryAction } from "@/app/(admin)/actions/inventory";
 import { formatPoisha, poishaToTaka } from "@/lib/utils/money";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 interface CategoryOption {
   id: number;
@@ -844,26 +846,20 @@ export function InventoryManagement({
                 </select>
 
                 {/* Date Range: From */}
-                <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">From</span>
-                  <input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => setFromDate(e.target.value)}
-                    className="text-xs text-slate-700 font-medium focus:outline-none bg-transparent"
+                <div className="w-36">
+                  <DatePicker
+                    date={fromDate ? new Date(fromDate) : null}
+                    onChange={(d) => setFromDate(d ? format(d, "yyyy-MM-dd") : "")}
+                    placeholder="From Date"
                   />
                 </div>
 
                 {/* Date Range: To */}
-                <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">To</span>
-                  <input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => setToDate(e.target.value)}
-                    className="text-xs text-slate-700 font-medium focus:outline-none bg-transparent"
+                <div className="w-36">
+                  <DatePicker
+                    date={toDate ? new Date(toDate) : null}
+                    onChange={(d) => setToDate(d ? format(d, "yyyy-MM-dd") : "")}
+                    placeholder="To Date"
                   />
                 </div>
               </div>
