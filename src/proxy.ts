@@ -9,9 +9,11 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. User Protected Routes: /account, /checkout
+  // The payment return page must stay public: guests land there after paying online.
+  const isPublicCheckoutPage = pathname === '/checkout/payment';
   if (
-    pathname.startsWith('/account') ||
-    pathname.startsWith('/checkout')
+    (pathname.startsWith('/account') || pathname.startsWith('/checkout')) &&
+    !isPublicCheckoutPage
   ) {
     const hasUserToken =
       request.cookies.has('token') ||

@@ -18,7 +18,9 @@ declare global {
   }
 }
 
-const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+const RAW_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
+/** Only a real OAuth client ID enables the button; placeholders and blanks are ignored. */
+const CLIENT_ID = RAW_CLIENT_ID && /\.apps\.googleusercontent\.com$/.test(RAW_CLIENT_ID) ? RAW_CLIENT_ID : undefined;
 
 /**
  * "Continue with Google" via Google Identity Services.
