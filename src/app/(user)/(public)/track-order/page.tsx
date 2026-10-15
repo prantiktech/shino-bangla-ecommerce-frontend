@@ -1,23 +1,33 @@
 "use client";
 
 import React, { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Breadcrumb } from "@/components/common/Breadcrumb";
+import { ParcelTracking } from "@/components/orders/ParcelTracking";
+import type { OrderTracking } from "@/app/(user)/actions/orders";
 import { Truck, Search, CheckCircle2, Clock, PackageCheck, MapPin, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trackOrderAction } from "@/app/(user)/actions/orders";
 import { poishaToTaka } from "@/lib/utils/money";
 
 interface TrackingData {
-  order_number: string;
+  /** The API sends `number`; `order_number` is kept for older responses. */
+  number?: string;
+  order_number?: string;
   status: string;
   placed_at: string;
-  items: Array<{ name: string; quantity: number; unit_price: number }>;
-  timeline: Array<{ status: string; note: string | null; created_at: string }>;
-  totals?: { subtotal: number; shipping: number; total: number };
+  items: Array<{ name: string; quantity: number; unit_price: number; line_total?: number }>;
+  timeline: Array<{ status: string; note: string | null; at?: string; created_at?: string }>;
+  totals?: { subtotal: number; shipping: number; grand_total?: number };
+  tracking?: OrderTracking | null;
 }
 
+const statusLabel = (s: string) => s.replace(/_/g, " ");
+
 export default function TrackOrderPage() {
-  const [orderNumber, setOrderNumber] = useState("");
+  const searchParams = useSearchParams();
+  // "Track Package" on the order page links here with ?number=…
+  const [orderNumber, setOrderNumber] = useState(() => (searchParams.get("number") ?? "").slice(0, 24));
   const [phone, setPhone] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,13 +135,15 @@ export default function TrackOrderPage() {
               <div>
                 <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Order Status</span>
                 <h3 className="text-base sm:text-lg font-bold text-gray-900 font-mono">
-                  #{trackingData.order_number}
+                  #{trackingData.number ?? trackingData.order_number}
                 </h3>
               </div>
               <span className="px-3 py-1 bg-brand-50 text-primary border border-brand-200 text-xs font-bold rounded-full uppercase">
-                {trackingData.status}
+                {statusLabel(trackingData.status)}
               </span>
             </div>
+
+            <ParcelTracking tracking={trackingData.tracking} />
 
             {/* Order Items */}
             {trackingData.items && trackingData.items.length > 0 && (
@@ -144,7 +156,7 @@ export default function TrackOrderPage() {
                         {item.name} <span className="text-gray-400">× {item.quantity}</span>
                       </span>
                       <span className="font-mono text-gray-900">
-                        ৳ {poishaToTaka(item.unit_price * item.quantity).toFixed(2)}
+                        ৳ {poishaToTaka(item.line_total ?? item.unit_price * item.quantity).toFixed(2)}
                       </span>
                     </div>
                   ))}
@@ -163,10 +175,10 @@ export default function TrackOrderPage() {
                         <CheckCircle2 className="w-4 h-4" />
                       </div>
                       <div className="text-xs">
-                        <h4 className="font-bold text-gray-900 capitalize">{step.status}</h4>
+                        <h4 className="font-bold text-gray-900 capitalize">{statusLabel(step.status)}</h4>
                         {step.note && <p className="text-gray-600 mt-0.5">{step.note}</p>}
                         <span className="text-[11px] text-gray-400 mt-0.5 block">
-                          {new Date(step.created_at).toLocaleString()}
+                          {step.at || step.created_at ? new Date((step.at || step.created_at) as string).toLocaleString() : ""}
                         </span>
                       </div>
                     </div>
@@ -177,7 +189,7 @@ export default function TrackOrderPage() {
                       <Clock className="w-4 h-4" />
                     </div>
                     <div className="text-xs">
-                      <h4 className="font-bold text-gray-900 capitalize">{trackingData.status}</h4>
+                      <h4 className="font-bold text-gray-900 capitalize">{statusLabel(trackingData.status)}</h4>
                       <span className="text-[11px] text-gray-400 mt-0.5 block">
                         Placed: {new Date(trackingData.placed_at).toLocaleString()}
                       </span>

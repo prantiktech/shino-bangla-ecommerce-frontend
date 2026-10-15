@@ -4,10 +4,15 @@ import { getAdminCategoriesAction } from "@/app/(admin)/actions/categories";
 import { getAdminBrandsAction } from "@/app/(admin)/actions/brands";
 import { getAdminOptionTypesAction } from "@/app/(admin)/actions/option-types";
 import { ProductsManagement } from "./_components/ProductsManagement";
+import { guardAdminPage } from "@/app/(admin)/session";
+import { AccessDenied } from "@/app/(admin)/components/AccessDenied";
 
 export const metadata: Metadata = { title: "Products | Admin Portal" };
 
 export default async function AdminProductsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const access = await guardAdminPage("/admin/products");
+  if (!access.allowed) return <AccessDenied needed={access.needed} fallback={access.fallback} />;
+
   const { q } = await searchParams;
   const [products, categories, brands, optionTypes] = await Promise.all([
     getAdminProductsAction({ per_page: 25, q: q?.trim() || undefined }),

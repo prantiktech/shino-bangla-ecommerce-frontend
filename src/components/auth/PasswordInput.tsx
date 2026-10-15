@@ -4,12 +4,10 @@ import React, { useState } from "react";
 import { Check, Eye, EyeOff, X } from "lucide-react";
 import { authInput } from "./AuthCard";
 
-/** The API's password rule: 12+ characters with upper and lower case, a number and a symbol. */
+/** The API's password rule (register, reset, change): 4 to 255 characters. */
 export const PASSWORD_RULES: { label: string; test: (p: string) => boolean }[] = [
-  { label: "At least 12 characters", test: (p) => p.length >= 12 },
-  { label: "Upper and lower case letters", test: (p) => /[a-z]/.test(p) && /[A-Z]/.test(p) },
-  { label: "A number", test: (p) => /\d/.test(p) },
-  { label: "A symbol", test: (p) => /[^A-Za-z0-9]/.test(p) },
+  { label: "At least 4 characters", test: (p) => p.length >= 4 },
+  { label: "No more than 255 characters", test: (p) => p.length <= 255 },
 ];
 
 export const passwordIsStrong = (p: string) => PASSWORD_RULES.every((r) => r.test(p));
@@ -19,7 +17,7 @@ export function PasswordInput({
   value,
   onChange,
   autoComplete = "current-password",
-  placeholder = "••••••••••••",
+  placeholder = "••••••••",
   showRules = false,
 }: {
   id: string;

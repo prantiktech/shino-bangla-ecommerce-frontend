@@ -18,6 +18,8 @@ export interface PaginationMeta {
   total: number;
   from?: number | null;
   to?: number | null;
+  /** Extra numeric counters some lists add to `meta` (e.g. `new` on business applications). */
+  counts?: Record<string, number>;
 }
 
 export interface Paginated<T> {
@@ -35,6 +37,10 @@ interface RequestOptions {
   params?: QueryParams;
   pathParams?: PathParams;
   body?: unknown;
+  /** Milliseconds before giving up; the default suits fast endpoints. Courier calls need longer. */
+  timeout?: number;
+  /** Retries on network errors / 5xx. Use 0 for requests that must never be sent twice. */
+  retries?: number;
 }
 
 /** Drop empty query values so the API never sees `?q=&status=`. */
@@ -49,7 +55,13 @@ function cleanParams(params?: QueryParams): Record<string, string | number | boo
 }
 
 async function send(method: Method, endpoint: TargetEndpoint, opts: RequestOptions) {
-  const config = { params: cleanParams(opts.params), pathParams: opts.pathParams, cache: "no-store" as const };
+  const config = {
+    params: cleanParams(opts.params),
+    pathParams: opts.pathParams,
+    cache: "no-store" as const,
+    ...(opts.timeout !== undefined && { timeout: opts.timeout }),
+    ...(opts.retries !== undefined && { retries: opts.retries }),
+  };
   switch (method) {
     case "GET":
       return serverGet<JsonBody>(endpoint, config);
@@ -99,10 +111,11 @@ export async function adminList<T>(
   endpoint: TargetEndpoint,
   fallbackMessage: string,
   params?: QueryParams,
-  pathParams?: PathParams
+  pathParams?: PathParams,
+  extra?: Pick<RequestOptions, "timeout" | "retries">
 ): Promise<ActionResponse<Paginated<T>>> {
   try {
-    const res = await send("GET", endpoint, { params, pathParams });
+    const res = await send("GET", endpoint, { params, pathParams, ...extra });
     if (!res.success) return failure(res, fallbackMessage, "LIST_FAILED");
     const body = res.data ?? {};
     const items: T[] = Array.isArray(body.data) ? body.data : Array.isArray(body) ? body : [];
@@ -115,6 +128,12 @@ export async function adminList<T>(
       from: m.from ?? null,
       to: m.to ?? null,
     };
+    const standard = new Set(["current_page", "last_page", "per_page", "total", "from", "to", "path", "links"]);
+    const counts: Record<string, number> = {};
+    for (const [k, v] of Object.entries(m)) {
+      if (!standard.has(k) && typeof v === "number") counts[k] = v;
+    }
+    if (Object.keys(counts).length) meta.counts = counts;
     return { success: true, data: { data: items, meta } };
   } catch (error) {
     return handleActionError(error);

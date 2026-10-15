@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { getAdminFlashSalesAction } from "@/app/(admin)/actions/discounts";
 import { FlashSalesManagement } from "./_components/FlashSalesManagement";
+import { guardAdminPage } from "@/app/(admin)/session";
+import { AccessDenied } from "@/app/(admin)/components/AccessDenied";
 
 export const metadata: Metadata = { title: "Flash Sales | Admin Portal" };
 
 export default async function AdminFlashSalesPage() {
+  const access = await guardAdminPage("/admin/flash-sales");
+  if (!access.allowed) return <AccessDenied needed={access.needed} fallback={access.fallback} />;
+
   const res = await getAdminFlashSalesAction();
   return (
     <FlashSalesManagement

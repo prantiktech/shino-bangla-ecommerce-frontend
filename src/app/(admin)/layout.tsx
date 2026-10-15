@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Menu, ChevronLeft, LogOut, Search } from "lucide-react";
 import { AdminSidebar } from "./components/Sidebar";
+import { AdminPermissionsProvider } from "./components/permissions";
 import { adminLogoutAction, getAdminMeAction } from "./actions/auth";
 
 export default function AdminLayout({
@@ -73,7 +74,7 @@ export default function AdminLayout({
         <AdminSidebar
           isCollapsed={isCollapsed}
           setIsMobileOpen={setIsMobileOpen}
-          permissions={me?.permissions ?? null}
+          access={me ? { permissions: me.permissions, roles: me.roles } : null}
         />
       </aside>
 
@@ -89,7 +90,7 @@ export default function AdminLayout({
               isCollapsed={false}
               setIsMobileOpen={setIsMobileOpen}
               forceOpen={true}
-              permissions={me?.permissions ?? null}
+              access={me ? { permissions: me.permissions, roles: me.roles } : null}
             />
           </aside>
         </div>
@@ -159,7 +160,7 @@ export default function AdminLayout({
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          {children}
+          <AdminPermissionsProvider access={me ? { permissions: me.permissions, roles: me.roles } : null}>{children}</AdminPermissionsProvider>
         </main>
       </div>
     </div>

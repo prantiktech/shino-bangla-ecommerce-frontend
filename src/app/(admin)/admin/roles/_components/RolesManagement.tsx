@@ -75,6 +75,10 @@ export const PERMISSION_GROUPS = [
       { key: "orders.fulfil", label: "Fulfil Orders", desc: "Pack, assign courier, and mark shipped" },
       { key: "orders.cancel", label: "Cancel Orders", desc: "Cancel orders and restock inventory" },
       { key: "orders.refund", label: "Process Refunds", desc: "Issue financial refunds to customers" },
+      { key: "couriers.view", label: "View Couriers", desc: "See courier settings (keys masked) and pickup stores" },
+      { key: "couriers.update", label: "Manage Couriers", desc: "Change courier keys and settings, check the keys" },
+      { key: "fraud.view", label: "View Fraud Checks", desc: "See fraud checks, blocked and trusted contacts" },
+      { key: "fraud.update", label: "Manage Fraud Rules", desc: "Block or trust contacts, set up the fraud-check provider" },
     ],
   },
   {
@@ -84,7 +88,11 @@ export const PERMISSION_GROUPS = [
       { key: "customers.view", label: "View Customers", desc: "Browse registered customer directory" },
       { key: "customers.update", label: "Edit Customers", desc: "Modify customer information" },
       { key: "customers.delete", label: "Delete Customers", desc: "Permanently delete customer data" },
+      { key: "business-applications.view", label: "View Business Applications", desc: "Read wholesale applications and documents" },
+      { key: "business-applications.update", label: "Review Business Applications", desc: "Change status and internal notes" },
+      { key: "business-applications.delete", label: "Delete Business Applications", desc: "Erase applications and their documents" },
       { key: "reviews.view", label: "View Reviews", desc: "Read customer product reviews" },
+      { key: "reviews.create", label: "Add Reviews", desc: "Enter reviews received outside the website" },
       { key: "reviews.moderate", label: "Moderate Reviews", desc: "Approve or reject customer reviews" },
       { key: "reviews.delete", label: "Delete Reviews", desc: "Remove inappropriate reviews" },
     ],
@@ -161,6 +169,10 @@ const PAGE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   roles: Key,
   staff: Users,
   settings: Lock,
+  couriers: Truck,
+  fraud: Shield,
+  reviews: Users,
+  "business-applications": FileText,
 };
 
 /** Convert the API permission catalogue (GET /permissions) into the grouped view used below. */

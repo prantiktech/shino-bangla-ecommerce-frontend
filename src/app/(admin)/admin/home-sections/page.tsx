@@ -3,10 +3,15 @@ import { getAdminHomeSectionsAction, getAdminHomeSectionTypesAction } from "@/ap
 import { getAdminCategoriesAction } from "@/app/(admin)/actions/categories";
 import { getAdminBrandsAction } from "@/app/(admin)/actions/brands";
 import { HomeSectionsManagement } from "./_components/HomeSectionsManagement";
+import { guardAdminPage } from "@/app/(admin)/session";
+import { AccessDenied } from "@/app/(admin)/components/AccessDenied";
 
 export const metadata: Metadata = { title: "Home Page | Admin Portal" };
 
 export default async function AdminHomeSectionsPage() {
+  const access = await guardAdminPage("/admin/home-sections");
+  if (!access.allowed) return <AccessDenied needed={access.needed} fallback={access.fallback} />;
+
   const [sections, types, categories, brands] = await Promise.all([
     getAdminHomeSectionsAction(),
     getAdminHomeSectionTypesAction(),

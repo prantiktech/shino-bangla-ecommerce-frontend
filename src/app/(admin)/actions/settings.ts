@@ -15,6 +15,17 @@ export interface StoreSettings {
   bank_transfer_instructions?: string | null;
   low_stock_threshold: number;
   order_payment_timeout_minutes: number;
+  /** Customers prove their mobile number with a code before an order is accepted. */
+  order_phone_verification?: boolean;
+  /** Send an SMS when an order is placed. */
+  order_confirmation_sms?: boolean;
+  /** Refuse a second order from the same number within `duplicate_order_minutes`. */
+  duplicate_order_block?: boolean;
+  duplicate_order_minutes?: number;
+  /** Refuse cash orders from numbers with a poor courier delivery record. */
+  courier_protection?: boolean;
+  courier_min_success_rate?: number;
+  courier_min_parcels?: number;
   logo_url?: string | null;
   favicon_url?: string | null;
   invoice_logo_url?: string | null;

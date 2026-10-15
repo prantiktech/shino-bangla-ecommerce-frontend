@@ -138,6 +138,11 @@ export function handleStatusCode(status: number, data: any): HandledError {
       }
   }
 
+  // The API's own code (e.g. COURIER_UNAVAILABLE, ORDER_NOT_SHIPPABLE) is more precise than the HTTP one.
+  if (data && typeof data === 'object' && typeof data.code === 'string' && data.code) {
+    code = data.code;
+  }
+
   if (extractedMessages.length > 0) {
     const combinedExtracted = extractedMessages.join(' ');
     if (!message || message === 'An unexpected error occurred.') {

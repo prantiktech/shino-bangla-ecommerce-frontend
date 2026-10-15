@@ -42,7 +42,7 @@ export function ForgotPasswordFlow() {
           purpose="password_reset"
           submitLabel="Reset password"
           onSubmit={async (code) => {
-            if (!passwordIsStrong(password)) return "Choose a stronger password that meets every rule.";
+            if (!passwordIsStrong(password)) return "Your password must be 4 to 255 characters.";
             if (password !== confirm) return "The two passwords do not match.";
             const res = await resetPasswordAction({ login, code, password, password_confirmation: confirm });
             if (!res.success) return res.error.message;

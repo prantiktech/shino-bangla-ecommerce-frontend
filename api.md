@@ -1,7 +1,7 @@
 # API reference
 
 Every endpoint of the ecommerce API, with the fields it accepts, the rules each field must
-pass, and a real request and response. The examples were captured on 2026-10-01 by running
+pass, and a real request and response. The examples were captured on 2026-10-12 by running
 the whole Postman collection against the demo data, so ids, numbers, dates and URLs will
 differ on your server. Endpoints are grouped as in the README.
 
@@ -63,6 +63,7 @@ differ on your server. Endpoints are grouped as in the README.
   - [`GET /api/v1/faqs`](#get-faqs)
   - [`GET /api/v1/sitemap`](#get-sitemap)
   - [`POST /api/v1/contact`](#post-contact)
+  - [`POST /api/v1/business-applications`](#post-business-applications)
   - [`POST /api/v1/newsletter/subscribe`](#post-newsletter-subscribe)
   - [`POST /api/v1/newsletter/unsubscribe`](#post-newsletter-unsubscribe)
   - [`POST /api/v1/track/view`](#post-track-view)
@@ -78,6 +79,7 @@ differ on your server. Endpoints are grouped as in the README.
   - [`POST /api/v1/checkout`](#post-checkout)
   - [`POST /api/v1/buy-now/quote`](#post-buy-now-quote)
   - [`POST /api/v1/buy-now`](#post-buy-now)
+  - [`POST /api/v1/orders/phone-code`](#post-orders-phone-code)
   - [`GET /api/v1/orders/track`](#get-orders-track)
   - [`POST /api/v1/orders/{number}/pay`](#post-orders-number-pay)
   - [`POST /api/v1/payments/sslcommerz/success`](#post-payments-sslcommerz-success)
@@ -171,9 +173,14 @@ differ on your server. Endpoints are grouped as in the README.
   - [`POST /api/v1/admin/inventory/purchases`](#post-admin-inventory-purchases)
 - **Admin endpoints (the back office) · Orders and customers**
   - [`GET /api/v1/admin/orders`](#get-admin-orders)
+  - [`GET /api/v1/admin/orders/summary`](#get-admin-orders-summary)
   - [`GET /api/v1/admin/orders/{order}`](#get-admin-orders-order)
   - [`POST /api/v1/admin/orders/{order}/status`](#post-admin-orders-order-status)
   - [`POST /api/v1/admin/orders/{order}/payment`](#post-admin-orders-order-payment)
+  - [`POST /api/v1/admin/shipments/scan`](#post-admin-shipments-scan)
+  - [`POST /api/v1/admin/returns/scan`](#post-admin-returns-scan)
+  - [`POST /api/v1/admin/orders/{order}/shipment`](#post-admin-orders-order-shipment)
+  - [`POST /api/v1/admin/orders/{order}/shipment/sync`](#post-admin-orders-order-shipment-sync)
   - [`GET /api/v1/admin/orders/{order}/invoice`](#get-admin-orders-order-invoice)
   - [`GET /api/v1/admin/orders/{order}/refunds`](#get-admin-orders-order-refunds)
   - [`POST /api/v1/admin/orders/{order}/refunds`](#post-admin-orders-order-refunds)
@@ -181,6 +188,14 @@ differ on your server. Endpoints are grouped as in the README.
   - [`GET /api/v1/admin/customers/{customer}`](#get-admin-customers-customer)
   - [`PUT /api/v1/admin/customers/{customer}`](#put-admin-customers-customer)
   - [`DELETE /api/v1/admin/customers/{customer}`](#delete-admin-customers-customer)
+- **Admin endpoints (the back office) · Couriers**
+  - [`GET /api/v1/admin/couriers`](#get-admin-couriers)
+  - [`PUT /api/v1/admin/couriers/{courier}`](#put-admin-couriers-courier)
+  - [`POST /api/v1/admin/couriers/{courier}/check`](#post-admin-couriers-courier-check)
+  - [`GET /api/v1/admin/couriers/{courier}/stores`](#get-admin-couriers-courier-stores)
+  - [`GET /api/v1/admin/couriers/available`](#get-admin-couriers-available)
+  - [`GET /api/v1/admin/couriers/{courier}/areas`](#get-admin-couriers-courier-areas)
+  - [`POST /api/v1/couriers/{courier}/webhook/{secret}`](#post-couriers-courier-webhook-secret)
 - **Admin endpoints (the back office) · Shipping and discounts**
   - [`GET /api/v1/admin/shipping-zones`](#get-admin-shipping-zones)
   - [`GET /api/v1/admin/shipping-zones/{shippingZone}`](#get-admin-shipping-zones-shippingzone)
@@ -199,6 +214,7 @@ differ on your server. Endpoints are grouped as in the README.
   - [`DELETE /api/v1/admin/flash-sales/{flashSale}`](#delete-admin-flash-sales-flashsale)
 - **Admin endpoints (the back office) · Reviews**
   - [`GET /api/v1/admin/reviews`](#get-admin-reviews)
+  - [`POST /api/v1/admin/reviews`](#post-admin-reviews)
   - [`GET /api/v1/admin/reviews/{review}`](#get-admin-reviews-review)
   - [`POST /api/v1/admin/reviews/{review}/approve`](#post-admin-reviews-review-approve)
   - [`POST /api/v1/admin/reviews/{review}/reject`](#post-admin-reviews-review-reject)
@@ -231,6 +247,19 @@ differ on your server. Endpoints are grouped as in the README.
   - [`PUT /api/v1/admin/faqs/{faq}`](#put-admin-faqs-faq)
   - [`DELETE /api/v1/admin/faqs/{faq}`](#delete-admin-faqs-faq)
   - [`GET /api/v1/admin/contact-messages`](#get-admin-contact-messages)
+  - [`GET /api/v1/admin/orders/{order}/fraud-check`](#get-admin-orders-order-fraud-check)
+  - [`POST /api/v1/admin/orders/{order}/fraud-check/provider`](#post-admin-orders-order-fraud-check-provider)
+  - [`GET /api/v1/admin/fraud-check`](#get-admin-fraud-check)
+  - [`GET /api/v1/admin/fraud-providers`](#get-admin-fraud-providers)
+  - [`PUT /api/v1/admin/fraud-providers/{provider}`](#put-admin-fraud-providers-provider)
+  - [`GET /api/v1/admin/contact-rules`](#get-admin-contact-rules)
+  - [`POST /api/v1/admin/contact-rules`](#post-admin-contact-rules)
+  - [`DELETE /api/v1/admin/contact-rules/{rule}`](#delete-admin-contact-rules-rule)
+  - [`GET /api/v1/admin/business-applications`](#get-admin-business-applications)
+  - [`GET /api/v1/admin/business-applications/{application}`](#get-admin-business-applications-application)
+  - [`GET /api/v1/admin/business-applications/{application}/documents/{document}`](#get-admin-business-applications-application-documents-document)
+  - [`PUT /api/v1/admin/business-applications/{application}`](#put-admin-business-applications-application)
+  - [`DELETE /api/v1/admin/business-applications/{application}`](#delete-admin-business-applications-application)
   - [`GET /api/v1/admin/contact-messages/{contactMessage}`](#get-admin-contact-messages-contactmessage)
   - [`POST /api/v1/admin/contact-messages/{contactMessage}/replied`](#post-admin-contact-messages-contactmessage-replied)
   - [`DELETE /api/v1/admin/contact-messages/{contactMessage}`](#delete-admin-contact-messages-contactmessage)
@@ -262,7 +291,7 @@ Auth: none
 | --- | --- | --- |
 | `name` | Yes | String, at least 1 character, up to 255 characters |
 | `login` | Yes | String, up to 255 characters, email address or mobile number (01XXXXXXXXX) |
-| `password` | Yes | String, send `password_confirmation` with the same value, 12+ characters with upper and lower case, a number and a symbol |
+| `password` | Yes | String, send `password_confirmation` with the same value, at least 4 characters, up to 255 characters |
 
 **Example**
 
@@ -330,9 +359,9 @@ Response `200`
 {
   "data": {
     "token": {
-      "token": "2|ecom_iVxuYUuEfzHeZZ1Oko2wpE9SmZ6UjjwBakMaB9rk7988e3c9",
+      "token": "2|ecom_GhVl4ip4zRulTAecdOiTtP1h2t7q0wttGlNrh2fma1ba7891",
       "token_type": "Bearer",
-      "expires_at": "2026-10-08T12:48:13+00:00",
+      "expires_at": "2026-10-19T17:03:42+00:00",
       "abilities": [
         "*"
       ]
@@ -354,9 +383,9 @@ Response `200`
         "customer"
       ],
       "permissions": [],
-      "last_login_at": "2026-10-01T12:48:13+00:00",
-      "created_at": "2026-10-01T12:48:13+00:00",
-      "updated_at": "2026-10-01T12:48:13+00:00"
+      "last_login_at": "2026-10-12T17:03:42+00:00",
+      "created_at": "2026-10-12T17:03:42+00:00",
+      "updated_at": "2026-10-12T17:03:42+00:00"
     }
   }
 }
@@ -444,9 +473,9 @@ Response `200`
 {
   "data": {
     "token": {
-      "token": "1|ecom_w3pSFcn2ditLzK76tUvujgjGtLMyJuvDhuRepnoL51035559",
+      "token": "1|ecom_LwOYRTCpqC9NZ3uFTWiTVROQhXYPxlEfKKZULbiO2ea285d4",
       "token_type": "Bearer",
-      "expires_at": "2026-10-08T12:48:12+00:00",
+      "expires_at": "2026-10-19T17:03:42+00:00",
       "abilities": [
         "*"
       ]
@@ -456,7 +485,7 @@ Response `200`
       "name": "Rafi Ahmed",
       "email": "customer@example.com",
       "email_verified": true,
-      "email_verified_at": "2026-10-01T12:48:08+00:00",
+      "email_verified_at": "2026-10-12T17:03:38+00:00",
       "phone": "+8801712345678",
       "phone_verified": true,
       "avatar_url": null,
@@ -468,9 +497,9 @@ Response `200`
         "customer"
       ],
       "permissions": [],
-      "last_login_at": "2026-10-01T12:48:12+00:00",
-      "created_at": "2026-10-01T12:48:08+00:00",
-      "updated_at": "2026-10-01T12:48:12+00:00"
+      "last_login_at": "2026-10-12T17:03:42+00:00",
+      "created_at": "2026-10-12T17:03:38+00:00",
+      "updated_at": "2026-10-12T17:03:42+00:00"
     }
   }
 }
@@ -513,7 +542,7 @@ Response `503`
 {
   "message": "Google sign-in is not configured.",
   "code": "SERVICE_UNAVAILABLE",
-  "request_id": "a82d09dc-0220-49dd-aa95-e8a6cd828b95"
+  "request_id": "0e1fc371-90f4-411d-b5ff-3e9ff93cac52"
 }
 ```
 
@@ -578,7 +607,7 @@ Auth: none
 | --- | --- | --- |
 | `login` | Yes | String, up to 255 characters, email address or mobile number (01XXXXXXXXX) |
 | `code` | Yes | String, 6 digits |
-| `password` | Yes | String, send `password_confirmation` with the same value, 12+ characters with upper and lower case, a number and a symbol |
+| `password` | Yes | String, send `password_confirmation` with the same value, at least 4 characters, up to 255 characters |
 
 **Example**
 
@@ -588,7 +617,7 @@ POST /api/v1/auth/reset-password
 ```json
 {
   "login": "customer@example.com",
-  "code": "589685",
+  "code": "563498",
   "password": "New-Password-1!",
   "password_confirmation": "New-Password-1!"
 }
@@ -660,7 +689,7 @@ Auth: token
 | Field | Required | Rules |
 | --- | --- | --- |
 | `current_password` | Yes, unless the account has no password yet (signed up with Google); then not allowed | String, the current password |
-| `password` | Yes | String, send `password_confirmation` with the same value, different from `current_password`, 12+ characters with upper and lower case, a number and a symbol |
+| `password` | Yes | String, send `password_confirmation` with the same value, different from `current_password`, at least 4 characters, up to 255 characters |
 
 **Example**
 
@@ -713,9 +742,9 @@ Response `200`
         "*"
       ],
       "is_current": true,
-      "last_used_at": "2026-10-01T12:48:16+00:00",
-      "expires_at": "2026-10-08T12:48:15+00:00",
-      "created_at": "2026-10-01T12:48:15+00:00"
+      "last_used_at": "2026-10-12T17:03:44+00:00",
+      "expires_at": "2026-10-19T17:03:43+00:00",
+      "created_at": "2026-10-12T17:03:43+00:00"
     }
   ]
 }
@@ -771,7 +800,7 @@ Response `200`
     "name": "Rafi Ahmed",
     "email": "customer@example.com",
     "email_verified": true,
-    "email_verified_at": "2026-10-01T12:48:08+00:00",
+    "email_verified_at": "2026-10-12T17:03:38+00:00",
     "phone": "+8801712345678",
     "phone_verified": true,
     "avatar_url": null,
@@ -783,9 +812,9 @@ Response `200`
       "customer"
     ],
     "permissions": [],
-    "last_login_at": "2026-10-01T12:48:12+00:00",
-    "created_at": "2026-10-01T12:48:08+00:00",
-    "updated_at": "2026-10-01T12:48:12+00:00"
+    "last_login_at": "2026-10-12T17:03:42+00:00",
+    "created_at": "2026-10-12T17:03:38+00:00",
+    "updated_at": "2026-10-12T17:03:42+00:00"
   }
 }
 ```
@@ -828,7 +857,7 @@ Response `200`
     "name": "Rafi Ahmed",
     "email": "customer@example.com",
     "email_verified": true,
-    "email_verified_at": "2026-10-01T12:48:08+00:00",
+    "email_verified_at": "2026-10-12T17:03:38+00:00",
     "phone": "+8801712345678",
     "phone_verified": true,
     "avatar_url": null,
@@ -840,9 +869,9 @@ Response `200`
       "customer"
     ],
     "permissions": [],
-    "last_login_at": "2026-10-01T12:48:12+00:00",
-    "created_at": "2026-10-01T12:48:08+00:00",
-    "updated_at": "2026-10-01T12:48:12+00:00"
+    "last_login_at": "2026-10-12T17:03:42+00:00",
+    "created_at": "2026-10-12T17:03:38+00:00",
+    "updated_at": "2026-10-12T17:03:42+00:00"
   }
 }
 ```
@@ -919,7 +948,7 @@ Authorization: Bearer <token>
 ```json
 {
   "login": "newaddress@example.com",
-  "code": "069975"
+  "code": "795145"
 }
 ```
 
@@ -931,7 +960,7 @@ Response `200`
     "name": "Rafi Ahmed",
     "email": "newaddress@example.com",
     "email_verified": true,
-    "email_verified_at": "2026-10-01T12:48:16+00:00",
+    "email_verified_at": "2026-10-12T17:03:44+00:00",
     "phone": "+8801712345678",
     "phone_verified": true,
     "avatar_url": null,
@@ -943,9 +972,9 @@ Response `200`
       "customer"
     ],
     "permissions": [],
-    "last_login_at": "2026-10-01T12:48:15+00:00",
-    "created_at": "2026-10-01T12:48:08+00:00",
-    "updated_at": "2026-10-01T12:48:16+00:00"
+    "last_login_at": "2026-10-12T17:03:43+00:00",
+    "created_at": "2026-10-12T17:03:38+00:00",
+    "updated_at": "2026-10-12T17:03:44+00:00"
   }
 }
 ```
@@ -1007,6 +1036,7 @@ Response `200`
     "cod_enabled": true,
     "bank_transfer_enabled": true,
     "bank_transfer_instructions": null,
+    "order_phone_verification": false,
     "logo_url": null,
     "favicon_url": null
   }
@@ -1052,7 +1082,7 @@ Response `200`
         ]
       }
     ],
-    "generated_at": "2026-10-01T12:48:12+00:00"
+    "generated_at": "2026-10-12T17:03:42+00:00"
   }
 }
 ```
@@ -1510,8 +1540,8 @@ Response `200`
       "description": "For wood, liquid and electrical fires. Refillable steel body.",
       "keywords": null
     },
-    "published_at": "2026-10-01T12:48:08+00:00",
-    "updated_at": "2026-10-01T12:48:08+00:00",
+    "published_at": "2026-10-12T17:03:37+00:00",
+    "updated_at": "2026-10-12T17:03:37+00:00",
     "price": {
       "min": 95000,
       "max": 349000
@@ -1796,7 +1826,7 @@ Response `200`
     "content": "<p>A demonstration shop, selling safety equipment and fasteners.</p>",
     "seo_title": null,
     "seo_description": null,
-    "updated_at": "2026-10-01T12:48:08.000000Z"
+    "updated_at": "2026-10-12T17:03:38.000000Z"
   }
 }
 ```
@@ -1862,7 +1892,7 @@ Response `200`
     "items": [
       {
         "slug": "abc-dry-powder-fire-extinguisher",
-        "updated_at": "2026-10-01T12:48:08+00:00"
+        "updated_at": "2026-10-12T17:03:37+00:00"
       }
     ]
   }
@@ -1918,6 +1948,76 @@ Response `201`
 ```
 
 <sub>End of `POST /api/v1/contact` · [back to contents](#contents)</sub>
+
+---
+
+<a id="post-business-applications"></a>
+
+### `POST /api/v1/business-applications`
+
+Apply to buy wholesale: business and contact details, trade licence, NID (multipart).
+
+Auth: optional
+
+**Body fields**
+
+| Field | Required | Rules |
+| --- | --- | --- |
+| `business_name` | Yes | String, up to 255 characters |
+| `business_type` | Yes | One of `proprietorship`, `partnership`, `limited_company`, `other` |
+| `trade_license_number` | Yes | String, up to 100 characters |
+| `bin_tin` | No | String, up to 50 characters, may be `null` |
+| `business_address` | Yes | String, up to 500 characters |
+| `district_id` | Yes | Integer, an existing `locations` id |
+| `interested_in` | No | String, up to 2000 characters, may be `null` |
+| `contact_name` | Yes | String, up to 255 characters |
+| `designation` | No | String, up to 100 characters, may be `null` |
+| `phone` | Yes | String, mobile number (01XXXXXXXXX) |
+| `email` | No | String, email address, up to 255 characters, may be `null` |
+| `alternate_phone` | No | String, mobile number (01XXXXXXXXX), may be `null` |
+| `message` | No | String, up to 2000 characters, may be `null` |
+| `trade_license` | Yes | List, at least 1 item, up to 3 items |
+| `trade_license[]` | No | File, file type jpg, jpeg, png, webp, pdf, up to 4096 KB |
+| `nid_front` | Yes | File, file type jpg, jpeg, png, webp, pdf, up to 4096 KB |
+| `nid_back` | Yes | File, file type jpg, jpeg, png, webp, pdf, up to 4096 KB |
+| `website` | No: must be left out or empty |  |
+
+**Example**
+
+```http
+POST /api/v1/business-applications
+```
+Sent as `multipart/form-data`:
+
+| Field | Value |
+| --- | --- |
+| `business_name` | `Rahman Safety Traders` |
+| `business_type` | `proprietorship` |
+| `trade_license_number` | `TRAD/DNCC/012345/2026` |
+| `bin_tin` | `000123456-0101` |
+| `business_address` | `Shop 14, Nawabpur Road` |
+| `district_id` | `{{district_id}}` |
+| `interested_in` | `Fire extinguishers, about 50 a month` |
+| `contact_name` | `Abdur Rahman` |
+| `designation` | `Proprietor` |
+| `phone` | `01712345678` |
+| `email` | `rahman@example.com` |
+| `message` | `We supply offices in Old Dhaka.` |
+| `trade_license[]` | a file |
+| `nid_front` | a file |
+| `nid_back` | a file |
+
+Response `201`
+```json
+{
+  "data": {
+    "id": 1,
+    "message": "Thank you. We have received your application and will be in touch."
+  }
+}
+```
+
+<sub>End of `POST /api/v1/business-applications` · [back to contents](#contents)</sub>
 
 ---
 
@@ -2565,7 +2665,7 @@ Auth: token
 ```http
 POST /api/v1/cart/claim
 Authorization: Bearer <token>
-X-Cart-Token: NOY10Pmdc1EkYOqgJuOXv6WHU8WaOQMF61TV9F6V
+X-Cart-Token: n1vGcU4yjVjdlhldz2QByG571iNgT70pOsy7OITG
 ```
 
 Response `200`
@@ -2747,13 +2847,15 @@ Send an `Idempotency-Key` header with a fresh UUID for each order. If the connec
 | `billing_address.postcode` | No | String, up to 16 characters, may be `null` |
 | `payment_method` | Yes | One of `cod`, `bank_transfer`, `sslcommerz` |
 | `note` | No | String, up to 1000 characters, may be `null` |
+| `customer_ip` | No | `ip`, may be `null` |
+| `phone_code` | No | String, 6 digits, may be `null` |
 
 **Example**
 
 ```http
 POST /api/v1/checkout
 Authorization: Bearer <token>
-Idempotency-Key: 194e6b93-2b17-4f52-936e-2a9c170a9101
+Idempotency-Key: e65303a8-b02b-4a24-ad83-1223ee79ea61
 ```
 ```json
 {
@@ -2767,7 +2869,7 @@ Response `201`
 ```json
 {
   "data": {
-    "number": "261001-7P8U8",
+    "number": "261012-9VCXS",
     "status": "pending",
     "payment_status": "unpaid",
     "payment_method": "cod",
@@ -2835,7 +2937,7 @@ Response `201`
     "note": "Ring the bell",
     "can_cancel": true,
     "payment_expires_at": null,
-    "placed_at": "2026-10-01T12:48:18.000000Z",
+    "placed_at": "2026-10-12T17:03:46.000000Z",
     "confirmed_at": null,
     "delivered_at": null,
     "cancelled_at": null,
@@ -2843,7 +2945,7 @@ Response `201`
       {
         "status": "pending",
         "note": "Order placed",
-        "at": "2026-10-01T12:48:18.000000Z"
+        "at": "2026-10-12T17:03:46.000000Z"
       }
     ]
   },
@@ -2980,6 +3082,8 @@ Fields are shown as a visitor sends them. A signed-in customer may leave out `na
 | `coupon_code` | No | String, up to 32 characters, may be `null` |
 | `payment_method` | Yes | One of `cod`, `bank_transfer`, `sslcommerz` |
 | `note` | No | String, up to 1000 characters, may be `null` |
+| `customer_ip` | No | `ip`, may be `null` |
+| `phone_code` | No | String, 6 digits, may be `null` |
 
 **Example**
 
@@ -2999,7 +3103,8 @@ POST /api/v1/buy-now
     "area": "New Market",
     "district_id": 21
   },
-  "payment_method": "cod"
+  "payment_method": "cod",
+  "customer_ip": "103.92.84.10"
 }
 ```
 
@@ -3007,7 +3112,7 @@ Response `201`
 ```json
 {
   "data": {
-    "number": "261001-BLTFT",
+    "number": "261012-7RPS8",
     "status": "pending",
     "payment_status": "unpaid",
     "payment_method": "cod",
@@ -3075,7 +3180,7 @@ Response `201`
     "note": null,
     "can_cancel": true,
     "payment_expires_at": null,
-    "placed_at": "2026-10-01T12:48:18.000000Z",
+    "placed_at": "2026-10-12T17:03:47.000000Z",
     "confirmed_at": null,
     "delivered_at": null,
     "cancelled_at": null,
@@ -3083,7 +3188,7 @@ Response `201`
       {
         "status": "pending",
         "note": "Order placed",
-        "at": "2026-10-01T12:48:18.000000Z"
+        "at": "2026-10-12T17:03:47.000000Z"
       }
     ]
   },
@@ -3092,6 +3197,45 @@ Response `201`
 ```
 
 <sub>End of `POST /api/v1/buy-now` · [back to contents](#contents)</sub>
+
+---
+
+<a id="post-orders-phone-code"></a>
+
+### `POST /api/v1/orders/phone-code`
+
+Send the code that proves an order's mobile number (when the shop asks for one).
+
+Auth: optional
+
+**Body fields**
+
+| Field | Required | Rules |
+| --- | --- | --- |
+| `phone` | Yes | String, mobile number (01XXXXXXXXX) |
+
+**Example**
+
+```http
+POST /api/v1/orders/phone-code
+```
+```json
+{
+  "phone": "01812345678"
+}
+```
+
+Response `200`
+```json
+{
+  "data": {
+    "required": false,
+    "message": "This shop does not ask for a code. Place the order directly."
+  }
+}
+```
+
+<sub>End of `POST /api/v1/orders/phone-code` · [back to contents](#contents)</sub>
 
 ---
 
@@ -3113,14 +3257,14 @@ Auth: none
 **Example**
 
 ```http
-GET /api/v1/orders/track?number=261001-BLTFT&phone=01812345678
+GET /api/v1/orders/track?number=261012-7RPS8&phone=01812345678
 ```
 
 Response `200`
 ```json
 {
   "data": {
-    "number": "261001-BLTFT",
+    "number": "261012-7RPS8",
     "status": "pending",
     "payment_status": "unpaid",
     "payment_method": "cod",
@@ -3186,9 +3330,10 @@ Response `200`
     "coupon_code": null,
     "currency": "BDT",
     "note": null,
+    "tracking": null,
     "can_cancel": true,
     "payment_expires_at": null,
-    "placed_at": "2026-10-01T12:48:18.000000Z",
+    "placed_at": "2026-10-12T17:03:47.000000Z",
     "confirmed_at": null,
     "delivered_at": null,
     "cancelled_at": null,
@@ -3196,7 +3341,7 @@ Response `200`
       {
         "status": "pending",
         "note": "Order placed",
-        "at": "2026-10-01T12:48:18.000000Z"
+        "at": "2026-10-12T17:03:47.000000Z"
       }
     ]
   }
@@ -3228,7 +3373,7 @@ Path: `number`
 **Example (not configured yet)**
 
 ```http
-POST /api/v1/orders/261001-BLTFT/pay
+POST /api/v1/orders/261012-7RPS8/pay
 ```
 ```json
 {
@@ -3241,7 +3386,7 @@ Response `409`
 {
   "message": "This order can no longer be paid for online. Please contact us.",
   "code": "PAYMENT_NOT_PAYABLE",
-  "request_id": "afa2c375-6e05-472c-9351-1ad15fe871f1"
+  "request_id": "a3d34e3d-2243-4f4b-9444-040839fe807a"
 }
 ```
 
@@ -3790,7 +3935,7 @@ Response `200`
 {
   "data": [
     {
-      "number": "261001-7P8U8",
+      "number": "261012-9VCXS",
       "status": "pending",
       "payment_status": "unpaid",
       "payment_method": "cod",
@@ -3805,7 +3950,7 @@ Response `200`
         }
       ],
       "can_cancel": true,
-      "placed_at": "2026-10-01T12:48:18.000000Z"
+      "placed_at": "2026-10-12T17:03:46.000000Z"
     }
   ],
   "links": {
@@ -3852,7 +3997,7 @@ Path: `number`
 **Example**
 
 ```http
-GET /api/v1/me/orders/261001-7P8U8
+GET /api/v1/me/orders/261012-9VCXS
 Authorization: Bearer <token>
 ```
 
@@ -3860,7 +4005,7 @@ Response `200`
 ```json
 {
   "data": {
-    "number": "261001-7P8U8",
+    "number": "261012-9VCXS",
     "status": "pending",
     "payment_status": "unpaid",
     "payment_method": "cod",
@@ -3926,9 +4071,10 @@ Response `200`
     "coupon_code": null,
     "currency": "BDT",
     "note": "Ring the bell",
+    "tracking": null,
     "can_cancel": true,
     "payment_expires_at": null,
-    "placed_at": "2026-10-01T12:48:18.000000Z",
+    "placed_at": "2026-10-12T17:03:46.000000Z",
     "confirmed_at": null,
     "delivered_at": null,
     "cancelled_at": null,
@@ -3936,7 +4082,7 @@ Response `200`
       {
         "status": "pending",
         "note": "Order placed",
-        "at": "2026-10-01T12:48:18.000000Z"
+        "at": "2026-10-12T17:03:46.000000Z"
       }
     ]
   }
@@ -3966,7 +4112,7 @@ Path: `number`
 **Example**
 
 ```http
-POST /api/v1/me/orders/261001-7P8U8/cancel
+POST /api/v1/me/orders/261012-9VCXS/cancel
 Authorization: Bearer <token>
 ```
 ```json
@@ -3979,7 +4125,7 @@ Response `200`
 ```json
 {
   "data": {
-    "number": "261001-7P8U8",
+    "number": "261012-9VCXS",
     "status": "cancelled",
     "payment_status": "unpaid",
     "payment_method": "cod",
@@ -4045,17 +4191,18 @@ Response `200`
     "coupon_code": null,
     "currency": "BDT",
     "note": "Ring the bell",
+    "tracking": null,
     "can_cancel": false,
     "payment_expires_at": null,
-    "placed_at": "2026-10-01T12:48:18.000000Z",
+    "placed_at": "2026-10-12T17:03:46.000000Z",
     "confirmed_at": null,
     "delivered_at": null,
-    "cancelled_at": "2026-10-01T12:48:19.000000Z",
+    "cancelled_at": "2026-10-12T17:03:47.000000Z",
     "timeline": [
       {
         "status": "pending",
         "note": "Order placed",
-        "at": "2026-10-01T12:48:18.000000Z"
+        "at": "2026-10-12T17:03:46.000000Z"
       }
     ]
   }
@@ -4080,7 +4227,7 @@ Path: `number`
 **Example**
 
 ```http
-GET /api/v1/me/orders/261001-7P8U8/invoice
+GET /api/v1/me/orders/261012-9VCXS/invoice
 Authorization: Bearer <token>
 ```
 
@@ -4110,9 +4257,9 @@ Response `200`
 {
   "data": [
     {
-      "order_number": "261001-NFJWN",
+      "order_number": "261012-MSHLU",
       "order_id": 3,
-      "delivered_at": "2026-10-01T12:48:22.000000Z",
+      "delivered_at": "2026-10-12T17:03:52.000000Z",
       "product_id": 7,
       "name": "Galvanised Nut & Washer Set",
       "slug": "galvanised-nut-washer-set",
@@ -4147,12 +4294,12 @@ Response `200`
 {
   "data": [
     {
-      "id": 1,
+      "id": 2,
       "rating": 5,
       "comment": "Solid build, arrived the next day.",
       "photos": [],
       "is_edited": false,
-      "created_at": "2026-10-01T12:48:23.000000Z",
+      "created_at": "2026-10-12T17:03:52.000000Z",
       "status": "pending",
       "rejection_reason": null,
       "product": {
@@ -4197,7 +4344,7 @@ _Lists trimmed to their first item; long text shortened._
 
 ### `POST /api/v1/me/reviews`
 
-Write one (stars alone are enough).
+Review any product on sale, once (stars alone are enough).
 
 Auth: token
 
@@ -4206,7 +4353,6 @@ Auth: token
 | Field | Required | Rules |
 | --- | --- | --- |
 | `product_id` | Yes | Integer, an existing `products` id |
-| `order_id` | Yes | Integer, an existing `orders` id |
 | `rating` | Yes | Integer, at least 1, at most 5 |
 | `comment` | No | String, up to 2000 characters, may be `null` |
 | `photo_ids` | No | List, up to 5 items |
@@ -4221,7 +4367,6 @@ Authorization: Bearer <token>
 ```json
 {
   "product_id": 7,
-  "order_id": 3,
   "rating": 5,
   "comment": "Solid build, arrived the next day."
 }
@@ -4231,12 +4376,12 @@ Response `201`
 ```json
 {
   "data": {
-    "id": 1,
+    "id": 2,
     "rating": 5,
     "comment": "Solid build, arrived the next day.",
     "photos": [],
     "is_edited": false,
-    "created_at": "2026-10-01T12:48:23.000000Z",
+    "created_at": "2026-10-12T17:03:52.000000Z",
     "status": "pending",
     "rejection_reason": null,
     "product": {
@@ -4283,11 +4428,11 @@ Response `201`
 {
   "data": {
     "id": 4,
-    "url": "http://localhost:8000/storage/media/2026/10/01M3VR4FENQEX3S2ZWN6NQRP5R/full.webp",
+    "url": "http://localhost:8000/storage/media/2026/10/01M4RH46C6629BY7CTJ154FQJE/full.webp",
     "sizes": {
-      "thumb": "http://localhost:8000/storage/media/2026/10/01M3VR4FENQEX3S2ZWN6NQRP5R/thumb.webp",
-      "card": "http://localhost:8000/storage/media/2026/10/01M3VR4FENQEX3S2ZWN6NQRP5R/card.webp",
-      "full": "http://localhost:8000/storage/media/2026/10/01M3VR4FENQEX3S2ZWN6NQRP5R/full.webp"
+      "thumb": "http://localhost:8000/storage/media/2026/10/01M4RH46C6629BY7CTJ154FQJE/thumb.webp",
+      "card": "http://localhost:8000/storage/media/2026/10/01M4RH46C6629BY7CTJ154FQJE/card.webp",
+      "full": "http://localhost:8000/storage/media/2026/10/01M4RH46C6629BY7CTJ154FQJE/full.webp"
     },
     "width": 64,
     "height": 64,
@@ -4320,7 +4465,7 @@ Path: `review`
 **Example**
 
 ```http
-PUT /api/v1/me/reviews/1
+PUT /api/v1/me/reviews/2
 Authorization: Bearer <token>
 ```
 ```json
@@ -4334,12 +4479,12 @@ Response `200`
 ```json
 {
   "data": {
-    "id": 1,
+    "id": 2,
     "rating": 4,
     "comment": "Good, though the bracket was fiddly.",
     "photos": [],
     "is_edited": false,
-    "created_at": "2026-10-01T12:48:23.000000Z",
+    "created_at": "2026-10-12T17:03:52.000000Z",
     "status": "pending",
     "rejection_reason": null,
     "product": {
@@ -4368,7 +4513,7 @@ Path: `review`
 **Example**
 
 ```http
-DELETE /api/v1/me/reviews/1
+DELETE /api/v1/me/reviews/2
 Authorization: Bearer <token>
 ```
 
@@ -4445,8 +4590,8 @@ Response `200`
       "is_reserved": true,
       "permissions": [],
       "users_count": 2,
-      "created_at": "2026-10-01T12:48:08+00:00",
-      "updated_at": "2026-10-01T12:48:08+00:00"
+      "created_at": "2026-10-12T17:03:37+00:00",
+      "updated_at": "2026-10-12T17:03:37+00:00"
     }
   ]
 }
@@ -4485,8 +4630,8 @@ Response `200`
       "orders.view"
     ],
     "users_count": 0,
-    "created_at": "2026-10-01T12:48:21+00:00",
-    "updated_at": "2026-10-01T12:48:21+00:00"
+    "created_at": "2026-10-12T17:03:50+00:00",
+    "updated_at": "2026-10-12T17:03:50+00:00"
   }
 }
 ```
@@ -4510,7 +4655,7 @@ Auth: token with permission `roles.create`
 | --- | --- | --- |
 | `name` | Yes | String, at least 1 character, up to 125 characters, not `super-admin`, `customer`, must not be taken |
 | `permissions` | Yes (may be empty) | List |
-| `permissions[]` | No | String, no repeats, one of `products.view`, `products.create`, `products.update`, `products.delete`, `products.import`, `products.export`, `categories.view`, `categories.create`, `categories.update`, `categories.delete`, `brands.view`, `brands.create`, `brands.update`, `brands.delete`, `inventory.view`, `inventory.adjust`, `inventory.receive`, `shipping.view`, `shipping.update`, `orders.view`, `orders.update`, `orders.fulfil`, `orders.cancel`, `orders.refund`, `customers.view`, `customers.update`, `customers.delete`, `discounts.view`, `discounts.create`, `discounts.update`, `discounts.delete`, `reviews.view`, `reviews.moderate`, `reviews.delete`, `reports.view`, `reports.export`, `settings.view`, `settings.update`, `staff.view`, `staff.create`, `staff.update`, `staff.delete`, `roles.view`, `roles.create`, `roles.update`, `roles.delete`, `roles.assign`, `media.upload`, `media.delete`, `storefront.view`, `storefront.update`, `content.view`, `content.create`, `content.update`, `content.delete`, `marketing.view`, `marketing.update`, `dashboard.view`, `activity-log.view` |
+| `permissions[]` | No | String, no repeats, one of `products.view`, `products.create`, `products.update`, `products.delete`, `products.import`, `products.export`, `categories.view`, `categories.create`, `categories.update`, `categories.delete`, `brands.view`, `brands.create`, `brands.update`, `brands.delete`, `inventory.view`, `inventory.adjust`, `inventory.receive`, `shipping.view`, `shipping.update`, `orders.view`, `orders.update`, `orders.fulfil`, `orders.cancel`, `orders.refund`, `couriers.view`, `couriers.update`, `customers.view`, `customers.update`, `customers.delete`, `discounts.view`, `discounts.create`, `discounts.update`, `discounts.delete`, `reviews.view`, `reviews.create`, `reviews.moderate`, `reviews.delete`, `reports.view`, `reports.export`, `settings.view`, `settings.update`, `staff.view`, `staff.create`, `staff.update`, `staff.delete`, `roles.view`, `roles.create`, `roles.update`, `roles.delete`, `roles.assign`, `media.upload`, `media.delete`, `storefront.view`, `storefront.update`, `content.view`, `content.create`, `content.update`, `content.delete`, `marketing.view`, `marketing.update`, `dashboard.view`, `activity-log.view`, `business-applications.view`, `business-applications.update`, `business-applications.delete`, `fraud.view`, `fraud.update` |
 
 **Example**
 
@@ -4539,8 +4684,8 @@ Response `201`
       "orders.view"
     ],
     "users_count": 0,
-    "created_at": "2026-10-01T12:48:21+00:00",
-    "updated_at": "2026-10-01T12:48:21+00:00"
+    "created_at": "2026-10-12T17:03:50+00:00",
+    "updated_at": "2026-10-12T17:03:50+00:00"
   }
 }
 ```
@@ -4566,7 +4711,7 @@ Path: `role`
 | --- | --- | --- |
 | `name` | Yes | String, at least 1 character, up to 125 characters, not `super-admin`, `customer`, must not be taken |
 | `permissions` | Yes (may be empty) | List |
-| `permissions[]` | No | String, no repeats, one of `products.view`, `products.create`, `products.update`, `products.delete`, `products.import`, `products.export`, `categories.view`, `categories.create`, `categories.update`, `categories.delete`, `brands.view`, `brands.create`, `brands.update`, `brands.delete`, `inventory.view`, `inventory.adjust`, `inventory.receive`, `shipping.view`, `shipping.update`, `orders.view`, `orders.update`, `orders.fulfil`, `orders.cancel`, `orders.refund`, `customers.view`, `customers.update`, `customers.delete`, `discounts.view`, `discounts.create`, `discounts.update`, `discounts.delete`, `reviews.view`, `reviews.moderate`, `reviews.delete`, `reports.view`, `reports.export`, `settings.view`, `settings.update`, `staff.view`, `staff.create`, `staff.update`, `staff.delete`, `roles.view`, `roles.create`, `roles.update`, `roles.delete`, `roles.assign`, `media.upload`, `media.delete`, `storefront.view`, `storefront.update`, `content.view`, `content.create`, `content.update`, `content.delete`, `marketing.view`, `marketing.update`, `dashboard.view`, `activity-log.view` |
+| `permissions[]` | No | String, no repeats, one of `products.view`, `products.create`, `products.update`, `products.delete`, `products.import`, `products.export`, `categories.view`, `categories.create`, `categories.update`, `categories.delete`, `brands.view`, `brands.create`, `brands.update`, `brands.delete`, `inventory.view`, `inventory.adjust`, `inventory.receive`, `shipping.view`, `shipping.update`, `orders.view`, `orders.update`, `orders.fulfil`, `orders.cancel`, `orders.refund`, `couriers.view`, `couriers.update`, `customers.view`, `customers.update`, `customers.delete`, `discounts.view`, `discounts.create`, `discounts.update`, `discounts.delete`, `reviews.view`, `reviews.create`, `reviews.moderate`, `reviews.delete`, `reports.view`, `reports.export`, `settings.view`, `settings.update`, `staff.view`, `staff.create`, `staff.update`, `staff.delete`, `roles.view`, `roles.create`, `roles.update`, `roles.delete`, `roles.assign`, `media.upload`, `media.delete`, `storefront.view`, `storefront.update`, `content.view`, `content.create`, `content.update`, `content.delete`, `marketing.view`, `marketing.update`, `dashboard.view`, `activity-log.view`, `business-applications.view`, `business-applications.update`, `business-applications.delete`, `fraud.view`, `fraud.update` |
 
 **Example**
 
@@ -4596,8 +4741,8 @@ Response `200`
       "orders.view"
     ],
     "users_count": 0,
-    "created_at": "2026-10-01T12:48:21+00:00",
-    "updated_at": "2026-10-01T12:48:21+00:00"
+    "created_at": "2026-10-12T17:03:50+00:00",
+    "updated_at": "2026-10-12T17:03:50+00:00"
   }
 }
 ```
@@ -4654,7 +4799,7 @@ Response `200`
       "name": "Store Owner",
       "email": "owner@example.com",
       "email_verified": true,
-      "email_verified_at": "2026-10-01T12:48:08+00:00",
+      "email_verified_at": "2026-10-12T17:03:37+00:00",
       "phone": null,
       "phone_verified": false,
       "avatar_url": null,
@@ -4668,9 +4813,9 @@ Response `200`
       "permissions": [
         "products.view"
       ],
-      "last_login_at": "2026-10-01T12:48:19+00:00",
-      "created_at": "2026-10-01T12:48:08+00:00",
-      "updated_at": "2026-10-01T12:48:19+00:00"
+      "last_login_at": "2026-10-12T17:03:47+00:00",
+      "created_at": "2026-10-12T17:03:37+00:00",
+      "updated_at": "2026-10-12T17:03:47+00:00"
     }
   ],
   "links": {
@@ -4729,7 +4874,7 @@ Response `200`
     "name": "Shop Assistant",
     "email": "assistant@example.com",
     "email_verified": true,
-    "email_verified_at": "2026-10-01T12:48:21+00:00",
+    "email_verified_at": "2026-10-12T17:03:51+00:00",
     "phone": null,
     "phone_verified": false,
     "avatar_url": null,
@@ -4744,8 +4889,8 @@ Response `200`
       "inventory.view"
     ],
     "last_login_at": null,
-    "created_at": "2026-10-01T12:48:21+00:00",
-    "updated_at": "2026-10-01T12:48:21+00:00"
+    "created_at": "2026-10-12T17:03:51+00:00",
+    "updated_at": "2026-10-12T17:03:51+00:00"
   }
 }
 ```
@@ -4797,7 +4942,7 @@ Response `201`
     "name": "Shop Assistant",
     "email": "assistant@example.com",
     "email_verified": true,
-    "email_verified_at": "2026-10-01T12:48:21+00:00",
+    "email_verified_at": "2026-10-12T17:03:51+00:00",
     "phone": null,
     "phone_verified": false,
     "avatar_url": null,
@@ -4812,8 +4957,8 @@ Response `201`
       "inventory.view"
     ],
     "last_login_at": null,
-    "created_at": "2026-10-01T12:48:21+00:00",
-    "updated_at": "2026-10-01T12:48:21+00:00"
+    "created_at": "2026-10-12T17:03:51+00:00",
+    "updated_at": "2026-10-12T17:03:51+00:00"
   }
 }
 ```
@@ -4863,7 +5008,7 @@ Response `200`
     "name": "Shop Assistant",
     "email": "assistant@example.com",
     "email_verified": true,
-    "email_verified_at": "2026-10-01T12:48:21+00:00",
+    "email_verified_at": "2026-10-12T17:03:51+00:00",
     "phone": null,
     "phone_verified": false,
     "avatar_url": null,
@@ -4878,8 +5023,8 @@ Response `200`
       "inventory.view"
     ],
     "last_login_at": null,
-    "created_at": "2026-10-01T12:48:21+00:00",
-    "updated_at": "2026-10-01T12:48:21+00:00"
+    "created_at": "2026-10-12T17:03:51+00:00",
+    "updated_at": "2026-10-12T17:03:51+00:00"
   }
 }
 ```
@@ -4919,7 +5064,7 @@ Response `204`, no body.
 
 ### `GET /api/v1/admin/dashboard`
 
-Sales, visitors, queues and the chart.
+Sales, visitors, queues, the chart, top products and top districts (`from`, `to`, `limit`).
 
 Auth: token with permission `dashboard.view`
 
@@ -4929,11 +5074,12 @@ Auth: token with permission `dashboard.view`
 | --- | --- | --- |
 | `to` | date | `YYYY-MM-DD` |
 | `from` | date | `YYYY-MM-DD` |
+| `limit` | integer | |
 
 **Example**
 
 ```http
-GET /api/v1/admin/dashboard
+GET /api/v1/admin/dashboard?limit=8
 Authorization: Bearer <token>
 ```
 
@@ -4942,8 +5088,8 @@ Response `200`
 {
   "data": {
     "range": {
-      "from": "2026-09-02",
-      "to": "2026-10-01"
+      "from": "2026-09-13",
+      "to": "2026-10-12"
     },
     "totals": {
       "orders": 1,
@@ -4970,6 +5116,7 @@ Response `200`
       "confirmed": 0,
       "processing": 0,
       "packed": 0,
+      "on_hold": 0,
       "shipped": 0,
       "delivered": 1,
       "cancelled": 1,
@@ -4978,7 +5125,7 @@ Response `200`
     },
     "chart": [
       {
-        "date": "2026-09-02",
+        "date": "2026-09-13",
         "orders": 0,
         "revenue": 0,
         "visitors": 0
@@ -4988,8 +5135,21 @@ Response `200`
       {
         "product_id": 1,
         "name": "ABC Dry Powder Fire Extinguisher",
+        "slug": "abc-dry-powder-fire-extinguisher",
+        "image": null,
         "quantity": 1,
         "revenue": 109250
+      }
+    ],
+    "top_districts": [
+      {
+        "district_id": 21,
+        "name": "Dhaka",
+        "name_bn": "ঢাকা",
+        "division": "Dhaka",
+        "orders": 1,
+        "sales": 115250,
+        "share": 100
       }
     ],
     "most_viewed": [
@@ -5002,19 +5162,21 @@ Response `200`
     "needs_attention": {
       "pending_orders": 0,
       "processing_orders": 0,
+      "on_hold_orders": 0,
       "pending_reviews": 0,
       "unread_messages": 0,
+      "new_business_applications": 0,
       "out_of_stock": 3
     },
     "recent_orders": [
       {
         "id": 2,
-        "number": "261001-BLTFT",
+        "number": "261012-7RPS8",
         "customer": "Walk-in Customer",
         "status": "delivered",
         "payment_status": "paid",
         "grand_total": 115250,
-        "placed_at": "2026-10-01T12:48:18.000000Z"
+        "placed_at": "2026-10-12T17:03:47.000000Z"
       }
     ],
     "low_stock": [
@@ -5175,7 +5337,7 @@ Response `202`
     "is_downloadable": false,
     "completed_at": null,
     "expires_at": null,
-    "created_at": "2026-10-01T12:48:21.000000Z"
+    "created_at": "2026-10-12T17:03:50.000000Z"
   }
 }
 ```
@@ -5209,13 +5371,13 @@ Response `200`
       "format": "xlsx",
       "status": "ready",
       "row_count": 0,
-      "size_bytes": 4515,
+      "size_bytes": 4516,
       "error": null,
       "is_downloadable": true,
       "requested_by": "Store Owner",
-      "completed_at": "2026-10-01T12:48:21.000000Z",
-      "expires_at": "2026-10-08T12:48:21.000000Z",
-      "created_at": "2026-10-01T12:48:21.000000Z"
+      "completed_at": "2026-10-12T17:03:50.000000Z",
+      "expires_at": "2026-10-19T17:03:50.000000Z",
+      "created_at": "2026-10-12T17:03:50.000000Z"
     }
   ],
   "links": {
@@ -5305,7 +5467,7 @@ Response `200`
 {
   "data": [
     {
-      "id": 117,
+      "id": 133,
       "log": "admin",
       "event": "deleted",
       "description": "deleted",
@@ -5333,9 +5495,9 @@ Response `200`
       "context": {
         "ip": "127.0.0.1",
         "user_agent": "Python-urllib/3.9",
-        "request_id": "6910314b-4db0-47f8-95ca-1326df9382a6"
+        "request_id": "d81f9bff-8d39-45b7-8a3a-8d8e8301cb86"
       },
-      "created_at": "2026-10-01T12:48:21.000000Z"
+      "created_at": "2026-10-12T17:03:49.000000Z"
     }
   ],
   "links": {
@@ -5359,7 +5521,7 @@ Response `200`
     "path": "http://localhost:8000/api/v1/admin/activity-log",
     "per_page": 25,
     "to": 25,
-    "total": 105,
+    "total": 120,
     "logs": [
       "admin"
     ],
@@ -5397,10 +5559,10 @@ Response `200`
 {
   "data": [
     {
-      "id": 89,
+      "id": 100,
       "log": "admin",
       "event": "order_status",
-      "description": "Order 261001-BLTFT: shipped to delivered",
+      "description": "Order 261012-7RPS8: shipped to delivered",
       "causer": {
         "id": 1,
         "name": "Store Owner"
@@ -5421,9 +5583,9 @@ Response `200`
         "note": null,
         "ip": "127.0.0.1",
         "user_agent": "Python-urllib/3.9",
-        "request_id": "8d470ddc-f155-4915-b82c-1aaa61418b4a"
+        "request_id": "cfdc5210-4035-45d3-a9a6-dc14477a1b38"
       },
-      "created_at": "2026-10-01T12:48:20.000000Z"
+      "created_at": "2026-10-12T17:03:48.000000Z"
     }
   ],
   "links": {
@@ -5446,8 +5608,8 @@ Response `200`
     ],
     "path": "http://localhost:8000/api/v1/admin/activity-log/App%5CModels%5COrder/2",
     "per_page": 25,
-    "to": 5,
-    "total": 5
+    "to": 10,
+    "total": 10
   }
 }
 ```
@@ -5490,6 +5652,13 @@ Response `200`
     "bank_transfer_enabled": true,
     "bank_transfer_instructions": null,
     "order_payment_timeout_minutes": 30,
+    "order_phone_verification": false,
+    "order_confirmation_sms": false,
+    "duplicate_order_block": false,
+    "duplicate_order_minutes": 15,
+    "courier_protection": false,
+    "courier_min_success_rate": 50,
+    "courier_min_parcels": 3,
     "logo_url": null,
     "favicon_url": null,
     "invoice_logo_url": null
@@ -5524,6 +5693,13 @@ Auth: token with permission `settings.update`
 | `bank_transfer_enabled` | Yes | Boolean |
 | `bank_transfer_instructions` | No | String, up to 2000 characters, may be `null` |
 | `order_payment_timeout_minutes` | Yes | Integer, at least 5, at most 1440 |
+| `order_phone_verification` | Yes | Boolean, checked by the server |
+| `order_confirmation_sms` | Yes | Boolean, checked by the server |
+| `duplicate_order_block` | Yes | Boolean |
+| `duplicate_order_minutes` | Yes | Integer, at least 1, at most 1440 |
+| `courier_protection` | Yes | Boolean |
+| `courier_min_success_rate` | Yes | Integer, at least 1, at most 100 |
+| `courier_min_parcels` | Yes | Integer, at least 1, at most 100 |
 
 **Example**
 
@@ -5559,6 +5735,13 @@ Response `200`
     "bank_transfer_enabled": true,
     "bank_transfer_instructions": null,
     "order_payment_timeout_minutes": 30,
+    "order_phone_verification": false,
+    "order_confirmation_sms": false,
+    "duplicate_order_block": false,
+    "duplicate_order_minutes": 15,
+    "courier_protection": false,
+    "courier_min_success_rate": 50,
+    "courier_min_parcels": 3,
     "logo_url": null,
     "favicon_url": null,
     "invoice_logo_url": null
@@ -5613,7 +5796,14 @@ Response `200`
     "bank_transfer_enabled": true,
     "bank_transfer_instructions": null,
     "order_payment_timeout_minutes": 30,
-    "logo_url": "http://localhost:8000/storage/system/logo-url-rzz02vikveq4.png",
+    "order_phone_verification": false,
+    "order_confirmation_sms": false,
+    "duplicate_order_block": false,
+    "duplicate_order_minutes": 15,
+    "courier_protection": false,
+    "courier_min_success_rate": 50,
+    "courier_min_parcels": 3,
+    "logo_url": "http://localhost:8000/storage/system/logo-url-zxeyp5zzjgcm.png",
     "favicon_url": null,
     "invoice_logo_url": null
   }
@@ -5657,11 +5847,11 @@ Response `201`
 {
   "data": {
     "id": 2,
-    "url": "http://localhost:8000/storage/media/2026/10/01M3VR4C32TXXMJCQ70HTPM8QR/full.webp",
+    "url": "http://localhost:8000/storage/media/2026/10/01M4RH42679A9GDGRA84X0NS9K/full.webp",
     "sizes": {
-      "thumb": "http://localhost:8000/storage/media/2026/10/01M3VR4C32TXXMJCQ70HTPM8QR/thumb.webp",
-      "card": "http://localhost:8000/storage/media/2026/10/01M3VR4C32TXXMJCQ70HTPM8QR/card.webp",
-      "full": "http://localhost:8000/storage/media/2026/10/01M3VR4C32TXXMJCQ70HTPM8QR/full.webp"
+      "thumb": "http://localhost:8000/storage/media/2026/10/01M4RH42679A9GDGRA84X0NS9K/thumb.webp",
+      "card": "http://localhost:8000/storage/media/2026/10/01M4RH42679A9GDGRA84X0NS9K/card.webp",
+      "full": "http://localhost:8000/storage/media/2026/10/01M4RH42679A9GDGRA84X0NS9K/full.webp"
     },
     "width": 64,
     "height": 64,
@@ -5669,7 +5859,7 @@ Response `201`
     "size_bytes": 90,
     "alt": "Fire extinguisher",
     "is_attached": false,
-    "created_at": "2026-10-01T12:48:19+00:00"
+    "created_at": "2026-10-12T17:03:47+00:00"
   }
 }
 ```
@@ -5793,8 +5983,8 @@ Response `200`
     "logo": null,
     "banner": null,
     "products_count": 0,
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "created_at": "2026-10-12T17:03:47+00:00",
+    "updated_at": "2026-10-12T17:03:47+00:00"
   }
 }
 ```
@@ -5855,8 +6045,8 @@ Response `201`
     "seo_keywords": null,
     "logo": null,
     "banner": null,
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "created_at": "2026-10-12T17:03:47+00:00",
+    "updated_at": "2026-10-12T17:03:47+00:00"
   }
 }
 ```
@@ -5918,8 +6108,8 @@ Response `200`
     "seo_keywords": null,
     "logo": null,
     "banner": null,
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "created_at": "2026-10-12T17:03:47+00:00",
+    "updated_at": "2026-10-12T17:03:47+00:00"
   }
 }
 ```
@@ -5984,8 +6174,8 @@ Response `200`
       "seo_keywords": null,
       "icon": null,
       "products_count": 0,
-      "created_at": "2026-10-01T12:48:08+00:00",
-      "updated_at": "2026-10-01T12:48:08+00:00"
+      "created_at": "2026-10-12T17:03:37+00:00",
+      "updated_at": "2026-10-12T17:03:37+00:00"
     }
   ]
 }
@@ -6030,8 +6220,8 @@ Response `200`
     "icon": null,
     "banner": null,
     "products_count": 0,
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "created_at": "2026-10-12T17:03:48+00:00",
+    "updated_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -6095,8 +6285,8 @@ Response `201`
     "seo_keywords": null,
     "icon": null,
     "banner": null,
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "created_at": "2026-10-12T17:03:48+00:00",
+    "updated_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -6158,8 +6348,8 @@ Response `200`
     "seo_keywords": null,
     "icon": null,
     "banner": null,
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "created_at": "2026-10-12T17:03:48+00:00",
+    "updated_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -6212,8 +6402,8 @@ Response `200`
     "seo_title": null,
     "seo_description": null,
     "seo_keywords": null,
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "created_at": "2026-10-12T17:03:48+00:00",
+    "updated_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -6434,7 +6624,7 @@ Response `200`
         "name": "Hardware"
       },
       "image": null,
-      "updated_at": "2026-10-01T12:48:08+00:00"
+      "updated_at": "2026-10-12T17:03:37+00:00"
     }
   ],
   "links": {
@@ -6548,9 +6738,9 @@ Response `200`
     "rating_count": 0,
     "sold_count": 0,
     "view_count": 0,
-    "published_at": "2026-10-01T12:48:19+00:00",
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "published_at": "2026-10-12T17:03:48+00:00",
+    "created_at": "2026-10-12T17:03:48+00:00",
+    "updated_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -6712,9 +6902,9 @@ Response `201`
     "rating_count": 0,
     "sold_count": 0,
     "view_count": 0,
-    "published_at": "2026-10-01T12:48:19+00:00",
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "published_at": "2026-10-12T17:03:48+00:00",
+    "created_at": "2026-10-12T17:03:48+00:00",
+    "updated_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -6854,9 +7044,9 @@ Response `200`
     "rating_count": 0,
     "sold_count": 0,
     "view_count": 0,
-    "published_at": "2026-10-01T12:48:19+00:00",
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "published_at": "2026-10-12T17:03:48+00:00",
+    "created_at": "2026-10-12T17:03:48+00:00",
+    "updated_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -6957,9 +7147,9 @@ Response `200`
     "rating_count": 0,
     "sold_count": 0,
     "view_count": 0,
-    "published_at": "2026-10-01T12:48:19+00:00",
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "published_at": "2026-10-12T17:03:48+00:00",
+    "created_at": "2026-10-12T17:03:48+00:00",
+    "updated_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -7050,8 +7240,8 @@ Response `201`
     "sold_count": 0,
     "view_count": 0,
     "published_at": null,
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "created_at": "2026-10-12T17:03:48+00:00",
+    "updated_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -7166,9 +7356,9 @@ Response `200`
     "rating_count": 0,
     "sold_count": 0,
     "view_count": 0,
-    "published_at": "2026-10-01T12:48:19+00:00",
-    "created_at": "2026-10-01T12:48:19+00:00",
-    "updated_at": "2026-10-01T12:48:19+00:00"
+    "published_at": "2026-10-12T17:03:48+00:00",
+    "created_at": "2026-10-12T17:03:48+00:00",
+    "updated_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -7364,9 +7554,9 @@ Response `202`
     "products_updated": 0,
     "rows_failed": 0,
     "errors": [],
-    "started_at": "2026-10-01T12:48:19+00:00",
-    "finished_at": "2026-10-01T12:48:20+00:00",
-    "created_at": "2026-10-01T12:48:19+00:00"
+    "started_at": "2026-10-12T17:03:48+00:00",
+    "finished_at": "2026-10-12T17:03:48+00:00",
+    "created_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -7431,9 +7621,9 @@ Response `200`
     "products_updated": 0,
     "rows_failed": 0,
     "errors": [],
-    "started_at": "2026-10-01T12:48:19+00:00",
-    "finished_at": "2026-10-01T12:48:20+00:00",
-    "created_at": "2026-10-01T12:48:19+00:00"
+    "started_at": "2026-10-12T17:03:48+00:00",
+    "finished_at": "2026-10-12T17:03:48+00:00",
+    "created_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -7598,7 +7788,7 @@ Response `200`
         "id": 1,
         "name": "Store Owner"
       },
-      "created_at": "2026-10-01T12:48:19+00:00"
+      "created_at": "2026-10-12T17:03:48+00:00"
     }
   ],
   "links": {
@@ -7783,7 +7973,7 @@ Response `200`
       }
     ],
     "recorded_by": "Store Owner",
-    "created_at": "2026-10-01T12:48:20+00:00"
+    "created_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -7856,7 +8046,7 @@ Response `201`
       }
     ],
     "recorded_by": "Store Owner",
-    "created_at": "2026-10-01T12:48:20+00:00"
+    "created_at": "2026-10-12T17:03:48+00:00"
   }
 }
 ```
@@ -7872,7 +8062,7 @@ Response `201`
 
 ### `GET /api/v1/admin/orders`
 
-Orders, filtered by status, payment, date or `q`.
+Orders, filtered by status, payment, date, `product`, `courier` or `q`.
 
 Auth: token with permission `orders.view` · _paginated_
 
@@ -7880,11 +8070,13 @@ Auth: token with permission `orders.view` · _paginated_
 
 | Query | Type | Notes |
 | --- | --- | --- |
-| `status` | one of `pending`, `confirmed`, `processing`, `packed`, `shipped`, `delivered`, `cancelled`, `returned`, `refunded` | |
+| `status` | one of `pending`, `confirmed`, `processing`, `packed`, `on_hold`, `shipped`, `delivered`, `cancelled`, `returned`, `refunded` | |
 | `payment_status` | one of `unpaid`, `pending`, `paid`, `failed`, `partially_refunded`, `refunded` | |
 | `payment_method` | one of `cod`, `bank_transfer`, `sslcommerz` | |
 | `source` | one of `cart`, `buy_now` | |
+| `courier` | one of `steadfast`, `pathao`, `redx` | |
 | `q` | string | search text |
+| `product` | string | |
 | `customer_id` | integer | |
 | `zone_id` | integer | |
 | `from` | date | `YYYY-MM-DD` |
@@ -7903,7 +8095,7 @@ Response `200`
   "data": [
     {
       "id": 2,
-      "number": "261001-BLTFT",
+      "number": "261012-7RPS8",
       "status": "pending",
       "payment_status": "unpaid",
       "payment_method": "cod",
@@ -7917,7 +8109,8 @@ Response `200`
       "district": "Dhaka",
       "item_count": 1,
       "grand_total": 115250,
-      "placed_at": "2026-10-01T12:48:18.000000Z"
+      "shipment": null,
+      "placed_at": "2026-10-12T17:03:47.000000Z"
     }
   ],
   "links": {
@@ -7951,6 +8144,70 @@ _Lists trimmed to their first item; long text shortened._
 
 ---
 
+<a id="get-admin-orders-summary"></a>
+
+### `GET /api/v1/admin/orders/summary`
+
+Counts for a period (`from`, `to`): orders per step and per payment status, sales total and average.
+
+Auth: token with permission `orders.view`
+
+**Body fields**
+
+| Field | Required | Rules |
+| --- | --- | --- |
+| `from` | No | `date_format:Y-m-d` |
+| `to` | No | `date_format:Y-m-d`, on or after `from` |
+
+**Example**
+
+```http
+GET /api/v1/admin/orders/summary?from=2026-10-01&to=2026-10-31
+Authorization: Bearer <token>
+```
+
+Response `200`
+```json
+{
+  "data": {
+    "range": {
+      "from": "2026-10-01",
+      "to": "2026-10-31"
+    },
+    "total_orders": 2,
+    "by_status": {
+      "pending": 1,
+      "confirmed": 0,
+      "processing": 0,
+      "packed": 0,
+      "on_hold": 0,
+      "shipped": 0,
+      "delivered": 0,
+      "cancelled": 1,
+      "returned": 0,
+      "refunded": 0
+    },
+    "by_payment_status": {
+      "unpaid": 2,
+      "pending": 0,
+      "paid": 0,
+      "failed": 0,
+      "partially_refunded": 0,
+      "refunded": 0
+    },
+    "sales": {
+      "orders": 1,
+      "amount": 115250,
+      "average": 115250
+    }
+  }
+}
+```
+
+<sub>End of `GET /api/v1/admin/orders/summary` · [back to contents](#contents)</sub>
+
+---
+
 <a id="get-admin-orders-order"></a>
 
 ### `GET /api/v1/admin/orders/{order}`
@@ -7973,7 +8230,7 @@ Response `200`
 {
   "data": {
     "id": 2,
-    "number": "261001-BLTFT",
+    "number": "261012-7RPS8",
     "status": "pending",
     "payment_status": "unpaid",
     "payment_method": "cod",
@@ -8051,6 +8308,7 @@ Response `200`
     "currency": "BDT",
     "customer_note": null,
     "payments": [],
+    "shipment": null,
     "allowed_transitions": [
       {
         "status": "confirmed",
@@ -8059,7 +8317,9 @@ Response `200`
     ],
     "payment_expires_at": null,
     "stock_released_at": null,
-    "placed_at": "2026-10-01T12:48:18.000000Z",
+    "ip_address": "127.0.0.1",
+    "customer_ip": "103.92.84.10",
+    "placed_at": "2026-10-12T17:03:47.000000Z",
     "confirmed_at": null,
     "delivered_at": null,
     "cancelled_at": null,
@@ -8069,7 +8329,7 @@ Response `200`
         "to": "pending",
         "note": "Order placed",
         "by": null,
-        "at": "2026-10-01T12:48:18.000000Z"
+        "at": "2026-10-12T17:03:47.000000Z"
       }
     ]
   }
@@ -8097,7 +8357,7 @@ Path: `order`
 
 | Field | Required | Rules |
 | --- | --- | --- |
-| `status` | Yes | One of `pending`, `confirmed`, `processing`, `packed`, `shipped`, `delivered`, `cancelled`, `returned`, `refunded` |
+| `status` | Yes | One of `pending`, `confirmed`, `processing`, `packed`, `on_hold`, `shipped`, `delivered`, `cancelled`, `returned`, `refunded` |
 | `note` | No | String, up to 500 characters, may be `null` |
 
 **Example**
@@ -8118,7 +8378,7 @@ Response `200`
 {
   "data": {
     "id": 2,
-    "number": "261001-BLTFT",
+    "number": "261012-7RPS8",
     "status": "confirmed",
     "payment_status": "unpaid",
     "payment_method": "cod",
@@ -8196,6 +8456,7 @@ Response `200`
     "currency": "BDT",
     "customer_note": null,
     "payments": [],
+    "shipment": null,
     "allowed_transitions": [
       {
         "status": "processing",
@@ -8204,8 +8465,10 @@ Response `200`
     ],
     "payment_expires_at": null,
     "stock_released_at": null,
-    "placed_at": "2026-10-01T12:48:18.000000Z",
-    "confirmed_at": "2026-10-01T12:48:20.000000Z",
+    "ip_address": "127.0.0.1",
+    "customer_ip": "103.92.84.10",
+    "placed_at": "2026-10-12T17:03:47.000000Z",
+    "confirmed_at": "2026-10-12T17:03:48.000000Z",
     "delivered_at": null,
     "cancelled_at": null,
     "history": [
@@ -8214,7 +8477,7 @@ Response `200`
         "to": "pending",
         "note": "Order placed",
         "by": null,
-        "at": "2026-10-01T12:48:18.000000Z"
+        "at": "2026-10-12T17:03:47.000000Z"
       }
     ]
   }
@@ -8239,7 +8502,7 @@ Response `409`
 {
   "message": "An order that is delivered cannot become pending. It can only become: returned.",
   "code": "INVALID_ORDER_TRANSITION",
-  "request_id": "9a3c7417-9d70-47c0-b78d-73c901756798"
+  "request_id": "b1ec68a5-a2cd-4d15-aa23-17dce3149ba7"
 }
 ```
 
@@ -8251,7 +8514,7 @@ Response `409`
 
 ### `POST /api/v1/admin/orders/{order}/payment`
 
-Record a cash or bank payment; confirms the order.
+Mark paid or unpaid (`payment_status`), at any time; marking paid confirms a pending order.
 
 Auth: token with permission `orders.update`
 
@@ -8261,6 +8524,7 @@ Path: `order`
 
 | Field | Required | Rules |
 | --- | --- | --- |
+| `payment_status` | No | One of `paid`, `unpaid` |
 | `note` | No | String, up to 500 characters, may be `null` |
 
 **Example**
@@ -8271,6 +8535,7 @@ Authorization: Bearer <token>
 ```
 ```json
 {
+  "payment_status": "paid",
   "note": "Cash on delivery collected"
 }
 ```
@@ -8280,7 +8545,7 @@ Response `200`
 {
   "data": {
     "id": 2,
-    "number": "261001-BLTFT",
+    "number": "261012-7RPS8",
     "status": "confirmed",
     "payment_status": "paid",
     "payment_method": "cod",
@@ -8358,6 +8623,7 @@ Response `200`
     "currency": "BDT",
     "customer_note": null,
     "payments": [],
+    "shipment": null,
     "allowed_transitions": [
       {
         "status": "processing",
@@ -8366,8 +8632,10 @@ Response `200`
     ],
     "payment_expires_at": null,
     "stock_released_at": null,
-    "placed_at": "2026-10-01T12:48:18.000000Z",
-    "confirmed_at": "2026-10-01T12:48:20.000000Z",
+    "ip_address": "127.0.0.1",
+    "customer_ip": "103.92.84.10",
+    "placed_at": "2026-10-12T17:03:47.000000Z",
+    "confirmed_at": "2026-10-12T17:03:48.000000Z",
     "delivered_at": null,
     "cancelled_at": null,
     "history": [
@@ -8376,7 +8644,7 @@ Response `200`
         "to": "pending",
         "note": "Order placed",
         "by": null,
-        "at": "2026-10-01T12:48:18.000000Z"
+        "at": "2026-10-12T17:03:47.000000Z"
       }
     ]
   }
@@ -8385,6 +8653,286 @@ Response `200`
 _Lists trimmed to their first item; long text shortened._
 
 <sub>End of `POST /api/v1/admin/orders/{order}/payment` · [back to contents](#contents)</sub>
+
+---
+
+<a id="post-admin-shipments-scan"></a>
+
+### `POST /api/v1/admin/shipments/scan`
+
+Scan an invoice barcode to ship a packed order (with a courier or by hand).
+
+Auth: token with permission `orders.fulfil`
+
+**Query parameters**
+
+| Query | Type | Notes |
+| --- | --- | --- |
+| `courier` | one of `steadfast`, `pathao`, `redx` | |
+
+**Body fields**
+
+| Field | Required | Rules |
+| --- | --- | --- |
+| `number` | Yes | String, up to 32 characters |
+| `courier` | No | One of `steadfast`, `pathao`, `redx`, may be `null` |
+| `weight_kg` | No | Number, at least 0.1, at most 50, may be `null` |
+| `cod_amount` | No | Integer, at least 0, may be `null` |
+| `note` | No | String, up to 250 characters, may be `null` |
+| `city_id` | No | Integer, at least 1, may be `null` |
+| `zone_id` | No | Integer, at least 1, may be `null` |
+| `area_id` | No | Integer, at least 1, may be `null` |
+
+**Example**
+
+```http
+POST /api/v1/admin/shipments/scan
+Authorization: Bearer <token>
+```
+```json
+{
+  "number": "261012-7RPS8"
+}
+```
+
+Response `201`
+```json
+{
+  "data": {
+    "result": "shipped",
+    "order": {
+      "id": 2,
+      "number": "261012-7RPS8",
+      "status": "shipped",
+      "payment_status": "paid",
+      "payment_method": "cod",
+      "payment_method_label": "Cash on delivery",
+      "source": "buy_now",
+      "customer": {
+        "id": null,
+        "is_guest": true,
+        "name": "Walk-in Customer",
+        "phone": "+8801812345678",
+        "email": null,
+        "account_type": "retail",
+        "group": "Retail"
+      },
+      "shipping_address": {
+        "name": "Walk-in Customer",
+        "phone": "+8801812345678",
+        "line1": "Shop 4, New Market",
+        "line2": null,
+        "area": "New Market",
+        "district": "Dhaka",
+        "division": "Dhaka",
+        "postcode": null,
+        "district_id": 21,
+        "division_id": 20
+      },
+      "billing_address": {
+        "name": "Walk-in Customer",
+        "phone": "+8801812345678",
+        "line1": "Shop 4, New Market",
+        "line2": null,
+        "area": "New Market",
+        "district": "Dhaka",
+        "division": "Dhaka",
+        "postcode": null,
+        "district_id": 21,
+        "division_id": 20
+      },
+      "delivery": {
+        "zone_id": 1,
+        "zone": "Inside Dhaka",
+        "days_min": 1,
+        "days_max": 2,
+        "weight_grams": 1600
+      },
+      "items": [
+        {
+          "id": 2,
+          "product_id": 1,
+          "variant_id": 1,
+          "name": "ABC Dry Powder Fire Extinguisher",
+          "label": "1 kg",
+          "sku": "FE-ABC-1KG",
+          "image": null,
+          "quantity": 1,
+          "unit_price": 95000,
+          "unit_cost": 62000,
+          "price_source": "base",
+          "discount": 0,
+          "vat_rate_bp": 1500,
+          "vat": 14250,
+          "line_total": 109250
+        }
+      ],
+      "totals": {
+        "subtotal": 95000,
+        "discount": 0,
+        "vat": 14250,
+        "shipping": 6000,
+        "shipping_vat": 0,
+        "grand_total": 115250,
+        "cost": 62000
+      },
+      "coupon_code": null,
+      "currency": "BDT",
+      "customer_note": null,
+      "payments": [],
+      "shipment": null,
+      "allowed_transitions": [
+        {
+          "status": "delivered",
+          "permission": "orders.fulfil"
+        }
+      ],
+      "payment_expires_at": null,
+      "stock_released_at": null,
+      "ip_address": "127.0.0.1",
+      "customer_ip": "103.92.84.10",
+      "placed_at": "2026-10-12T17:03:47.000000Z",
+      "confirmed_at": "2026-10-12T17:03:48.000000Z",
+      "delivered_at": null,
+      "cancelled_at": null,
+      "history": [
+        {
+          "from": null,
+          "to": "pending",
+          "note": "Order placed",
+          "by": null,
+          "at": "2026-10-12T17:03:47.000000Z"
+        }
+      ]
+    }
+  }
+}
+```
+_Lists trimmed to their first item; long text shortened._
+
+<sub>End of `POST /api/v1/admin/shipments/scan` · [back to contents](#contents)</sub>
+
+---
+
+<a id="post-admin-returns-scan"></a>
+
+### `POST /api/v1/admin/returns/scan`
+
+Scan an invoice barcode to return a shipped or delivered order.
+
+Auth: token with permission `orders.refund`
+
+**Body fields**
+
+| Field | Required | Rules |
+| --- | --- | --- |
+| `number` | Yes | String, up to 32 characters |
+| `note` | No | String, up to 500 characters, may be `null` |
+
+**Example (not configured yet)**
+
+```http
+POST /api/v1/admin/returns/scan
+Authorization: Bearer <token>
+```
+```json
+{
+  "number": "261012-7RPS8",
+  "note": "Customer refused"
+}
+```
+
+Response `409`
+```json
+{
+  "message": "An order that is packed cannot become returned. It can only become: shipped, on_hold, cancelled.",
+  "code": "INVALID_ORDER_TRANSITION",
+  "request_id": "431a50cc-22fd-40f5-bc93-e4e057a35dcf"
+}
+```
+
+<sub>End of `POST /api/v1/admin/returns/scan` · [back to contents](#contents)</sub>
+
+---
+
+<a id="post-admin-orders-order-shipment"></a>
+
+### `POST /api/v1/admin/orders/{order}/shipment`
+
+Book a packed order with a courier; it becomes Shipped.
+
+Auth: token with permission `orders.fulfil`
+
+Path: `order`
+
+**Body fields**
+
+| Field | Required | Rules |
+| --- | --- | --- |
+| `courier` | Yes | One of `steadfast`, `pathao`, `redx` |
+| `weight_kg` | No | Number, at least 0.1, at most 50, may be `null` |
+| `cod_amount` | No | Integer, at least 0, at most 0, may be `null` |
+| `note` | No | String, up to 250 characters, may be `null` |
+| `city_id` | No | Integer, at least 1, may be `null` |
+| `zone_id` | No | Integer, at least 1, may be `null` |
+| `area_id` | No | Integer, at least 1, may be `null` |
+
+**Example (not configured yet)**
+
+```http
+POST /api/v1/admin/orders/2/shipment
+Authorization: Bearer <token>
+```
+```json
+{
+  "courier": "pathao",
+  "city_id": 1,
+  "zone_id": 298,
+  "weight_kg": 1.2,
+  "note": "Call before coming"
+}
+```
+
+Response `409`
+```json
+{
+  "message": "Pathao Courier is not switched on. It can be set up under Couriers in the back office.",
+  "code": "COURIER_UNAVAILABLE",
+  "request_id": "c5db5509-f2f7-447a-9225-0ca4f43b8604"
+}
+```
+
+<sub>End of `POST /api/v1/admin/orders/{order}/shipment` · [back to contents](#contents)</sub>
+
+---
+
+<a id="post-admin-orders-order-shipment-sync"></a>
+
+### `POST /api/v1/admin/orders/{order}/shipment/sync`
+
+Ask the courier where the parcel is now.
+
+Auth: token with permission `orders.fulfil`
+
+Path: `order`
+
+**Example (not configured yet)**
+
+```http
+POST /api/v1/admin/orders/2/shipment/sync
+Authorization: Bearer <token>
+```
+
+Response `404`
+```json
+{
+  "message": "The requested resource was not found.",
+  "code": "NOT_FOUND",
+  "request_id": "ff6bf7ee-b7d8-4426-a5ab-c6541f01b434"
+}
+```
+
+<sub>End of `POST /api/v1/admin/orders/{order}/shipment/sync` · [back to contents](#contents)</sub>
 
 ---
 
@@ -8479,7 +9027,7 @@ Response `409`
 {
   "message": "This order was not paid for online, so there is nothing to refund through the gateway.",
   "code": "REFUND_NOT_POSSIBLE",
-  "request_id": "029f3646-c9c9-4763-bfa0-c6cb67b75608"
+  "request_id": "2b010e65-f8a8-4144-878d-e8595fd5ac13"
 }
 ```
 
@@ -8527,8 +9075,8 @@ Response `200`
       "orders_count": 0,
       "spent": 0,
       "last_order_at": null,
-      "last_login_at": "2026-10-01T12:48:18.000000Z",
-      "created_at": "2026-10-01T12:48:08.000000Z"
+      "last_login_at": "2026-10-12T17:03:46.000000Z",
+      "created_at": "2026-10-12T17:03:38.000000Z"
     }
   ],
   "links": {
@@ -8614,8 +9162,8 @@ Response `200`
         "is_default_billing": true
       }
     ],
-    "last_login_at": "2026-10-01T12:48:18.000000Z",
-    "created_at": "2026-10-01T12:48:08.000000Z"
+    "last_login_at": "2026-10-12T17:03:46.000000Z",
+    "created_at": "2026-10-12T17:03:38.000000Z"
   }
 }
 ```
@@ -8687,8 +9235,8 @@ Response `200`
         "is_default_billing": true
       }
     ],
-    "last_login_at": "2026-10-01T12:48:18.000000Z",
-    "created_at": "2026-10-01T12:48:08.000000Z"
+    "last_login_at": "2026-10-12T17:03:46.000000Z",
+    "created_at": "2026-10-12T17:03:38.000000Z"
   }
 }
 ```
@@ -8717,6 +9265,290 @@ Authorization: Bearer <token>
 Response `204`, no body.
 
 <sub>End of `DELETE /api/v1/admin/customers/{customer}` · [back to contents](#contents)</sub>
+
+
+## Admin endpoints (the back office) · Couriers
+
+---
+
+<a id="get-admin-couriers"></a>
+
+### `GET /api/v1/admin/couriers`
+
+Steadfast, Pathao and RedX: on/off, test mode, keys (masked), webhook address.
+
+Auth: token with permission `couriers.view`
+
+**Example**
+
+```http
+GET /api/v1/admin/couriers
+Authorization: Bearer <token>
+```
+
+Response `200`
+```json
+{
+  "data": [
+    {
+      "courier": "steadfast",
+      "label": "Steadfast",
+      "is_enabled": false,
+      "is_sandbox": false,
+      "supports_sandbox": false,
+      "is_configured": false,
+      "credentials": [
+        {
+          "key": "api_key",
+          "label": "API key",
+          "is_secret": true,
+          "is_set": false,
+          "preview": null
+        }
+      ],
+      "options": [],
+      "webhook": {
+        "url": "http://localhost:8000/api/v1/couriers/steadfast/webhook/4m8PhvG7GIyJewIBJcycscEXwwt35d5AhLOyQbkc",
+        "secret": "4m8PhvG7GIyJewIBJcycscEXwwt35d5AhLOyQbkc"
+      },
+      "updated_at": "2026-10-12T17:03:47.000000Z"
+    }
+  ]
+}
+```
+_Lists trimmed to their first item; long text shortened._
+
+<sub>End of `GET /api/v1/admin/couriers` · [back to contents](#contents)</sub>
+
+---
+
+<a id="put-admin-couriers-courier"></a>
+
+### `PUT /api/v1/admin/couriers/{courier}`
+
+Switch on or off, test mode, keys, pickup store.
+
+Auth: token with permission `couriers.update`
+
+Path: `courier`
+
+**Query parameters**
+
+| Query | Type | Notes |
+| --- | --- | --- |
+| `is_sandbox` | boolean | `1` or `0` |
+| `is_enabled` | boolean | `1` or `0` |
+
+**Example**
+
+```http
+PUT /api/v1/admin/couriers/steadfast
+Authorization: Bearer <token>
+```
+```json
+{
+  "is_enabled": true,
+  "credentials": {
+    "api_key": "your-steadfast-api-key",
+    "secret_key": "your-steadfast-secret-key"
+  }
+}
+```
+
+Response `200`
+```json
+{
+  "data": {
+    "courier": "steadfast",
+    "label": "Steadfast",
+    "is_enabled": true,
+    "is_sandbox": false,
+    "supports_sandbox": false,
+    "is_configured": true,
+    "credentials": [
+      {
+        "key": "api_key",
+        "label": "API key",
+        "is_secret": true,
+        "is_set": true,
+        "preview": "••••-key"
+      }
+    ],
+    "options": [],
+    "webhook": {
+      "url": "http://localhost:8000/api/v1/couriers/steadfast/webhook/4m8PhvG7GIyJewIBJcycscEXwwt35d5AhLOyQbkc",
+      "secret": "4m8PhvG7GIyJewIBJcycscEXwwt35d5AhLOyQbkc"
+    },
+    "updated_at": "2026-10-12T17:03:47.000000Z"
+  }
+}
+```
+_Lists trimmed to their first item; long text shortened._
+
+<sub>End of `PUT /api/v1/admin/couriers/{courier}` · [back to contents](#contents)</sub>
+
+---
+
+<a id="post-admin-couriers-courier-check"></a>
+
+### `POST /api/v1/admin/couriers/{courier}/check`
+
+Try the saved keys with the courier.
+
+Auth: token with permission `couriers.update`
+
+Path: `courier`
+
+**Example (not configured yet)**
+
+```http
+POST /api/v1/admin/couriers/redx/check
+Authorization: Bearer <token>
+```
+
+Response `409`
+```json
+{
+  "message": "RedX has not been given all of its keys. It can be set up under Couriers in the back office.",
+  "code": "COURIER_UNAVAILABLE",
+  "request_id": "9ac0ffa7-97b3-45b1-8378-9c72cb893519"
+}
+```
+
+<sub>End of `POST /api/v1/admin/couriers/{courier}/check` · [back to contents](#contents)</sub>
+
+---
+
+<a id="get-admin-couriers-courier-stores"></a>
+
+### `GET /api/v1/admin/couriers/{courier}/stores`
+
+The merchant's pickup stores at that courier.
+
+Auth: token with permission `couriers.view`
+
+Path: `courier`
+
+**Example (not configured yet)**
+
+```http
+GET /api/v1/admin/couriers/redx/stores
+Authorization: Bearer <token>
+```
+
+Response `409`
+```json
+{
+  "message": "RedX has not been given all of its keys. It can be set up under Couriers in the back office.",
+  "code": "COURIER_UNAVAILABLE",
+  "request_id": "6d71c50a-77a2-4758-a09d-1f227cc8ff38"
+}
+```
+
+<sub>End of `GET /api/v1/admin/couriers/{courier}/stores` · [back to contents](#contents)</sub>
+
+---
+
+<a id="get-admin-couriers-available"></a>
+
+### `GET /api/v1/admin/couriers/available`
+
+Couriers that can be shipped with right now.
+
+Auth: token with permission `orders.fulfil`
+
+**Example**
+
+```http
+GET /api/v1/admin/couriers/available
+Authorization: Bearer <token>
+```
+
+Response `200`
+```json
+{
+  "data": [
+    {
+      "courier": "steadfast",
+      "label": "Steadfast",
+      "is_sandbox": false,
+      "area_fields": []
+    }
+  ]
+}
+```
+
+<sub>End of `GET /api/v1/admin/couriers/available` · [back to contents](#contents)</sub>
+
+---
+
+<a id="get-admin-couriers-courier-areas"></a>
+
+### `GET /api/v1/admin/couriers/{courier}/areas`
+
+The courier's places: Pathao cities → `city_id` zones → `zone_id` areas; RedX areas searched with `q`.
+
+Auth: token with permission `orders.fulfil`
+
+Path: `courier`
+
+**Body fields**
+
+| Field | Required | Rules |
+| --- | --- | --- |
+| `city_id` | No | Integer, at least 1 |
+| `zone_id` | No | Integer, at least 1 |
+| `q` | No | String, up to 100 characters, may be `null` |
+
+**Example**
+
+```http
+GET /api/v1/admin/couriers/steadfast/areas
+Authorization: Bearer <token>
+```
+
+Response `200`
+```json
+{
+  "data": []
+}
+```
+
+<sub>End of `GET /api/v1/admin/couriers/{courier}/areas` · [back to contents](#contents)</sub>
+
+---
+
+<a id="post-couriers-courier-webhook-secret"></a>
+
+### `POST /api/v1/couriers/{courier}/webhook/{secret}`
+
+The courier's own server reporting a parcel moved.
+
+Auth: none
+
+Path: `courier`, `secret`
+
+**Example**
+
+```http
+POST /api/v1/couriers/steadfast/webhook/4m8PhvG7GIyJewIBJcycscEXwwt35d5AhLOyQbkc
+```
+```json
+{
+  "notification_type": "delivery_status",
+  "consignment_id": 1424107,
+  "status": "delivered"
+}
+```
+
+Response `202`
+```json
+{
+  "message": "Accepted."
+}
+```
+
+<sub>End of `POST /api/v1/couriers/{courier}/webhook/{secret}` · [back to contents](#contents)</sub>
 
 
 ## Admin endpoints (the back office) · Shipping and discounts
@@ -9064,7 +9896,7 @@ Response `200`
       "is_active": true,
       "status": "active",
       "summary": "৳100.00 off",
-      "created_at": "2026-10-01T12:48:08+00:00"
+      "created_at": "2026-10-12T17:03:38+00:00"
     }
   ],
   "links": {
@@ -9134,7 +9966,7 @@ Response `200`
     "is_active": true,
     "status": "active",
     "summary": "25% off",
-    "created_at": "2026-10-01T12:48:20+00:00"
+    "created_at": "2026-10-12T17:03:49+00:00"
   }
 }
 ```
@@ -9203,7 +10035,7 @@ Response `201`
     "is_active": true,
     "status": "active",
     "summary": "25% off",
-    "created_at": "2026-10-01T12:48:20+00:00"
+    "created_at": "2026-10-12T17:03:49+00:00"
   }
 }
 ```
@@ -9268,7 +10100,7 @@ Response `200`
     "is_active": false,
     "status": "inactive",
     "summary": "25% off",
-    "created_at": "2026-10-01T12:48:20+00:00"
+    "created_at": "2026-10-12T17:03:49+00:00"
   }
 }
 ```
@@ -9392,7 +10224,7 @@ Response `200`
         "usual_price": 95000
       }
     ],
-    "created_at": "2026-10-01T12:48:20+00:00"
+    "created_at": "2026-10-12T17:03:49+00:00"
   }
 }
 ```
@@ -9460,7 +10292,7 @@ Response `201`
         "usual_price": 95000
       }
     ],
-    "created_at": "2026-10-01T12:48:20+00:00"
+    "created_at": "2026-10-12T17:03:49+00:00"
   }
 }
 ```
@@ -9526,7 +10358,7 @@ Response `200`
         "usual_price": 95000
       }
     ],
-    "created_at": "2026-10-01T12:48:20+00:00"
+    "created_at": "2026-10-12T17:03:49+00:00"
   }
 }
 ```
@@ -9565,7 +10397,7 @@ Response `204`, no body.
 
 ### `GET /api/v1/admin/reviews`
 
-The moderation queue (`status`, default pending).
+The moderation queue (`status`, default pending; `source` customer or store).
 
 Auth: token with permission `reviews.view` · _paginated_
 
@@ -9573,6 +10405,7 @@ Auth: token with permission `reviews.view` · _paginated_
 
 | Query | Type | Notes |
 | --- | --- | --- |
+| `source` | one of `customer`, `store` | |
 | `status` | string | |
 | `rating` | integer | |
 | `product_id` | integer | |
@@ -9592,7 +10425,7 @@ Response `200`
 {
   "data": [
     {
-      "id": 2,
+      "id": 3,
       "rating": 4,
       "comment": "Does the job.",
       "status": "pending",
@@ -9601,20 +10434,24 @@ Response `200`
       "is_visible": false,
       "rejection_reason": null,
       "edited_by_shop": false,
+      "source": "customer",
+      "author_name": "Rafi Ahmed",
       "author": {
         "id": 2,
         "name": "Rafi Ahmed"
       },
+      "reviewer_name": null,
+      "created_by": null,
       "product": {
         "id": 7,
         "name": "Galvanised Nut & Washer Set",
         "slug": "galvanised-nut-washer-set"
       },
-      "order_id": 3,
+      "order_id": null,
       "photos": [],
       "moderated_by": null,
       "approved_at": null,
-      "created_at": "2026-10-01T12:48:23.000000Z"
+      "created_at": "2026-10-12T17:03:52.000000Z"
     }
   ],
   "links": {
@@ -9649,6 +10486,76 @@ _Lists trimmed to their first item; long text shortened._
 
 ---
 
+<a id="post-admin-reviews"></a>
+
+### `POST /api/v1/admin/reviews`
+
+Enter a review under a given name; published at once.
+
+Auth: token with permission `reviews.create`
+
+**Body fields**
+
+| Field | Required | Rules |
+| --- | --- | --- |
+| `product_id` | Yes | Integer, an existing `products` id |
+| `reviewer_name` | Yes | String, at least 2 characters, up to 100 characters |
+| `rating` | Yes | Integer, at least 1, at most 5 |
+| `comment` | No | String, up to 2000 characters, may be `null` |
+| `photo_ids` | No | List, up to 5 items |
+| `photo_ids[]` | No | Integer, an existing `media` id |
+
+**Example**
+
+```http
+POST /api/v1/admin/reviews
+Authorization: Bearer <token>
+```
+```json
+{
+  "product_id": 1,
+  "reviewer_name": "Rahim Uddin",
+  "rating": 5,
+  "comment": "Bought two for the office. Easy to mount."
+}
+```
+
+Response `201`
+```json
+{
+  "data": {
+    "id": 4,
+    "rating": 5,
+    "comment": "Bought two for the office. Easy to mount.",
+    "status": "approved",
+    "is_hidden": false,
+    "is_featured": false,
+    "is_visible": true,
+    "rejection_reason": null,
+    "edited_by_shop": false,
+    "source": "store",
+    "author_name": "Rahim Uddin",
+    "author": null,
+    "reviewer_name": "Rahim Uddin",
+    "created_by": "Store Owner",
+    "product": {
+      "id": 1,
+      "name": "ABC Dry Powder Fire Extinguisher",
+      "slug": "abc-dry-powder-fire-extinguisher"
+    },
+    "order_id": null,
+    "photos": [],
+    "moderated_by": "Store Owner",
+    "approved_at": "2026-10-12T17:03:52.000000Z",
+    "created_at": "2026-10-12T17:03:52.000000Z"
+  }
+}
+```
+
+<sub>End of `POST /api/v1/admin/reviews` · [back to contents](#contents)</sub>
+
+---
+
 <a id="get-admin-reviews-review"></a>
 
 ### `GET /api/v1/admin/reviews/{review}`
@@ -9662,7 +10569,7 @@ Path: `review`
 **Example**
 
 ```http
-GET /api/v1/admin/reviews/2
+GET /api/v1/admin/reviews/3
 Authorization: Bearer <token>
 ```
 
@@ -9670,7 +10577,7 @@ Response `200`
 ```json
 {
   "data": {
-    "id": 2,
+    "id": 3,
     "rating": 4,
     "comment": "Does the job.",
     "status": "pending",
@@ -9679,20 +10586,24 @@ Response `200`
     "is_visible": false,
     "rejection_reason": null,
     "edited_by_shop": false,
+    "source": "customer",
+    "author_name": "Rafi Ahmed",
     "author": {
       "id": 2,
       "name": "Rafi Ahmed"
     },
+    "reviewer_name": null,
+    "created_by": null,
     "product": {
       "id": 7,
       "name": "Galvanised Nut & Washer Set",
       "slug": "galvanised-nut-washer-set"
     },
-    "order_id": 3,
+    "order_id": null,
     "photos": [],
     "moderated_by": null,
     "approved_at": null,
-    "created_at": "2026-10-01T12:48:23.000000Z"
+    "created_at": "2026-10-12T17:03:52.000000Z"
   }
 }
 ```
@@ -9714,7 +10625,7 @@ Path: `review`
 **Example**
 
 ```http
-POST /api/v1/admin/reviews/2/approve
+POST /api/v1/admin/reviews/3/approve
 Authorization: Bearer <token>
 ```
 
@@ -9722,7 +10633,7 @@ Response `200`
 ```json
 {
   "data": {
-    "id": 2,
+    "id": 3,
     "rating": 4,
     "comment": "Does the job.",
     "status": "approved",
@@ -9731,20 +10642,24 @@ Response `200`
     "is_visible": true,
     "rejection_reason": null,
     "edited_by_shop": false,
+    "source": "customer",
+    "author_name": "Rafi Ahmed",
     "author": {
       "id": 2,
       "name": "Rafi Ahmed"
     },
+    "reviewer_name": null,
+    "created_by": null,
     "product": {
       "id": 7,
       "name": "Galvanised Nut & Washer Set",
       "slug": "galvanised-nut-washer-set"
     },
-    "order_id": 3,
+    "order_id": null,
     "photos": [],
     "moderated_by": "Store Owner",
-    "approved_at": "2026-10-01T12:48:23.000000Z",
-    "created_at": "2026-10-01T12:48:23.000000Z"
+    "approved_at": "2026-10-12T17:03:52.000000Z",
+    "created_at": "2026-10-12T17:03:52.000000Z"
   }
 }
 ```
@@ -9772,7 +10687,7 @@ Path: `review`
 **Example**
 
 ```http
-POST /api/v1/admin/reviews/2/reject
+POST /api/v1/admin/reviews/3/reject
 Authorization: Bearer <token>
 ```
 ```json
@@ -9785,7 +10700,7 @@ Response `200`
 ```json
 {
   "data": {
-    "id": 2,
+    "id": 3,
     "rating": 4,
     "comment": "Does the job.",
     "status": "rejected",
@@ -9794,20 +10709,24 @@ Response `200`
     "is_visible": false,
     "rejection_reason": "Contains a phone number",
     "edited_by_shop": false,
+    "source": "customer",
+    "author_name": "Rafi Ahmed",
     "author": {
       "id": 2,
       "name": "Rafi Ahmed"
     },
+    "reviewer_name": null,
+    "created_by": null,
     "product": {
       "id": 7,
       "name": "Galvanised Nut & Washer Set",
       "slug": "galvanised-nut-washer-set"
     },
-    "order_id": 3,
+    "order_id": null,
     "photos": [],
     "moderated_by": "Store Owner",
     "approved_at": null,
-    "created_at": "2026-10-01T12:48:23.000000Z"
+    "created_at": "2026-10-12T17:03:52.000000Z"
   }
 }
 ```
@@ -9829,7 +10748,7 @@ Path: `review`
 **Example**
 
 ```http
-POST /api/v1/admin/reviews/2/hide
+POST /api/v1/admin/reviews/3/hide
 Authorization: Bearer <token>
 ```
 
@@ -9837,7 +10756,7 @@ Response `200`
 ```json
 {
   "data": {
-    "id": 2,
+    "id": 3,
     "rating": 4,
     "comment": "Solid build, arrived the next day.",
     "status": "rejected",
@@ -9846,20 +10765,24 @@ Response `200`
     "is_visible": false,
     "rejection_reason": "Contains a phone number",
     "edited_by_shop": true,
+    "source": "customer",
+    "author_name": "Rafi Ahmed",
     "author": {
       "id": 2,
       "name": "Rafi Ahmed"
     },
+    "reviewer_name": null,
+    "created_by": null,
     "product": {
       "id": 7,
       "name": "Galvanised Nut & Washer Set",
       "slug": "galvanised-nut-washer-set"
     },
-    "order_id": 3,
+    "order_id": null,
     "photos": [],
     "moderated_by": "Store Owner",
     "approved_at": null,
-    "created_at": "2026-10-01T12:48:23.000000Z"
+    "created_at": "2026-10-12T17:03:52.000000Z"
   }
 }
 ```
@@ -9879,7 +10802,7 @@ Path: `review`
 **Example**
 
 ```http
-DELETE /api/v1/admin/reviews/2/hide
+DELETE /api/v1/admin/reviews/3/hide
 Authorization: Bearer <token>
 ```
 
@@ -9887,7 +10810,7 @@ Response `200`
 ```json
 {
   "data": {
-    "id": 2,
+    "id": 3,
     "rating": 4,
     "comment": "Solid build, arrived the next day.",
     "status": "rejected",
@@ -9896,20 +10819,24 @@ Response `200`
     "is_visible": false,
     "rejection_reason": "Contains a phone number",
     "edited_by_shop": true,
+    "source": "customer",
+    "author_name": "Rafi Ahmed",
     "author": {
       "id": 2,
       "name": "Rafi Ahmed"
     },
+    "reviewer_name": null,
+    "created_by": null,
     "product": {
       "id": 7,
       "name": "Galvanised Nut & Washer Set",
       "slug": "galvanised-nut-washer-set"
     },
-    "order_id": 3,
+    "order_id": null,
     "photos": [],
     "moderated_by": "Store Owner",
     "approved_at": null,
-    "created_at": "2026-10-01T12:48:23.000000Z"
+    "created_at": "2026-10-12T17:03:52.000000Z"
   }
 }
 ```
@@ -9931,7 +10858,7 @@ Path: `review`
 **Example**
 
 ```http
-POST /api/v1/admin/reviews/2/feature
+POST /api/v1/admin/reviews/3/feature
 Authorization: Bearer <token>
 ```
 
@@ -9939,7 +10866,7 @@ Response `200`
 ```json
 {
   "data": {
-    "id": 2,
+    "id": 3,
     "rating": 4,
     "comment": "Solid build, arrived the next day.",
     "status": "rejected",
@@ -9948,20 +10875,24 @@ Response `200`
     "is_visible": false,
     "rejection_reason": "Contains a phone number",
     "edited_by_shop": true,
+    "source": "customer",
+    "author_name": "Rafi Ahmed",
     "author": {
       "id": 2,
       "name": "Rafi Ahmed"
     },
+    "reviewer_name": null,
+    "created_by": null,
     "product": {
       "id": 7,
       "name": "Galvanised Nut & Washer Set",
       "slug": "galvanised-nut-washer-set"
     },
-    "order_id": 3,
+    "order_id": null,
     "photos": [],
     "moderated_by": "Store Owner",
     "approved_at": null,
-    "created_at": "2026-10-01T12:48:23.000000Z"
+    "created_at": "2026-10-12T17:03:52.000000Z"
   }
 }
 ```
@@ -9981,7 +10912,7 @@ Path: `review`
 **Example**
 
 ```http
-DELETE /api/v1/admin/reviews/2/feature
+DELETE /api/v1/admin/reviews/3/feature
 Authorization: Bearer <token>
 ```
 
@@ -9989,7 +10920,7 @@ Response `200`
 ```json
 {
   "data": {
-    "id": 2,
+    "id": 3,
     "rating": 4,
     "comment": "Solid build, arrived the next day.",
     "status": "rejected",
@@ -9998,20 +10929,24 @@ Response `200`
     "is_visible": false,
     "rejection_reason": "Contains a phone number",
     "edited_by_shop": true,
+    "source": "customer",
+    "author_name": "Rafi Ahmed",
     "author": {
       "id": 2,
       "name": "Rafi Ahmed"
     },
+    "reviewer_name": null,
+    "created_by": null,
     "product": {
       "id": 7,
       "name": "Galvanised Nut & Washer Set",
       "slug": "galvanised-nut-washer-set"
     },
-    "order_id": 3,
+    "order_id": null,
     "photos": [],
     "moderated_by": "Store Owner",
     "approved_at": null,
-    "created_at": "2026-10-01T12:48:23.000000Z"
+    "created_at": "2026-10-12T17:03:52.000000Z"
   }
 }
 ```
@@ -10024,7 +10959,7 @@ Response `200`
 
 ### `PUT /api/v1/admin/reviews/{review}`
 
-Edit what it says.
+Edit what it says (and the name, on a store review).
 
 Auth: token with permission `reviews.moderate`
 
@@ -10036,11 +10971,12 @@ Path: `review`
 | --- | --- | --- |
 | `comment` | Yes (may be empty) | String, up to 2000 characters, may be `null` |
 | `rating` | No | Integer, at least 1, at most 5 |
+| `reviewer_name` | Not allowed |  |
 
 **Example**
 
 ```http
-PUT /api/v1/admin/reviews/2
+PUT /api/v1/admin/reviews/3
 Authorization: Bearer <token>
 ```
 ```json
@@ -10053,7 +10989,7 @@ Response `200`
 ```json
 {
   "data": {
-    "id": 2,
+    "id": 3,
     "rating": 4,
     "comment": "Solid build, arrived the next day.",
     "status": "rejected",
@@ -10062,20 +10998,24 @@ Response `200`
     "is_visible": false,
     "rejection_reason": "Contains a phone number",
     "edited_by_shop": true,
+    "source": "customer",
+    "author_name": "Rafi Ahmed",
     "author": {
       "id": 2,
       "name": "Rafi Ahmed"
     },
+    "reviewer_name": null,
+    "created_by": null,
     "product": {
       "id": 7,
       "name": "Galvanised Nut & Washer Set",
       "slug": "galvanised-nut-washer-set"
     },
-    "order_id": 3,
+    "order_id": null,
     "photos": [],
     "moderated_by": "Store Owner",
     "approved_at": null,
-    "created_at": "2026-10-01T12:48:23.000000Z"
+    "created_at": "2026-10-12T17:03:52.000000Z"
   }
 }
 ```
@@ -10097,7 +11037,7 @@ Path: `review`
 **Example**
 
 ```http
-DELETE /api/v1/admin/reviews/2
+DELETE /api/v1/admin/reviews/3
 Authorization: Bearer <token>
 ```
 
@@ -10552,11 +11492,11 @@ Response `201`
     "is_live": true,
     "image": {
       "id": 3,
-      "url": "http://localhost:8000/storage/media/2026/10/01M3VR4D8YC78D68TG60BDV4C9/full.webp",
+      "url": "http://localhost:8000/storage/media/2026/10/01M4RH43T5NXVDAH21XHQRV73Z/full.webp",
       "sizes": {
-        "thumb": "http://localhost:8000/storage/media/2026/10/01M3VR4D8YC78D68TG60BDV4C9/thumb.webp",
-        "card": "http://localhost:8000/storage/media/2026/10/01M3VR4D8YC78D68TG60BDV4C9/card.webp",
-        "full": "http://localhost:8000/storage/media/2026/10/01M3VR4D8YC78D68TG60BDV4C9/full.webp"
+        "thumb": "http://localhost:8000/storage/media/2026/10/01M4RH43T5NXVDAH21XHQRV73Z/thumb.webp",
+        "card": "http://localhost:8000/storage/media/2026/10/01M4RH43T5NXVDAH21XHQRV73Z/card.webp",
+        "full": "http://localhost:8000/storage/media/2026/10/01M4RH43T5NXVDAH21XHQRV73Z/full.webp"
       },
       "width": 64,
       "height": 64,
@@ -10624,11 +11564,11 @@ Response `200`
     "is_live": true,
     "image": {
       "id": 3,
-      "url": "http://localhost:8000/storage/media/2026/10/01M3VR4D8YC78D68TG60BDV4C9/full.webp",
+      "url": "http://localhost:8000/storage/media/2026/10/01M4RH43T5NXVDAH21XHQRV73Z/full.webp",
       "sizes": {
-        "thumb": "http://localhost:8000/storage/media/2026/10/01M3VR4D8YC78D68TG60BDV4C9/thumb.webp",
-        "card": "http://localhost:8000/storage/media/2026/10/01M3VR4D8YC78D68TG60BDV4C9/card.webp",
-        "full": "http://localhost:8000/storage/media/2026/10/01M3VR4D8YC78D68TG60BDV4C9/full.webp"
+        "thumb": "http://localhost:8000/storage/media/2026/10/01M4RH43T5NXVDAH21XHQRV73Z/thumb.webp",
+        "card": "http://localhost:8000/storage/media/2026/10/01M4RH43T5NXVDAH21XHQRV73Z/card.webp",
+        "full": "http://localhost:8000/storage/media/2026/10/01M4RH43T5NXVDAH21XHQRV73Z/full.webp"
       },
       "width": 64,
       "height": 64,
@@ -10694,7 +11634,7 @@ Response `200`
       "is_active": true,
       "seo_title": null,
       "seo_description": null,
-      "updated_at": "2026-10-01T12:48:08.000000Z"
+      "updated_at": "2026-10-12T17:03:38.000000Z"
     }
   ]
 }
@@ -10733,7 +11673,7 @@ Response `200`
     "is_active": true,
     "seo_title": null,
     "seo_description": null,
-    "updated_at": "2026-10-01T12:48:20.000000Z"
+    "updated_at": "2026-10-12T17:03:49.000000Z"
   }
 }
 ```
@@ -10784,7 +11724,7 @@ Response `201`
     "is_active": true,
     "seo_title": null,
     "seo_description": null,
-    "updated_at": "2026-10-01T12:48:20.000000Z"
+    "updated_at": "2026-10-12T17:03:49.000000Z"
   }
 }
 ```
@@ -10835,7 +11775,7 @@ Response `200`
     "is_active": true,
     "seo_title": null,
     "seo_description": null,
-    "updated_at": "2026-10-01T12:48:20.000000Z"
+    "updated_at": "2026-10-12T17:03:49.000000Z"
   }
 }
 ```
@@ -11052,7 +11992,7 @@ Response `200`
       "is_read": false,
       "replied_at": null,
       "customer": null,
-      "created_at": "2026-10-01T12:48:19.000000Z"
+      "created_at": "2026-10-12T17:03:47.000000Z"
     }
   ],
   "links": {
@@ -11087,6 +12027,681 @@ _Lists trimmed to their first item; long text shortened._
 
 ---
 
+<a id="get-admin-orders-order-fraud-check"></a>
+
+### `GET /api/v1/admin/orders/{order}/fraud-check`
+
+The Fraud check tab: shop history, rule, checkout verdict, order IPs.
+
+Auth: token with permission `fraud.view`
+
+Path: `order`
+
+**Example**
+
+```http
+GET /api/v1/admin/orders/2/fraud-check
+Authorization: Bearer <token>
+```
+
+Response `200`
+```json
+{
+  "data": {
+    "phone": "+8801812345678",
+    "rule": null,
+    "shop": {
+      "orders": 1,
+      "delivered": 0,
+      "returned": 0,
+      "cancelled": 0,
+      "in_progress": 1,
+      "finished": 0,
+      "success_rate": null
+    },
+    "checkout": {
+      "courier_protection": false,
+      "min_success_rate": 50,
+      "min_parcels": 3,
+      "would_block": false
+    },
+    "provider": {
+      "connected": false,
+      "checked": false
+    },
+    "order": {
+      "id": 2,
+      "number": "261012-7RPS8",
+      "ip_address": "127.0.0.1",
+      "customer_ip": "103.92.84.10"
+    }
+  }
+}
+```
+
+<sub>End of `GET /api/v1/admin/orders/{order}/fraud-check` · [back to contents](#contents)</sub>
+
+---
+
+<a id="post-admin-orders-order-fraud-check-provider"></a>
+
+### `POST /api/v1/admin/orders/{order}/fraud-check/provider`
+
+Ask the fraud-check provider too (503 until one is connected).
+
+Auth: token with permission `fraud.view`
+
+Path: `order`
+
+**Example (not configured yet)**
+
+```http
+POST /api/v1/admin/orders/2/fraud-check/provider
+Authorization: Bearer <token>
+```
+
+Response `503`
+```json
+{
+  "message": "No fraud-check provider is connected yet. The shop's own delivery history is shown instead.",
+  "code": "FRAUD_CHECK_UNAVAILABLE",
+  "request_id": "e39ac24d-d0bf-4bc9-9ebf-83553baf1baf"
+}
+```
+
+<sub>End of `POST /api/v1/admin/orders/{order}/fraud-check/provider` · [back to contents](#contents)</sub>
+
+---
+
+<a id="get-admin-fraud-check"></a>
+
+### `GET /api/v1/admin/fraud-check`
+
+The same check for any number.
+
+Auth: token with permission `fraud.view`
+
+**Body fields**
+
+| Field | Required | Rules |
+| --- | --- | --- |
+| `phone` | Yes | String, mobile number (01XXXXXXXXX) |
+| `provider` | No | Boolean |
+
+**Example**
+
+```http
+GET /api/v1/admin/fraud-check?phone=01812345678
+Authorization: Bearer <token>
+```
+
+Response `200`
+```json
+{
+  "data": {
+    "phone": "+8801812345678",
+    "rule": null,
+    "shop": {
+      "orders": 1,
+      "delivered": 0,
+      "returned": 0,
+      "cancelled": 0,
+      "in_progress": 1,
+      "finished": 0,
+      "success_rate": null
+    },
+    "checkout": {
+      "courier_protection": false,
+      "min_success_rate": 50,
+      "min_parcels": 3,
+      "would_block": false
+    },
+    "provider": {
+      "connected": false,
+      "checked": false
+    }
+  }
+}
+```
+
+<sub>End of `GET /api/v1/admin/fraud-check` · [back to contents](#contents)</sub>
+
+---
+
+<a id="get-admin-fraud-providers"></a>
+
+### `GET /api/v1/admin/fraud-providers`
+
+The fraud-check service, its key masked.
+
+Auth: token with permission `fraud.view`
+
+**Example**
+
+```http
+GET /api/v1/admin/fraud-providers
+Authorization: Bearer <token>
+```
+
+Response `200`
+```json
+{
+  "data": [
+    {
+      "provider": "fraudchecker",
+      "label": "FraudChecker",
+      "is_enabled": false,
+      "is_configured": false,
+      "credentials": [
+        {
+          "key": "api_url",
+          "label": "API URL",
+          "is_secret": false,
+          "is_set": false,
+          "preview": null,
+          "default": "https://fraudchecker.link/api/v1/qc/"
+        }
+      ],
+      "updated_at": "2026-10-12T17:03:48.000000Z"
+    }
+  ]
+}
+```
+_Lists trimmed to their first item; long text shortened._
+
+<sub>End of `GET /api/v1/admin/fraud-providers` · [back to contents](#contents)</sub>
+
+---
+
+<a id="put-admin-fraud-providers-provider"></a>
+
+### `PUT /api/v1/admin/fraud-providers/{provider}`
+
+Enter its API URL and key, switch it on or off.
+
+Auth: token with permission `fraud.update`
+
+Path: `provider`
+
+**Query parameters**
+
+| Query | Type | Notes |
+| --- | --- | --- |
+| `is_enabled` | boolean | `1` or `0` |
+
+**Example**
+
+```http
+PUT /api/v1/admin/fraud-providers/fraudchecker
+Authorization: Bearer <token>
+```
+```json
+{
+  "is_enabled": false,
+  "credentials": {
+    "api_url": "https://fraudchecker.link/api/v1/qc/",
+    "api_key": "fraudchecker-api-key"
+  }
+}
+```
+
+Response `200`
+```json
+{
+  "data": {
+    "provider": "fraudchecker",
+    "label": "FraudChecker",
+    "is_enabled": false,
+    "is_configured": true,
+    "credentials": [
+      {
+        "key": "api_url",
+        "label": "API URL",
+        "is_secret": false,
+        "is_set": true,
+        "preview": "https://fraudchecker.link/api/v1/qc/",
+        "default": "https://fraudchecker.link/api/v1/qc/"
+      }
+    ],
+    "updated_at": "2026-10-12T17:03:48.000000Z"
+  }
+}
+```
+_Lists trimmed to their first item; long text shortened._
+
+<sub>End of `PUT /api/v1/admin/fraud-providers/{provider}` · [back to contents](#contents)</sub>
+
+---
+
+<a id="get-admin-contact-rules"></a>
+
+### `GET /api/v1/admin/contact-rules`
+
+Blocked and trusted numbers and addresses.
+
+Auth: token with permission `fraud.view` · _paginated_
+
+**Query parameters**
+
+| Query | Type | Notes |
+| --- | --- | --- |
+| `type` | one of `phone`, `ip` | |
+| `rule` | one of `blocked`, `trusted` | |
+| `q` | string | search text |
+
+**Example**
+
+```http
+GET /api/v1/admin/contact-rules
+Authorization: Bearer <token>
+```
+
+Response `200`
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "type": "phone",
+      "value": "+8801999999999",
+      "rule": "trusted",
+      "reason": "Called, genuine",
+      "created_by": "Store Owner",
+      "created_at": "2026-10-12T17:03:48.000000Z"
+    }
+  ],
+  "links": {
+    "first": "http://localhost:8000/api/v1/admin/contact-rules?page=1",
+    "last": "http://localhost:8000/api/v1/admin/contact-rules?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "links": [
+      {
+        "url": null,
+        "label": "&laquo; Previous",
+        "page": null,
+        "active": false
+      }
+    ],
+    "path": "http://localhost:8000/api/v1/admin/contact-rules",
+    "per_page": 25,
+    "to": 1,
+    "total": 1
+  }
+}
+```
+_Lists trimmed to their first item; long text shortened._
+
+<sub>End of `GET /api/v1/admin/contact-rules` · [back to contents](#contents)</sub>
+
+---
+
+<a id="post-admin-contact-rules"></a>
+
+### `POST /api/v1/admin/contact-rules`
+
+Block a phone or IP, or trust a phone.
+
+Auth: token with permission `fraud.update`
+
+**Body fields**
+
+| Field | Required | Rules |
+| --- | --- | --- |
+| `type` | Yes | One of `phone`, `ip` |
+| `value` | Yes | String, `ip` |
+| `rule` | Yes | One of `blocked`, `trusted`, one of `blocked` |
+| `reason` | No | String, up to 255 characters, may be `null` |
+
+**Example**
+
+```http
+POST /api/v1/admin/contact-rules
+Authorization: Bearer <token>
+```
+```json
+{
+  "type": "phone",
+  "value": "01999999999",
+  "rule": "blocked",
+  "reason": "Fake orders"
+}
+```
+
+Response `201`
+```json
+{
+  "data": {
+    "id": 1,
+    "type": "phone",
+    "value": "+8801999999999",
+    "rule": "blocked",
+    "reason": "Fake orders",
+    "created_by": "Store Owner",
+    "created_at": "2026-10-12T17:03:48.000000Z"
+  }
+}
+```
+
+<sub>End of `POST /api/v1/admin/contact-rules` · [back to contents](#contents)</sub>
+
+---
+
+<a id="delete-admin-contact-rules-rule"></a>
+
+### `DELETE /api/v1/admin/contact-rules/{rule}`
+
+Remove a rule.
+
+Auth: token with permission `fraud.update`
+
+Path: `rule`
+
+**Example**
+
+```http
+DELETE /api/v1/admin/contact-rules/1
+Authorization: Bearer <token>
+```
+
+Response `204`, no body.
+
+<sub>End of `DELETE /api/v1/admin/contact-rules/{rule}` · [back to contents](#contents)</sub>
+
+---
+
+<a id="get-admin-business-applications"></a>
+
+### `GET /api/v1/admin/business-applications`
+
+Wholesale applications (`status`, `q`).
+
+Auth: token with permission `business-applications.view` · _paginated_
+
+**Query parameters**
+
+| Query | Type | Notes |
+| --- | --- | --- |
+| `status` | one of `new`, `contacted`, `approved`, `rejected` | |
+| `q` | string | search text |
+
+**Example**
+
+```http
+GET /api/v1/admin/business-applications
+Authorization: Bearer <token>
+```
+
+Response `200`
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "status": "new",
+      "business": {
+        "name": "Rahman Safety Traders",
+        "type": "proprietorship",
+        "type_label": "Sole proprietorship",
+        "trade_license_number": "TRAD/DNCC/012345/2026",
+        "bin_tin": "000123456-0101",
+        "address": "Shop 14, Nawabpur Road",
+        "district_id": 21,
+        "district": "Dhaka",
+        "interested_in": "Fire extinguishers, about 50 a month"
+      },
+      "contact": {
+        "name": "Abdur Rahman",
+        "designation": "Proprietor",
+        "phone": "+8801712345678",
+        "email": "rahman@example.com",
+        "alternate_phone": null
+      },
+      "message": "We supply offices in Old Dhaka.",
+      "documents_count": 3,
+      "admin_note": null,
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "customer_id": null,
+      "created_at": "2026-10-12T17:03:47.000000Z"
+    }
+  ],
+  "links": {
+    "first": "http://localhost:8000/api/v1/admin/business-applications?page=1",
+    "last": "http://localhost:8000/api/v1/admin/business-applications?page=1",
+    "prev": null,
+    "next": null
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 1,
+    "links": [
+      {
+        "url": null,
+        "label": "&laquo; Previous",
+        "page": null,
+        "active": false
+      }
+    ],
+    "path": "http://localhost:8000/api/v1/admin/business-applications",
+    "per_page": 25,
+    "to": 1,
+    "total": 1,
+    "new": 1
+  }
+}
+```
+_Lists trimmed to their first item; long text shortened._
+
+<sub>End of `GET /api/v1/admin/business-applications` · [back to contents](#contents)</sub>
+
+---
+
+<a id="get-admin-business-applications-application"></a>
+
+### `GET /api/v1/admin/business-applications/{application}`
+
+One application with its documents.
+
+Auth: token with permission `business-applications.view`
+
+Path: `application`
+
+**Example**
+
+```http
+GET /api/v1/admin/business-applications/1
+Authorization: Bearer <token>
+```
+
+Response `200`
+```json
+{
+  "data": {
+    "id": 1,
+    "status": "new",
+    "business": {
+      "name": "Rahman Safety Traders",
+      "type": "proprietorship",
+      "type_label": "Sole proprietorship",
+      "trade_license_number": "TRAD/DNCC/012345/2026",
+      "bin_tin": "000123456-0101",
+      "address": "Shop 14, Nawabpur Road",
+      "district_id": 21,
+      "district": "Dhaka",
+      "interested_in": "Fire extinguishers, about 50 a month"
+    },
+    "contact": {
+      "name": "Abdur Rahman",
+      "designation": "Proprietor",
+      "phone": "+8801712345678",
+      "email": "rahman@example.com",
+      "alternate_phone": null
+    },
+    "message": "We supply offices in Old Dhaka.",
+    "documents": [
+      {
+        "id": 1,
+        "type": "trade_license",
+        "label": "Trade licence",
+        "original_name": "image.png",
+        "mime_type": "image/png",
+        "size_bytes": 177,
+        "url": "http://localhost:8000/api/v1/admin/business-applications/1/documents/1"
+      }
+    ],
+    "admin_note": null,
+    "reviewed_by": null,
+    "reviewed_at": null,
+    "customer_id": null,
+    "created_at": "2026-10-12T17:03:47.000000Z"
+  }
+}
+```
+_Lists trimmed to their first item; long text shortened._
+
+<sub>End of `GET /api/v1/admin/business-applications/{application}` · [back to contents](#contents)</sub>
+
+---
+
+<a id="get-admin-business-applications-application-documents-document"></a>
+
+### `GET /api/v1/admin/business-applications/{application}/documents/{document}`
+
+Open a trade licence or NID file.
+
+Auth: token with permission `business-applications.view`
+
+Path: `application`, `document`
+
+**Example**
+
+```http
+GET /api/v1/admin/business-applications/1/documents/1
+Authorization: Bearer <token>
+```
+
+Response `200`: a file (`image/png`).
+
+<sub>End of `GET /api/v1/admin/business-applications/{application}/documents/{document}` · [back to contents](#contents)</sub>
+
+---
+
+<a id="put-admin-business-applications-application"></a>
+
+### `PUT /api/v1/admin/business-applications/{application}`
+
+Status (new, contacted, approved, rejected) and internal note.
+
+Auth: token with permission `business-applications.update`
+
+Path: `application`
+
+**Query parameters**
+
+| Query | Type | Notes |
+| --- | --- | --- |
+| `status` | one of `new`, `contacted`, `approved`, `rejected` | |
+
+**Body fields**
+
+| Field | Required | Rules |
+| --- | --- | --- |
+| `status` | No | One of `new`, `contacted`, `approved`, `rejected` |
+| `admin_note` | No | String, up to 2000 characters, may be `null` |
+
+**Example**
+
+```http
+PUT /api/v1/admin/business-applications/1
+Authorization: Bearer <token>
+```
+```json
+{
+  "status": "contacted",
+  "admin_note": "Called, sending a price list"
+}
+```
+
+Response `200`
+```json
+{
+  "data": {
+    "id": 1,
+    "status": "contacted",
+    "business": {
+      "name": "Rahman Safety Traders",
+      "type": "proprietorship",
+      "type_label": "Sole proprietorship",
+      "trade_license_number": "TRAD/DNCC/012345/2026",
+      "bin_tin": "000123456-0101",
+      "address": "Shop 14, Nawabpur Road",
+      "district_id": 21,
+      "district": "Dhaka",
+      "interested_in": "Fire extinguishers, about 50 a month"
+    },
+    "contact": {
+      "name": "Abdur Rahman",
+      "designation": "Proprietor",
+      "phone": "+8801712345678",
+      "email": "rahman@example.com",
+      "alternate_phone": null
+    },
+    "message": "We supply offices in Old Dhaka.",
+    "documents": [
+      {
+        "id": 1,
+        "type": "trade_license",
+        "label": "Trade licence",
+        "original_name": "image.png",
+        "mime_type": "image/png",
+        "size_bytes": 177,
+        "url": "http://localhost:8000/api/v1/admin/business-applications/1/documents/1"
+      }
+    ],
+    "admin_note": "Called, sending a price list",
+    "reviewed_by": "Store Owner",
+    "reviewed_at": "2026-10-12T17:03:49.000000Z",
+    "customer_id": null,
+    "created_at": "2026-10-12T17:03:47.000000Z"
+  }
+}
+```
+_Lists trimmed to their first item; long text shortened._
+
+<sub>End of `PUT /api/v1/admin/business-applications/{application}` · [back to contents](#contents)</sub>
+
+---
+
+<a id="delete-admin-business-applications-application"></a>
+
+### `DELETE /api/v1/admin/business-applications/{application}`
+
+Delete it; its documents are erased.
+
+Auth: token with permission `business-applications.delete`
+
+Path: `application`
+
+**Example**
+
+```http
+DELETE /api/v1/admin/business-applications/1
+Authorization: Bearer <token>
+```
+
+Response `204`, no body.
+
+<sub>End of `DELETE /api/v1/admin/business-applications/{application}` · [back to contents](#contents)</sub>
+
+---
+
 <a id="get-admin-contact-messages-contactmessage"></a>
 
 ### `GET /api/v1/admin/contact-messages/{contactMessage}`
@@ -11117,7 +12732,7 @@ Response `200`
     "is_read": true,
     "replied_at": null,
     "customer": null,
-    "created_at": "2026-10-01T12:48:19.000000Z"
+    "created_at": "2026-10-12T17:03:47.000000Z"
   }
 }
 ```
@@ -11154,9 +12769,9 @@ Response `200`
     "subject": "Do you deliver to Khulna?",
     "message": "Asking before I order.",
     "is_read": true,
-    "replied_at": "2026-10-01T12:48:20.000000Z",
+    "replied_at": "2026-10-12T17:03:49.000000Z",
     "customer": null,
-    "created_at": "2026-10-01T12:48:19.000000Z"
+    "created_at": "2026-10-12T17:03:47.000000Z"
   }
 }
 ```
@@ -11222,7 +12837,7 @@ Response `200`
       "email": "reader@example.com",
       "source": "footer",
       "is_subscribed": true,
-      "subscribed_at": "2026-10-01T12:48:19.000000Z",
+      "subscribed_at": "2026-10-12T17:03:47.000000Z",
       "unsubscribed_at": null
     }
   ],
@@ -11334,7 +12949,7 @@ Response `200`
     "scheduled_at": null,
     "sent_at": null,
     "author": "Store Owner",
-    "created_at": "2026-10-01T12:48:21.000000Z"
+    "created_at": "2026-10-12T17:03:49.000000Z"
   }
 }
 ```
@@ -11382,7 +12997,7 @@ Response `201`
     "sent_count": 0,
     "scheduled_at": null,
     "sent_at": null,
-    "created_at": "2026-10-01T12:48:21.000000Z"
+    "created_at": "2026-10-12T17:03:49.000000Z"
   }
 }
 ```
@@ -11434,7 +13049,7 @@ Response `200`
     "scheduled_at": null,
     "sent_at": null,
     "author": "Store Owner",
-    "created_at": "2026-10-01T12:48:21.000000Z"
+    "created_at": "2026-10-12T17:03:49.000000Z"
   }
 }
 ```
@@ -11492,9 +13107,9 @@ Response `200`
     "recipient_count": 1,
     "sent_count": 1,
     "scheduled_at": null,
-    "sent_at": "2026-10-01T12:48:21.000000Z",
+    "sent_at": "2026-10-12T17:03:49.000000Z",
     "author": "Store Owner",
-    "created_at": "2026-10-01T12:48:21.000000Z"
+    "created_at": "2026-10-12T17:03:49.000000Z"
   }
 }
 ```

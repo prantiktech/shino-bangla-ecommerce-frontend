@@ -28,6 +28,7 @@ import { getProductReviewsAction, PublicReview } from "@/app/(user)/actions/revi
 import { recordProductViewAction, addToWishlistAction, removeFromWishlistAction } from "@/app/(user)/actions/wishlist";
 import { ProductCard } from "@/components/common/ProductCard";
 import { BuyNowModal } from "@/components/common/BuyNowModal";
+import { ReviewFormDialog } from "@/components/reviews/ReviewFormDialog";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { poishaToTaka, formatVatRate } from "@/lib/utils/money";
@@ -64,6 +65,8 @@ export function ProductDetailClient({ product, similarProducts, crossSellProduct
   const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState<boolean>(false);
   const [hasLoadedReviews, setHasLoadedReviews] = useState<boolean>(false);
+  const [writingReview, setWritingReview] = useState(false);
+  const [reviewNotice, setReviewNotice] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (activeTab === "reviews" && !hasLoadedReviews) {
@@ -593,25 +596,55 @@ export function ProductDetailClient({ product, similarProducts, crossSellProduct
 
             {activeTab === "reviews" && (
               <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl bg-brand-50 border border-brand-100 max-w-lg">
-                  <div className="text-center">
-                    <span className="text-4xl sm:text-5xl font-black text-primary">
-                      {product.rating?.average?.toFixed(1) || "5.0"}
-                    </span>
-                    <div className="flex items-center justify-center gap-1 text-amber-400 mt-1">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-400" />
-                      ))}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl bg-brand-50 border border-brand-100 max-w-lg">
+                    <div className="text-center">
+                      <span className="text-4xl sm:text-5xl font-black text-primary">
+                        {product.rating?.count ? (product.rating.average ?? 0).toFixed(1) : "—"}
+                      </span>
+                      <div className="flex items-center justify-center gap-1 mt-1">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-4 h-4 ${i < Math.round(product.rating?.average ?? 0) ? "fill-amber-400 text-amber-400" : "text-gray-300"}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs text-gray-500 mt-1 block">
+                        {product.rating?.count ? `Based on ${product.rating.count} review${product.rating.count === 1 ? "" : "s"}` : "No ratings yet"}
+                      </span>
                     </div>
-                    <span className="text-xs text-gray-500 mt-1 block">
-                      Based on {product.rating?.count || reviews.length} reviews
-                    </span>
+                    <div className="text-xs text-gray-600 space-y-1">
+                      <p className="font-semibold text-gray-800">Reviews from our customers</p>
+                      <p>Every review is checked by the shop before it appears. &ldquo;Verified Purchase&rdquo; marks reviews from delivered orders.</p>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-600 space-y-1">
-                    <p className="font-semibold text-gray-800">100% Verified Purchases</p>
-                    <p>All reviews are written by authentic store customers after receipt of goods.</p>
-                  </div>
+                  {isAuthenticated ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReviewNotice(null);
+                        setWritingReview(true);
+                      }}
+                      className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl bg-primary hover:bg-primary-hover text-white text-sm font-bold shrink-0"
+                    >
+                      <Star className="w-4 h-4" /> Write a review
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/login?redirect=${encodeURIComponent(`/products/${product.slug}`)}`}
+                      className="inline-flex items-center justify-center gap-2 h-11 px-5 rounded-xl ring-1 ring-slate-200 bg-white hover:bg-slate-50 text-slate-800 text-sm font-bold shrink-0"
+                    >
+                      Sign in to write a review
+                    </Link>
+                  )}
                 </div>
+
+                {reviewNotice && (
+                  <p role="status" className="rounded-xl bg-emerald-50 ring-1 ring-emerald-200 px-4 py-3 text-sm text-emerald-800">
+                    {reviewNotice}
+                  </p>
+                )}
 
                 {reviewsLoading ? (
                   <div className="py-8 text-center text-xs text-gray-500">
@@ -665,7 +698,7 @@ export function ProductDetailClient({ product, similarProducts, crossSellProduct
                   </div>
                 ) : (
                   <div className="py-8 text-center text-xs text-gray-400">
-                    No customer reviews yet. Be the first verified buyer to share your feedback!
+                    No reviews yet. Be the first to share what you think of this product.
                   </div>
                 )}
               </div>
@@ -720,6 +753,17 @@ export function ProductDetailClient({ product, similarProducts, crossSellProduct
               </div>
             </section>
           ))}
+
+        {writingReview && (
+          <ReviewFormDialog
+            target={{ mode: "write", product: { id: product.id, name: product.name } }}
+            onClose={() => setWritingReview(false)}
+            onSaved={(message) => {
+              setWritingReview(false);
+              setReviewNotice(message);
+            }}
+          />
+        )}
 
         {/* 5. Buy Now Instant Modal */}
         {isBuyNowOpen && (

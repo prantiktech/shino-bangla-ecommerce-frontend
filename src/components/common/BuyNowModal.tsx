@@ -36,6 +36,8 @@ import {
 } from "@/app/(user)/actions/checkout";
 import { getAddressesAction, Address } from "@/app/(user)/actions/addresses";
 import { getProductBySlugAction, ApiProductVariant } from "@/app/(user)/actions/products";
+import { getSettingsAction } from "@/app/(user)/actions/settings";
+import { PhoneCodeField, normaliseBdMobile } from "@/components/orders/PhoneCodeField";
 
 export interface BuyNowModalProps {
   isOpen: boolean;
@@ -111,6 +113,11 @@ export function BuyNowModal({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
+
+  // Mobile verification (settings `order_phone_verification`); the code belongs to the number it was sent to.
+  const [needsPhoneCode, setNeedsPhoneCode] = useState(false);
+  const [phoneCode, setPhoneCode] = useState<{ phone: string; code: string }>({ phone: "", code: "" });
+  const [phoneCodeError, setPhoneCodeError] = useState<string | null>(null);
   const [placedOrder, setPlacedOrder] = useState<OrderPlacedResponse | null>(null);
 
   // Initialize/Resolve variant and quantity when modal opens
@@ -186,6 +193,12 @@ export function BuyNowModal({
     let isMounted = true;
 
     async function loadData() {
+      getSettingsAction()
+        .then((res) => {
+          if (isMounted && res.success && res.data.order_phone_verification) setNeedsPhoneCode(true);
+        })
+        .catch(() => {});
+
       try {
         const locRes = await getCheckoutLocationsAction();
         if (isMounted && locRes.success && locRes.data) {
@@ -331,10 +344,21 @@ export function BuyNowModal({
     setAppliedCoupon("");
   };
 
+  const savedAddress = savedAddresses.find((a) => a.id === selectedAddressId) ?? null;
+  const orderPhone = normaliseBdMobile(!useNewAddress && savedAddress ? savedAddress.phone || "" : phone);
+  const currentCode = phoneCode.phone === orderPhone ? phoneCode.code : "";
+
   // Submit Order
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setOrderError(null);
+    setPhoneCodeError(null);
+
+    if (needsPhoneCode && !/^\d{6}$/.test(currentCode)) {
+      setPhoneCodeError("Enter the 6-digit code we texted to your mobile number.");
+      setOrderError("Please verify your mobile number to place the order.");
+      return;
+    }
 
     if (!activeVariantId || activeVariantId <= 0) {
       setOrderError("Please select a product variant before confirming your order.");
@@ -350,6 +374,7 @@ export function BuyNowModal({
         payment_method: paymentMethod,
         note: note.trim() || undefined,
         coupon_code: appliedCoupon || undefined,
+        ...(needsPhoneCode && currentCode ? { phone_code: currentCode } : {}),
       };
 
       if (!useNewAddress && selectedAddressId) {
@@ -415,6 +440,11 @@ export function BuyNowModal({
           // ignore
         }
       } else {
+        const codeError = !res.success ? res.error?.fields?.phone_code?.[0] : undefined;
+        if (codeError) {
+          setNeedsPhoneCode(true);
+          setPhoneCodeError(codeError);
+        }
         setOrderError(
           !res.success
             ? res.error?.message || "Failed to place your Buy Now order. Please try again."
@@ -852,6 +882,24 @@ export function BuyNowModal({
                 </div>
               </div>
             </div>
+
+            {needsPhoneCode && (
+              <PhoneCodeField
+                key={orderPhone}
+                phone={orderPhone}
+                code={currentCode}
+                onCodeChange={(code) => {
+                  setPhoneCode({ phone: orderPhone, code });
+                  setPhoneCodeError(null);
+                }}
+                onNotRequired={() => {
+                  setNeedsPhoneCode(false);
+                  setPhoneCodeError(null);
+                }}
+                error={phoneCodeError}
+                disabled={isSubmitting}
+              />
+            )}
 
             {/* Payment Method Selection */}
             <div className="space-y-2">

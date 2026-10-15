@@ -76,6 +76,7 @@ export async function Footer() {
   const companyLinks: FooterLink[] = [
     ...pages.map((p) => ({ label: p.title, href: `/pages/${p.slug}` })),
     { label: "Guides & Articles", href: "/blogs" },
+    { label: "Wholesale & business", href: "/wholesale" },
   ];
 
   const storeName = settings?.store_name || "Nogod Bazar";

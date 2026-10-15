@@ -3,9 +3,10 @@
 import { serverGet } from "@/lib/api-client/server";
 import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
 
-export async function getAdminDashboardAction(): Promise<ActionResponse<any>> {
+/** GET /admin/dashboard — `from`/`to` (YYYY-MM-DD) pick the period; `limit` sizes the top-products and top-districts lists. */
+export async function getAdminDashboardAction(params?: { from?: string; to?: string; limit?: number }): Promise<ActionResponse<any>> {
   try {
-    const res = await serverGet<any>("GET_ADMIN_DASHBOARD");
+    const res = await serverGet<any>("GET_ADMIN_DASHBOARD", { params, cache: "no-store" });
     if (res.success && res.data) {
       return { success: true, data: res.data.data || res.data };
     }

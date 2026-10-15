@@ -3,6 +3,8 @@ import { Metadata } from "next";
 import { getActivityLogsAction } from "@/app/(admin)/actions/activity-log";
 import { ActivityLogManagement } from "./_components/ActivityLogManagement";
 import { ActivityLogFilters } from "@/types/activity-log";
+import { guardAdminPage } from "@/app/(admin)/session";
+import { AccessDenied } from "@/app/(admin)/components/AccessDenied";
 
 export const metadata: Metadata = {
   title: "Activity Log | Admin Portal",
@@ -14,6 +16,9 @@ interface PageProps {
 }
 
 export default async function AdminActivityLogPage({ searchParams }: PageProps) {
+  const access = await guardAdminPage("/admin/activity-log");
+  if (!access.allowed) return <AccessDenied needed={access.needed} fallback={access.fallback} />;
+
   const resolvedParams = await searchParams;
 
   const filters: ActivityLogFilters = {

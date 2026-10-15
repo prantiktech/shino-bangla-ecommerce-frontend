@@ -11,6 +11,7 @@ import type { ReviewableItem, CustomerReview } from "@/app/(user)/actions/review
 import { WishlistTab } from "./WishlistTab";
 import { ReviewsTab } from "./ReviewsTab";
 import { SecurityTab } from "./SecurityTab";
+import { ParcelTracking } from "@/components/orders/ParcelTracking";
 import {
   Address,
   AddressInput,
@@ -372,8 +373,12 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
   // Password Change
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPassword || newPassword.length < 8) {
-      setPasswordError("New password must be at least 8 characters long.");
+    if (!newPassword || newPassword.length < 4 || newPassword.length > 255) {
+      setPasswordError("New password must be 4 to 255 characters.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordError("Choose a password different from your current one.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -1128,7 +1133,7 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                     required
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Min 8 characters"
+                    placeholder="At least 4 characters"
                     className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -1549,6 +1554,8 @@ export const AccountDashboard: React.FC<AccountDashboardProps> = ({
                     <span>{orderModalError}</span>
                   </div>
                 )}
+
+                <ParcelTracking tracking={selectedOrder.tracking} />
 
                 {/* Timeline if available */}
                 {selectedOrder.timeline && selectedOrder.timeline.length > 0 && (

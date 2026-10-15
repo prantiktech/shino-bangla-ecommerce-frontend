@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getSessionUserAction } from "@/app/(user)/actions/auth";
 import { getAddressesAction } from "@/app/(user)/actions/addresses";
 import { getCheckoutLocationsAction } from "@/app/(user)/actions/checkout";
+import { getSettingsAction } from "@/app/(user)/actions/settings";
 import { CheckoutClient } from "./_components/CheckoutClient";
 
 export const metadata: Metadata = {
@@ -17,10 +18,12 @@ export default async function CheckoutPage() {
     redirect("/login?redirect=/checkout");
   }
 
-  const [addressesRes, locationsRes] = await Promise.all([
+  const [addressesRes, locationsRes, settingsRes] = await Promise.all([
     getAddressesAction(),
     getCheckoutLocationsAction(),
+    getSettingsAction(),
   ]);
+  const phoneVerification = settingsRes.success ? Boolean(settingsRes.data.order_phone_verification) : false;
 
   const initialAddresses = addressesRes.success ? addressesRes.data : [];
   const locations = locationsRes.success
@@ -39,5 +42,5 @@ export default async function CheckoutPage() {
         { id: 46, name: "Mymensingh" },
       ];
 
-  return <CheckoutClient initialAddresses={initialAddresses} locations={locations} />;
+  return <CheckoutClient initialAddresses={initialAddresses} locations={locations} phoneVerification={phoneVerification} />;
 }

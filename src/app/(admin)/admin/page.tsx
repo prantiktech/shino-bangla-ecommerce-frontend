@@ -11,20 +11,26 @@ import {
   Users,
   Clock,
   Truck,
-  CheckCheck
+  CheckCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { getProductsAction } from "@/app/(user)/actions/products";
 import { getCategoriesAction } from "@/app/(user)/actions/categories";
 import { getAdminDashboardAction } from "@/app/(admin)/actions/dashboard";
 import { poishaToTaka } from "@/lib/utils/money";
+import { guardAdminPage } from "@/app/(admin)/session";
+import { AccessDenied } from "@/app/(admin)/components/AccessDenied";
 
 export const metadata = {
   title: "Dashboard | Admin Portal",
 };
 
 export default async function AdminDashboardPage() {
+  const access = await guardAdminPage("/admin");
+  if (!access.allowed) return <AccessDenied needed={access.needed} fallback={access.fallback} />;
+
   const [dashboardRes, productsRes, categoriesRes] = await Promise.all([
-    getAdminDashboardAction(),
+    getAdminDashboardAction({ limit: 6 }),
     getProductsAction({ per_page: 5 }),
     getCategoriesAction(),
   ]);
@@ -43,6 +49,46 @@ export default async function AdminDashboardPage() {
   const totalOrdersCount = totals.orders || 0;
   const todayOrdersCount = today.orders || 0;
   const newCustomersCount = totals.new_customers || 0;
+
+  const topProducts = (Array.isArray(dashData?.top_products) ? dashData.top_products : []) as {
+    product_id: number;
+    name: string;
+    slug?: string;
+    image?: string | null;
+    quantity: number;
+    revenue: number;
+  }[];
+  const topDistricts = (Array.isArray(dashData?.top_districts) ? dashData.top_districts : []) as {
+    district_id: number;
+    name: string;
+    division?: string | null;
+    orders: number;
+    sales: number;
+    share: number;
+  }[];
+  const statusTiles = [
+    { key: "pending", label: "Pending", tone: "bg-amber-50/70 border-amber-200/80 text-amber-800" },
+    { key: "confirmed", label: "Confirmed", tone: "bg-blue-50/70 border-blue-200/80 text-blue-800" },
+    { key: "processing", label: "Processing", tone: "bg-indigo-50/70 border-indigo-200/80 text-indigo-800" },
+    { key: "packed", label: "Packed", tone: "bg-violet-50/70 border-violet-200/80 text-violet-800" },
+    { key: "on_hold", label: "On hold", tone: "bg-slate-50 border-slate-200 text-slate-700" },
+    { key: "shipped", label: "Shipped", tone: "bg-cyan-50/70 border-cyan-200/80 text-cyan-800" },
+    { key: "delivered", label: "Delivered", tone: "bg-emerald-50/70 border-emerald-200/80 text-emerald-800" },
+    { key: "cancelled", label: "Cancelled", tone: "bg-rose-50/70 border-rose-200/80 text-rose-800" },
+    { key: "returned", label: "Returned", tone: "bg-rose-50/70 border-rose-200/80 text-rose-800" },
+  ];
+
+  // Work waiting for staff, each linked to the screen where it is handled.
+  const attention = (dashData?.needs_attention || {}) as Record<string, number | undefined>;
+  const attentionItems = [
+    { key: "pending_orders", label: "Orders to confirm", href: "/admin/orders?status=pending" },
+    { key: "processing_orders", label: "Orders processing", href: "/admin/orders?status=processing" },
+    { key: "on_hold_orders", label: "Orders on hold", href: "/admin/orders?status=on_hold" },
+    { key: "pending_reviews", label: "Reviews to moderate", href: "/admin/reviews" },
+    { key: "unread_messages", label: "Unread messages", href: "/admin/messages" },
+    { key: "new_business_applications", label: "New business applications", href: "/admin/business-applications" },
+    { key: "out_of_stock", label: "Out of stock", href: "/admin/inventory" },
+  ].filter((i) => Number(attention[i.key] ?? 0) > 0);
 
   return (
     <div className="space-y-6">
@@ -73,6 +119,26 @@ export default async function AdminDashboardPage() {
           </Link>
         </div>
       </div>
+
+      {attentionItems.length > 0 && (
+        <div className="bg-white p-4 rounded-2xl border border-amber-200 shadow-2xs">
+          <h2 className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5 mb-3">
+            <AlertTriangle className="w-4 h-4" /> Needs attention
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {attentionItems.map((i) => (
+              <Link
+                key={i.key}
+                href={i.href}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-semibold ring-1 ring-amber-200 transition-colors"
+              >
+                <span className="tabular-nums font-black">{attention[i.key]}</span> {i.label}
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -135,35 +201,93 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Orders Breakdown Strip */}
+      {/* Orders by status, each linking to that tab of the orders list */}
       {dashData && (
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs space-y-3">
-          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Orders Status Funnel</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-center">
-              <span className="text-[10px] font-bold text-amber-700 uppercase">Pending</span>
-              <div className="text-xl font-black text-amber-900 mt-0.5">{ordersByStatus.pending || 0}</div>
+          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">Orders by status</h3>
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-3">
+            {statusTiles.map((t) => (
+              <Link
+                key={t.key}
+                href={`/admin/orders?status=${t.key}`}
+                className={`p-3 border rounded-xl text-center hover:shadow-xs transition-shadow ${t.tone}`}
+              >
+                <span className="text-[10px] font-bold uppercase">{t.label}</span>
+                <div className="text-xl font-black mt-0.5 tabular-nums">{ordersByStatus[t.key] || 0}</div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(topProducts.length > 0 || topDistricts.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="text-sm font-bold text-slate-900">Top products</h2>
+              {dashData?.range && (
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {dashData.range.from} to {dashData.range.to}
+                </p>
+              )}
             </div>
-            <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl text-center">
-              <span className="text-[10px] font-bold text-blue-700 uppercase">Confirmed</span>
-              <div className="text-xl font-black text-blue-900 mt-0.5">{ordersByStatus.confirmed || 0}</div>
+            {topProducts.length === 0 ? (
+              <p className="p-5 text-xs text-slate-400">No sales in this period.</p>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {topProducts.map((p, i) => (
+                  <li key={p.product_id} className="px-5 py-3 flex items-center gap-3">
+                    <span className="w-5 text-xs font-bold text-slate-400 tabular-nums">{i + 1}</span>
+                    <span className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden shrink-0">
+                      {p.image && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.image} alt="" className="w-full h-full object-cover" />
+                      )}
+                    </span>
+                    <span className="flex-1 min-w-0">
+                      {p.slug ? (
+                        <Link href={`/products/${p.slug}`} target="_blank" className="block text-xs font-semibold text-slate-900 truncate hover:text-[#FF5B00]">
+                          {p.name}
+                        </Link>
+                      ) : (
+                        <span className="block text-xs font-semibold text-slate-900 truncate">{p.name}</span>
+                      )}
+                      <span className="block text-[11px] text-slate-500">{p.quantity} sold</span>
+                    </span>
+                    <span className="text-xs font-bold text-slate-900 tabular-nums">৳ {poishaToTaka(p.revenue).toLocaleString("en-BD")}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            <div className="p-5 border-b border-slate-100">
+              <h2 className="text-sm font-bold text-slate-900">Top districts</h2>
+              <p className="text-[11px] text-slate-400 mt-0.5">Where orders are delivered</p>
             </div>
-            <div className="p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-xl text-center">
-              <span className="text-[10px] font-bold text-indigo-700 uppercase">Processing</span>
-              <div className="text-xl font-black text-indigo-900 mt-0.5">{ordersByStatus.processing || 0}</div>
-            </div>
-            <div className="p-3 bg-cyan-50/70 border border-cyan-200/80 rounded-xl text-center">
-              <span className="text-[10px] font-bold text-cyan-700 uppercase">Shipped</span>
-              <div className="text-xl font-black text-cyan-900 mt-0.5">{ordersByStatus.shipped || 0}</div>
-            </div>
-            <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-center">
-              <span className="text-[10px] font-bold text-emerald-700 uppercase">Delivered</span>
-              <div className="text-xl font-black text-emerald-900 mt-0.5">{ordersByStatus.delivered || 0}</div>
-            </div>
-            <div className="p-3 bg-rose-50/70 border border-rose-200/80 rounded-xl text-center">
-              <span className="text-[10px] font-bold text-rose-700 uppercase">Cancelled</span>
-              <div className="text-xl font-black text-rose-900 mt-0.5">{ordersByStatus.cancelled || 0}</div>
-            </div>
+            {topDistricts.length === 0 ? (
+              <p className="p-5 text-xs text-slate-400">No orders in this period.</p>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {topDistricts.map((d) => (
+                  <li key={d.district_id} className="px-5 py-3 space-y-1.5">
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                      <span className="font-semibold text-slate-900">
+                        {d.name}
+                        {d.division && <span className="font-normal text-slate-400"> · {d.division}</span>}
+                      </span>
+                      <span className="text-slate-500 tabular-nums">
+                        {d.orders} order{d.orders === 1 ? "" : "s"} · <span className="font-bold text-slate-900">৳ {poishaToTaka(d.sales).toLocaleString("en-BD")}</span>
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden" title={`${d.share}% of sales`}>
+                      <div className="h-full rounded-full bg-[#FF5B00]" style={{ width: `${Math.min(100, Math.max(0, Number(d.share) || 0))}%` }} />
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}

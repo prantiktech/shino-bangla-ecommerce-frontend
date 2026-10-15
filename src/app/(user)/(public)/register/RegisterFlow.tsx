@@ -41,7 +41,7 @@ export function RegisterFlow() {
     if (!name.trim()) return setError("Enter your name.");
     if (!EMAIL.test(loginValue) && !BD_MOBILE.test(loginValue))
       return setError("Enter a valid email address or a Bangladeshi mobile number (01XXXXXXXXX).");
-    if (!passwordIsStrong(password)) return setError("Choose a stronger password that meets every rule below.");
+    if (!passwordIsStrong(password)) return setError("Your password must be 4 to 255 characters.");
     if (password !== confirm) return setError("The two passwords do not match.");
 
     setBusy(true);

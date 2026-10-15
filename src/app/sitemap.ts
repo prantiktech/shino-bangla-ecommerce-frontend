@@ -40,7 +40,7 @@ async function allItems(type: string) {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticPages: MetadataRoute.Sitemap = ["", "/products", "/deals", "/brands", "/blogs", "/faq", "/contact", "/track-order"].map((p) => ({
+  const staticPages: MetadataRoute.Sitemap = ["", "/products", "/deals", "/brands", "/blogs", "/faq", "/contact", "/track-order", "/wholesale"].map((p) => ({
     url: `${SITE_URL}${p}`,
     changeFrequency: p === "" ? "daily" : "weekly",
     priority: p === "" ? 1 : 0.6,

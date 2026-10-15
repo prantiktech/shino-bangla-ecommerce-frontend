@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { OrderDetail, cancelOrderAction } from "@/app/(user)/actions/orders";
 import { PayOrderButton } from "@/components/orders/PayOrderButton";
+import { ParcelTracking } from "@/components/orders/ParcelTracking";
 import { formatPoisha } from "@/lib/utils/money";
 
 interface OrderDetailViewProps {
@@ -288,6 +289,8 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
               )}
             </div>
           </div>
+
+          <ParcelTracking tracking={currentOrder.tracking} />
 
           {/* Unpaid online order: let the customer pay or retry */}
           {currentOrder.payment_method === "sslcommerz" &&

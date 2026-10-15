@@ -1,7 +1,7 @@
 /**
  * API Endpoints Registry for Shino-Bangla eCommerce Backend
- * Central repository for all backend route mappings (224 endpoints / 25 modules).
- * Formatted strictly according to api_documation.md
+ * Central repository for all backend route mappings.
+ * Formatted strictly according to api.md
  */
 export const ApiEndpoints = {
   // 00 · System & Public Settings
@@ -93,6 +93,8 @@ export const ApiEndpoints = {
 
   // 10 · Contact & Newsletter
   CONTACT_SUBMIT: '/contact',
+  BUSINESS_APPLICATION_SUBMIT: '/business-applications',
+  ORDER_PHONE_CODE: '/orders/phone-code',
   NEWSLETTER_SUBSCRIBE: '/newsletter/subscribe',
   NEWSLETTER_UNSUBSCRIBE: '/newsletter/unsubscribe',
 
@@ -155,6 +157,35 @@ export const ApiEndpoints = {
   GET_ADMIN_ORDER_INVOICE: '/admin/orders/:id/invoice',
   GET_ADMIN_ORDER_REFUNDS: '/admin/orders/:id/refunds',
   CREATE_ADMIN_ORDER_REFUND: '/admin/orders/:id/refunds',
+  GET_ADMIN_ORDERS_SUMMARY: '/admin/orders/summary',
+  BOOK_ADMIN_ORDER_SHIPMENT: '/admin/orders/:id/shipment',
+  SYNC_ADMIN_ORDER_SHIPMENT: '/admin/orders/:id/shipment/sync',
+  SCAN_ADMIN_SHIPMENT: '/admin/shipments/scan',
+  SCAN_ADMIN_RETURN: '/admin/returns/scan',
+  GET_ADMIN_ORDER_FRAUD_CHECK: '/admin/orders/:id/fraud-check',
+  RUN_ADMIN_ORDER_FRAUD_PROVIDER: '/admin/orders/:id/fraud-check/provider',
+
+  // 15b · Back Office: Couriers
+  GET_ADMIN_COURIERS: '/admin/couriers',
+  GET_ADMIN_AVAILABLE_COURIERS: '/admin/couriers/available',
+  UPDATE_ADMIN_COURIER: '/admin/couriers/:courier',
+  CHECK_ADMIN_COURIER: '/admin/couriers/:courier/check',
+  GET_ADMIN_COURIER_STORES: '/admin/couriers/:courier/stores',
+  GET_ADMIN_COURIER_AREAS: '/admin/couriers/:courier/areas',
+
+  // 15c · Back Office: Fraud protection
+  GET_ADMIN_FRAUD_CHECK: '/admin/fraud-check',
+  GET_ADMIN_FRAUD_PROVIDERS: '/admin/fraud-providers',
+  UPDATE_ADMIN_FRAUD_PROVIDER: '/admin/fraud-providers/:provider',
+  GET_ADMIN_CONTACT_RULES: '/admin/contact-rules',
+  CREATE_ADMIN_CONTACT_RULE: '/admin/contact-rules',
+  DELETE_ADMIN_CONTACT_RULE: '/admin/contact-rules/:id',
+
+  // 15d · Back Office: Business (wholesale) applications
+  GET_ADMIN_BUSINESS_APPLICATIONS: '/admin/business-applications',
+  GET_ADMIN_BUSINESS_APPLICATION: '/admin/business-applications/:id',
+  UPDATE_ADMIN_BUSINESS_APPLICATION: '/admin/business-applications/:id',
+  DELETE_ADMIN_BUSINESS_APPLICATION: '/admin/business-applications/:id',
 
   // 16 · Back Office: Customers
   GET_ADMIN_CUSTOMERS: '/admin/customers',
@@ -184,6 +215,7 @@ export const ApiEndpoints = {
 
   // 19 · Back Office: Reviews
   GET_ADMIN_REVIEWS: '/admin/reviews',
+  CREATE_ADMIN_REVIEW: '/admin/reviews',
   GET_ADMIN_REVIEW: '/admin/reviews/:id',
   APPROVE_ADMIN_REVIEW: '/admin/reviews/:id/approve',
   REJECT_ADMIN_REVIEW: '/admin/reviews/:id/reject',

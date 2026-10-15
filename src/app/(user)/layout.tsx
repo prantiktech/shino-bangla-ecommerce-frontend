@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { Header } from "@/components/layout/Header/Header";
 import { Footer } from "@/components/layout/Footer/Footer";
 import { MobileBottomNav } from "@/components/layout/MobileNav/MobileBottomNav";
-import { FloatingChat } from "@/components/layout/FloatingChat";
+import { ContactLauncher } from "@/components/layout/ContactLauncher";
 import { QuickViewModal } from "@/components/common/QuickViewModal";
 import { CartDrawer } from "@/components/common/CartDrawer";
 import { ToastNotification } from "@/components/common/ToastNotification";
@@ -22,7 +22,10 @@ export default function UserLayout({
       <Suspense fallback={null}>
         <MobileBottomNav />
       </Suspense>
-      <FloatingChat />
+      {/* WhatsApp / Messenger contact button; hidden when neither is configured. */}
+      <Suspense fallback={null}>
+        <ContactLauncher />
+      </Suspense>
       <QuickViewModal />
       <CartDrawer />
       <ToastNotification />

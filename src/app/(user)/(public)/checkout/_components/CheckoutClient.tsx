@@ -36,13 +36,16 @@ import {
 import { Address } from "@/app/(user)/actions/addresses";
 import { applyCouponAction, removeCouponAction } from "@/app/(user)/actions/cart";
 import confetti from "canvas-confetti";
+import { PhoneCodeField, normaliseBdMobile } from "@/components/orders/PhoneCodeField";
 
 interface CheckoutClientProps {
   initialAddresses: Address[];
   locations: Array<{ id: number; name: string }>;
+  /** The shop asks for a code texted to the order's mobile number (settings `order_phone_verification`). */
+  phoneVerification?: boolean;
 }
 
-export function CheckoutClient({ initialAddresses, locations }: CheckoutClientProps) {
+export function CheckoutClient({ initialAddresses, locations, phoneVerification = false }: CheckoutClientProps) {
   const router = useRouter();
   const { cart, subtotal, clearCart } = useCart();
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -86,6 +89,11 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
       setPhone((prev) => prev || user.phone || "");
     }
   }, [user]);
+
+  // Mobile verification: the code belongs to the number it was sent to.
+  const [needsPhoneCode, setNeedsPhoneCode] = useState(phoneVerification);
+  const [phoneCode, setPhoneCode] = useState<{ phone: string; code: string }>({ phone: "", code: "" });
+  const [phoneCodeError, setPhoneCodeError] = useState<string | null>(null);
 
   // Payment & Options
   const [paymentMethod, setPaymentMethod] = useState<string>("cod");
@@ -197,9 +205,20 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
         { method: "sslcommerz", label: "Online payment (Cards / Mobile Banking)", is_online: true },
       ];
 
+  const selectedAddress = initialAddresses.find((a) => a.id === selectedAddressId) ?? null;
+  const orderPhone = normaliseBdMobile(!useNewAddress && selectedAddress ? selectedAddress.phone || "" : phone);
+  const currentCode = phoneCode.phone === orderPhone ? phoneCode.code : "";
+
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setPhoneCodeError(null);
+
+    if (needsPhoneCode && !/^\d{6}$/.test(currentCode)) {
+      setPhoneCodeError("Enter the 6-digit code we texted to your mobile number.");
+      setError("Please verify your mobile number to place the order.");
+      return;
+    }
 
     if (!isAuthenticated) {
       router.push("/login?redirect=/checkout");
@@ -212,6 +231,7 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
       const payload: PlaceOrderPayload = {
         payment_method: paymentMethod,
         note: note.trim() || undefined,
+        ...(needsPhoneCode && currentCode ? { phone_code: currentCode } : {}),
         items: cart
           .filter((i) => i.product.variantId)
           .map((i) => ({
@@ -286,6 +306,12 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
           // ignore
         }
       } else {
+        const codeError = !res.success ? res.error?.fields?.phone_code?.[0] : undefined;
+        if (codeError) {
+          // The shop wants a code (or the one given is wrong or expired).
+          setNeedsPhoneCode(true);
+          setPhoneCodeError(codeError);
+        }
         setError(
           !res.success
             ? res.error?.message || "Failed to place order. Please review your details and try again."
@@ -619,6 +645,24 @@ export function CheckoutClient({ initialAddresses, locations }: CheckoutClientPr
               </div>
             )}
           </div>
+
+          {needsPhoneCode && (
+            <PhoneCodeField
+              key={orderPhone}
+              phone={orderPhone}
+              code={currentCode}
+              onCodeChange={(code) => {
+                setPhoneCode({ phone: orderPhone, code });
+                setPhoneCodeError(null);
+              }}
+              onNotRequired={() => {
+                setNeedsPhoneCode(false);
+                setPhoneCodeError(null);
+              }}
+              error={phoneCodeError}
+              disabled={isPending}
+            />
+          )}
 
           {/* Payment Methods On Offer */}
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-6 space-y-4">

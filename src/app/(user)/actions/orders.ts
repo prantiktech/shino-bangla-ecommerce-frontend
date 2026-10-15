@@ -49,6 +49,13 @@ export interface OrderTotals {
   grand_total: number;
 }
 
+/** The parcel's courier and tracking link, once the order is shipped with a courier. */
+export interface OrderTracking {
+  courier: string;
+  tracking_code: string | null;
+  tracking_url: string | null;
+}
+
 export interface OrderDetail {
   id?: number;
   number?: string;
@@ -75,6 +82,8 @@ export interface OrderDetail {
   delivered_at?: string | null;
   cancelled_at?: string | null;
   timeline?: OrderTimelineItem[];
+  /** Filled once the order is shipped with a courier; null before that. */
+  tracking?: OrderTracking | null;
   created_at?: string;
   // Fallbacks
   total_amount?: number;

@@ -32,6 +32,9 @@ import {
   Eye,
 } from "lucide-react";
 
+/** API rule for staff passwords: 12+ characters with upper and lower case, a number and a symbol. */
+const STAFF_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{12,}$/;
+
 interface StaffManagementProps {
   initialStaff: StaffMember[];
   initialRoles: RoleResource[];
@@ -120,8 +123,13 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
       setEditorError("Valid email is required.");
       return;
     }
-    if (!editingStaff && (!password || password.length < 8)) {
-      setEditorError("Starting password must be at least 8 characters.");
+    // Staff passwords follow the stricter staff rule (customer passwords only need 4 characters).
+    if (!editingStaff && !password) {
+      setEditorError("Enter a starting password.");
+      return;
+    }
+    if (password && !STAFF_PASSWORD.test(password)) {
+      setEditorError("Staff passwords need 12+ characters with upper and lower case letters, a number and a symbol.");
       return;
     }
 
@@ -505,7 +513,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                   required={!editingStaff}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={editingStaff ? "••••••••••••" : "Min 8 characters"}
+                  placeholder={editingStaff ? "Leave empty to keep the current password" : "12+ characters, Aa, 1 and a symbol"}
                   className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#FF5B00]"
                 />
               </div>

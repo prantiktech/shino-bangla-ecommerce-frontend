@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { serverGet, serverPost } from "@/lib/api-client/server";
 import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
 
@@ -72,6 +72,8 @@ export interface PlaceOrderPayload {
   billing_address?: CheckoutAddressPayload;
   payment_method: string;
   note?: string;
+  /** 6-digit code from `POST /orders/phone-code`, when the shop verifies order numbers. */
+  phone_code?: string;
   items?: Array<{ variant_id: number; quantity: number }>;
 }
 
@@ -130,6 +132,25 @@ export interface OrderPlacedResponse {
   order_number: string;
   total_amount: number;
   gateway_url?: string | null;
+}
+
+const IPV4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+const IPV6 = /^[0-9a-f:.]+$/i;
+
+/**
+ * The shopper's own IP address. Orders are placed from this server, so the API would otherwise only see
+ * the server's address; `customer_ip` feeds its fraud checks and the "Block IP" rule.
+ * Trusts the first X-Forwarded-For hop, as set by the reverse proxy in front of Next.js.
+ */
+async function getCustomerIp(): Promise<string | undefined> {
+  try {
+    const h = await headers();
+    const candidate = (h.get("x-forwarded-for")?.split(",")[0] || h.get("x-real-ip") || "").trim().replace(/^::ffff:/, "");
+    if (IPV4.test(candidate) || (candidate.includes(":") && IPV6.test(candidate))) return candidate;
+  } catch {
+    /* outside a request */
+  }
+  return undefined;
 }
 
 export async function getCheckoutLocationsAction(): Promise<ActionResponse<any[]>> {
@@ -299,7 +320,9 @@ export async function placeOrderAction(payload: PlaceOrderPayload): Promise<Acti
       : `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     // Strip client helper fields before sending to API
-    const { items: _, ...apiPayload } = payload;
+    const { items: _, ...rest } = payload;
+    const customerIp = await getCustomerIp();
+    const apiPayload = customerIp ? { ...rest, customer_ip: customerIp } : rest;
 
     const res = await serverPost<any>("CHECKOUT", apiPayload, {
       headers: {
@@ -325,7 +348,10 @@ export async function placeOrderAction(payload: PlaceOrderPayload): Promise<Acti
       success: false,
       error: {
         message: !res.success ? (res.error?.message || "Failed to place order") : "Failed to place order",
-        code: "PLACE_ORDER_FAILED",
+        // Keep the API's code and field errors so the form can react (e.g. a missing phone_code).
+        code: (!res.success && res.error?.code) || "PLACE_ORDER_FAILED",
+        status: !res.success ? res.error?.status : undefined,
+        fields: !res.success ? res.error?.fields : undefined,
       },
     };
   } catch (error) {
@@ -352,6 +378,8 @@ export interface BuyNowPayload {
   coupon_code?: string;
   payment_method: string;
   note?: string;
+  /** 6-digit code from `POST /orders/phone-code`, when the shop verifies order numbers. */
+  phone_code?: string;
 }
 
 /**
@@ -420,7 +448,8 @@ export async function buyNowAction(
         ? crypto.randomUUID()
         : `buynow_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    const res = await serverPost<any>("BUY_NOW", payload, {
+    const customerIp = await getCustomerIp();
+    const res = await serverPost<any>("BUY_NOW", customerIp ? { ...payload, customer_ip: customerIp } : payload, {
       headers: {
         "Idempotency-Key": idempotencyKey,
       },
@@ -443,7 +472,10 @@ export async function buyNowAction(
       success: false,
       error: {
         message: !res.success ? (res.error?.message || "Failed to place Buy Now order") : "Buy now failed",
-        code: "BUY_NOW_FAILED",
+        // Keep the API's code and field errors so the form can react (e.g. a missing phone_code).
+        code: (!res.success && res.error?.code) || "BUY_NOW_FAILED",
+        status: !res.success ? res.error?.status : undefined,
+        fields: !res.success ? res.error?.fields : undefined,
       },
     };
   } catch (error) {
@@ -451,3 +483,43 @@ export async function buyNowAction(
   }
 }
 
+export interface OrderPhoneCodeResponse {
+  /** false when the shop does not ask for a code: the order can be placed directly. */
+  required: boolean;
+  message: string;
+  /** Some APIs say how long to wait before asking again. */
+  retry_after?: number;
+  expires_in?: number;
+}
+
+/**
+ * Send the code that proves an order's mobile number.
+ * Endpoint: POST /api/v1/orders/phone-code
+ */
+export async function requestOrderPhoneCodeAction(phone: string): Promise<ActionResponse<OrderPhoneCodeResponse>> {
+  try {
+    const clean = phone.replace(/[\s-]/g, "").replace(/^\+?88(?=01)/, "");
+    if (!/^01[3-9]\d{8}$/.test(clean)) {
+      return {
+        success: false,
+        error: { message: "Enter a valid Bangladeshi mobile number (01XXXXXXXXX).", code: "INVALID_PHONE" },
+      };
+    }
+    // Never resend automatically: each attempt texts the customer.
+    const res = await serverPost<{ data?: OrderPhoneCodeResponse } & OrderPhoneCodeResponse>("ORDER_PHONE_CODE", { phone: clean }, { retries: 0 });
+    if (res.success && res.data) {
+      const data = (res.data.data ?? res.data) as OrderPhoneCodeResponse;
+      return { success: true, data: { ...data, required: Boolean(data.required) } };
+    }
+    return {
+      success: false,
+      error: {
+        message: !res.success ? res.error?.message || "Could not send the code" : "Could not send the code",
+        code: !res.success ? res.error?.code || "PHONE_CODE_FAILED" : "PHONE_CODE_FAILED",
+        status: !res.success ? res.error?.status : undefined,
+      },
+    };
+  } catch (error) {
+    return handleActionError(error);
+  }
+}

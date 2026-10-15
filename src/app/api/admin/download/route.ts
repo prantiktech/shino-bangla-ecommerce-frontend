@@ -4,12 +4,16 @@ import { cookies } from "next/headers";
 import { API_BASE_URL as API_BASE } from "@/lib/api/config";
 
 /** Only these back-office file endpoints may be proxied. */
-const ALLOWED: { pattern: RegExp; query: string[]; fallbackName: string }[] = [
+/** `inline` files open in the browser tab (images and PDFs only); everything else downloads. */
+const ALLOWED: { pattern: RegExp; query: string[]; fallbackName: string; inline?: boolean }[] = [
   { pattern: /^\/admin\/orders\/\d+\/invoice$/, query: [], fallbackName: "invoice.pdf" },
   { pattern: /^\/admin\/products\/export$/, query: ["format", "status", "brand_id", "category_id"], fallbackName: "products.xlsx" },
   { pattern: /^\/admin\/product-imports\/template$/, query: ["format"], fallbackName: "product-import-template.xlsx" },
   { pattern: /^\/admin\/report-exports\/\d+\/download$/, query: [], fallbackName: "report" },
+  { pattern: /^\/admin\/business-applications\/\d+\/documents\/\d+$/, query: [], fallbackName: "document", inline: true },
 ];
+
+const INLINE_TYPES = /^(image\/(png|jpe?g|webp)|application\/pdf)$/i;
 
 /**
  * GET /api/admin/download?path=/admin/orders/5/invoice
@@ -53,11 +57,16 @@ export async function GET(request: NextRequest) {
     }
 
     const headers = new Headers();
-    headers.set("Content-Type", res.headers.get("content-type") || "application/octet-stream");
-    headers.set(
-      "Content-Disposition",
-      res.headers.get("content-disposition") || `attachment; filename="${rule.fallbackName}"`
-    );
+    const contentType = res.headers.get("content-type") || "application/octet-stream";
+    const upstreamDisposition = res.headers.get("content-disposition");
+    headers.set("Content-Type", contentType);
+    if (rule.inline && INLINE_TYPES.test(contentType.split(";")[0].trim())) {
+      // Keep the upstream file name but let the browser display the file.
+      headers.set("Content-Disposition", upstreamDisposition ? upstreamDisposition.replace(/^\s*attachment/i, "inline") : "inline");
+    } else {
+      headers.set("Content-Disposition", upstreamDisposition || `attachment; filename="${rule.fallbackName}"`);
+    }
+    headers.set("X-Content-Type-Options", "nosniff");
     const len = res.headers.get("content-length");
     if (len) headers.set("Content-Length", len);
     headers.set("Cache-Control", "no-store");

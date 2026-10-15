@@ -13,6 +13,8 @@ function AdminLoginForm() {
     rawRedirect && rawRedirect.startsWith("/admin") && !rawRedirect.startsWith("//")
       ? rawRedirect
       : "/admin";
+  // Set when an expired or revoked session was cleared on the way here.
+  const sessionExpired = searchParams.get("expired") === "1";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -80,6 +82,13 @@ function AdminLoginForm() {
             Auto Fill
           </button>
         </div>
+
+        {sessionExpired && !error && !success && (
+          <div role="status" className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2 text-xs text-amber-200">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>Your session has ended. Please sign in again.</span>
+          </div>
+        )}
 
         {error && (
           <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center gap-2.5 text-xs font-semibold text-rose-400">

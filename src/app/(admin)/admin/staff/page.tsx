@@ -2,6 +2,8 @@ import React from "react";
 import { getAdminStaffAction } from "@/app/(admin)/actions/staff";
 import { getAdminRolesAction } from "@/app/(admin)/actions/roles";
 import { StaffManagement } from "./_components/StaffManagement";
+import { guardAdminPage } from "@/app/(admin)/session";
+import { AccessDenied } from "@/app/(admin)/components/AccessDenied";
 
 export const metadata = {
   title: "Back Office Staff | Admin Portal",
@@ -9,6 +11,9 @@ export const metadata = {
 };
 
 export default async function AdminStaffPage() {
+  const access = await guardAdminPage("/admin/staff");
+  if (!access.allowed) return <AccessDenied needed={access.needed} fallback={access.fallback} />;
+
   const [staffRes, rolesRes] = await Promise.all([
     getAdminStaffAction(),
     getAdminRolesAction(),

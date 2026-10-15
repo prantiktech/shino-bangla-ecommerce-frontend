@@ -2,10 +2,11 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Check, Edit2, Eye, EyeOff, MessageSquareText, Sparkles, Star, Trash2, XCircle } from "lucide-react";
+import { Check, Edit2, Eye, EyeOff, MessageSquareText, Plus, Sparkles, Star, Trash2, XCircle } from "lucide-react";
 import {
   AdminReview,
   approveAdminReviewAction,
+  createAdminReviewAction,
   deleteAdminReviewAction,
   getAdminReviewAction,
   getAdminReviewsAction,
@@ -22,7 +23,10 @@ import {
   ConfirmDialog,
   EmptyState,
   Field,
+  GalleryUpload,
   InlineError,
+  Input,
+  MediaValue,
   Modal,
   NoticeBanner,
   PageHeader,
@@ -36,6 +40,8 @@ import {
   useNotice,
 } from "@/app/(admin)/components/ui";
 import { formatDateTime } from "@/app/(admin)/components/format";
+import { ProductPicker, ProductRef } from "@/app/(admin)/components/pickers";
+import { useCan } from "@/app/(admin)/components/permissions";
 
 type StatusTab = "pending" | "approved" | "rejected" | "hidden" | "featured";
 
@@ -73,6 +79,7 @@ export function ReviewsManagement({ initial, initialError }: { initial: Paginate
   const [list, setList] = useState(initial);
   const [status, setStatus] = useState<StatusTab>("pending");
   const [rating, setRating] = useState("");
+  const [source, setSource] = useState("");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -84,16 +91,27 @@ export function ReviewsManagement({ initial, initialError }: { initial: Paginate
   const [editing, setEditing] = useState<AdminReview | null>(null);
   const [editComment, setEditComment] = useState("");
   const [editRating, setEditRating] = useState(5);
+  const [editName, setEditName] = useState("");
   const [modalBusy, setModalBusy] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<AdminReview | null>(null);
+  const can = useCan();
+  const [creating, setCreating] = useState(false);
+  const [draft, setDraft] = useState<{ product: ProductRef[]; name: string; rating: number; comment: string; photos: MediaValue[] }>({
+    product: [],
+    name: "",
+    rating: 5,
+    comment: "",
+    photos: [],
+  });
 
-  const load = async (opts: { status?: StatusTab; rating?: string; q?: string; page?: number } = {}) => {
+  const load = async (opts: { status?: StatusTab; rating?: string; source?: string; q?: string; page?: number } = {}) => {
     setLoading(true);
     const s = opts.status ?? status;
     const res = await getAdminReviewsAction({
       ...tabParams(s),
       rating: opts.rating ?? rating,
+      source: opts.source ?? source,
       q: opts.q ?? q,
       page: opts.page ?? page,
     });
@@ -143,12 +161,42 @@ export function ReviewsManagement({ initial, initialError }: { initial: Paginate
     if (!editing) return;
     setModalBusy(true);
     setModalError(null);
-    const res = await updateAdminReviewAction(editing.id, { comment: editComment.trim() || null, rating: editRating });
+    const isStore = editing.source === "store";
+    if (isStore && editName.trim().length < 2) {
+      setModalBusy(false);
+      return setModalError("Enter the reviewer's name (at least 2 characters).");
+    }
+    const res = await updateAdminReviewAction(editing.id, {
+      comment: editComment.trim() || null,
+      rating: editRating,
+      // The API refuses a name on customers' own reviews.
+      ...(isStore && editName.trim() !== (editing.reviewer_name ?? "") ? { reviewer_name: editName.trim() } : {}),
+    });
     setModalBusy(false);
     if (!res.success) return setModalError(res.error.message);
     setList((l) => ({ ...l, data: l.data.map((x) => (x.id === res.data.id ? res.data : x)) }));
     setEditing(null);
     success("Review updated. It is marked as edited by the shop.");
+  };
+
+  const submitCreate = async () => {
+    const product = draft.product[0];
+    if (!product) return setModalError("Choose the product being reviewed.");
+    if (draft.name.trim().length < 2) return setModalError("Enter the reviewer's name (at least 2 characters).");
+    setModalBusy(true);
+    setModalError(null);
+    const res = await createAdminReviewAction({
+      product_id: product.id,
+      reviewer_name: draft.name,
+      rating: draft.rating,
+      comment: draft.comment,
+      photo_ids: draft.photos.map((p) => p.id),
+    });
+    setModalBusy(false);
+    if (!res.success) return setModalError(res.error.message);
+    setCreating(false);
+    if (belongs(res.data, status)) setList((l) => ({ ...l, data: [res.data, ...l.data], meta: { ...l.meta, total: l.meta.total + 1 } }));
+    success(`Review by ${res.data.reviewer_name ?? draft.name.trim()} published on ${product.name}.`);
   };
 
   const submitDelete = async () => {
@@ -166,7 +214,25 @@ export function ReviewsManagement({ initial, initialError }: { initial: Paginate
 
   return (
     <div className="space-y-5">
-      <PageHeader icon={MessageSquareText} title="Reviews" description="Approve, reject, hide and feature customer reviews." />
+      <PageHeader
+        icon={MessageSquareText}
+        title="Reviews"
+        description="Approve, reject, hide and feature customer reviews."
+        actions={
+          can("reviews.create") ? (
+            <Button
+              icon={Plus}
+              onClick={() => {
+                setDraft({ product: [], name: "", rating: 5, comment: "", photos: [] });
+                setModalError(null);
+                setCreating(true);
+              }}
+            >
+              Add review
+            </Button>
+          ) : null
+        }
+      />
       <NoticeBanner notice={notice ?? (initialError ? { type: "error", message: initialError } : null)} onClose={clear} />
 
       <div className="flex flex-col lg:flex-row gap-3 lg:items-center justify-between">
@@ -212,6 +278,20 @@ export function ReviewsManagement({ initial, initialError }: { initial: Paginate
               </option>
             ))}
           </Select>
+          <Select
+            value={source}
+            onChange={(e) => {
+              setSource(e.target.value);
+              setPage(1);
+              load({ source: e.target.value, page: 1 });
+            }}
+            className="sm:w-44"
+            aria-label="Filter by source"
+          >
+            <option value="">All sources</option>
+            <option value="customer">From customers</option>
+            <option value="store">Entered by the shop</option>
+          </Select>
         </div>
       </div>
 
@@ -239,9 +319,10 @@ export function ReviewsManagement({ initial, initialError }: { initial: Paginate
                     {r.is_hidden && <Badge tone="slate">Hidden</Badge>}
                     {r.is_featured && <Badge tone="orange">Featured</Badge>}
                     {r.edited_by_shop && <Badge tone="purple">Edited by shop</Badge>}
+                    {r.source === "store" && <Badge tone="blue">Entered by shop{r.created_by ? ` · ${r.created_by}` : ""}</Badge>}
                   </div>
                   <p className="text-xs text-slate-500">
-                    <span className="font-medium text-slate-700">{r.author?.name ?? "Customer"}</span> on{" "}
+                    <span className="font-medium text-slate-700">{r.author?.name ?? r.reviewer_name ?? r.author_name ?? "Customer"}</span> on{" "}
                     {r.product ? (
                       <Link href={`/products/${r.product.slug}`} target="_blank" className="font-medium text-primary hover:underline">
                         {r.product.name}
@@ -333,12 +414,14 @@ export function ReviewsManagement({ initial, initialError }: { initial: Paginate
                     setEditing(r);
                     setEditComment(r.comment ?? "");
                     setEditRating(r.rating);
+                    setEditName(r.reviewer_name ?? "");
                     setModalError(null);
                     getAdminReviewAction(r.id).then((fresh) => {
                       if (!fresh.success) return;
                       setEditing(fresh.data);
                       setEditComment(fresh.data.comment ?? "");
                       setEditRating(fresh.data.rating);
+                      setEditName(fresh.data.reviewer_name ?? "");
                     });
                   }}
                 >
@@ -405,11 +488,52 @@ export function ReviewsManagement({ initial, initialError }: { initial: Paginate
       >
         <div className="space-y-4">
           <InlineError message={modalError} />
+          {editing?.source === "store" && (
+            <Field label="Reviewer's name" hint="Only reviews entered by the shop can be renamed.">
+              <Input value={editName} maxLength={100} onChange={(e) => setEditName(e.target.value)} />
+            </Field>
+          )}
           <Field label="Rating">
             <Stars value={editRating} onChange={setEditRating} />
           </Field>
           <Field label="Comment">
             <Textarea value={editComment} onChange={(e) => setEditComment(e.target.value)} maxLength={2000} rows={5} />
+          </Field>
+        </div>
+      </Modal>
+
+      <Modal
+        open={creating}
+        onClose={() => !modalBusy && setCreating(false)}
+        title="Add a review"
+        description="For reviews received by phone, email or in the shop. It is published at once and marked as entered by the shop."
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setCreating(false)} disabled={modalBusy}>
+              Cancel
+            </Button>
+            <Button loading={modalBusy} onClick={submitCreate}>
+              Publish review
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <InlineError message={modalError} />
+          <Field label="Product" required>
+            <ProductPicker value={draft.product} max={1} onChange={(v) => setDraft((d) => ({ ...d, product: v }))} placeholder="Search products" />
+          </Field>
+          <Field label="Reviewer's name" required hint="Shown with the review, 2 to 100 characters.">
+            <Input value={draft.name} maxLength={100} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} placeholder="Rahim Uddin" />
+          </Field>
+          <Field label="Rating" required>
+            <Stars value={draft.rating} onChange={(v) => setDraft((d) => ({ ...d, rating: v }))} />
+          </Field>
+          <Field label="Comment" hint={`Optional. ${draft.comment.length}/2000`}>
+            <Textarea value={draft.comment} rows={4} maxLength={2000} onChange={(e) => setDraft((d) => ({ ...d, comment: e.target.value }))} />
+          </Field>
+          <Field label="Photos" hint="Optional, up to 5.">
+            <GalleryUpload value={draft.photos} max={5} onChange={(v) => setDraft((d) => ({ ...d, photos: v }))} />
           </Field>
         </div>
       </Modal>

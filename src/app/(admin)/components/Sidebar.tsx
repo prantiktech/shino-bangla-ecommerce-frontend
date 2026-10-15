@@ -30,14 +30,18 @@ import {
   HelpCircle,
   Mail,
   Inbox,
+  ScanBarcode,
+  Bike,
+  ShieldAlert,
+  Briefcase,
 } from "lucide-react";
+import { StaffAccess, canOpenPage } from "../access";
 
+/** Which permission each link needs lives in `access.ts`, shared with the pages' server-side guards. */
 interface SidebarItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   href: string;
-  /** Permission needed to see the link; omitted means always visible. */
-  permission?: string;
 }
 
 interface SidebarSection {
@@ -49,63 +53,67 @@ interface SidebarProps {
   isCollapsed: boolean;
   setIsMobileOpen: (open: boolean) => void;
   forceOpen?: boolean;
-  /** Permissions of the signed-in staff member; null while loading (show everything). */
-  permissions?: string[] | null;
+  /** Roles and permissions of the signed-in staff member; null while loading (show everything). */
+  access?: StaffAccess | null;
 }
 
 const SECTIONS: SidebarSection[] = [
   {
     title: "Overview",
     items: [
-      { label: "Dashboard", icon: LayoutDashboard, href: "/admin", permission: "dashboard.view" },
-      { label: "Reports", icon: BarChart3, href: "/admin/reports", permission: "reports.view" },
+      { label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
+      { label: "Reports", icon: BarChart3, href: "/admin/reports" },
     ],
   },
   {
     title: "Catalogue",
     items: [
-      { label: "Products", icon: Layers, href: "/admin/products", permission: "products.view" },
-      { label: "Categories", icon: FolderTree, href: "/admin/categories", permission: "categories.view" },
-      { label: "Brands", icon: Award, href: "/admin/brands", permission: "brands.view" },
-      { label: "Product options", icon: SlidersHorizontal, href: "/admin/option-types", permission: "products.view" },
-      { label: "Inventory", icon: Boxes, href: "/admin/inventory", permission: "inventory.view" },
-      { label: "Purchases", icon: PackagePlus, href: "/admin/purchases", permission: "inventory.view" },
+      { label: "Products", icon: Layers, href: "/admin/products" },
+      { label: "Categories", icon: FolderTree, href: "/admin/categories" },
+      { label: "Brands", icon: Award, href: "/admin/brands" },
+      { label: "Product options", icon: SlidersHorizontal, href: "/admin/option-types" },
+      { label: "Inventory", icon: Boxes, href: "/admin/inventory" },
+      { label: "Purchases", icon: PackagePlus, href: "/admin/purchases" },
     ],
   },
   {
     title: "Sales",
     items: [
-      { label: "Orders", icon: ShoppingBag, href: "/admin/orders", permission: "orders.view" },
-      { label: "Customers", icon: Users, href: "/admin/customers", permission: "customers.view" },
-      { label: "Reviews", icon: MessageSquareText, href: "/admin/reviews", permission: "reviews.view" },
-      { label: "Coupons", icon: Ticket, href: "/admin/coupons", permission: "discounts.view" },
-      { label: "Flash sales", icon: Zap, href: "/admin/flash-sales", permission: "discounts.view" },
-      { label: "Shipping zones", icon: Truck, href: "/admin/shipping", permission: "shipping.view" },
+      { label: "Orders", icon: ShoppingBag, href: "/admin/orders" },
+      { label: "Scan station", icon: ScanBarcode, href: "/admin/shipments" },
+      { label: "Couriers", icon: Bike, href: "/admin/couriers" },
+      { label: "Fraud check", icon: ShieldAlert, href: "/admin/fraud" },
+      { label: "Customers", icon: Users, href: "/admin/customers" },
+      { label: "Reviews", icon: MessageSquareText, href: "/admin/reviews" },
+      { label: "Coupons", icon: Ticket, href: "/admin/coupons" },
+      { label: "Flash sales", icon: Zap, href: "/admin/flash-sales" },
+      { label: "Shipping zones", icon: Truck, href: "/admin/shipping" },
     ],
   },
   {
     title: "Storefront",
     items: [
-      { label: "Home page", icon: LayoutTemplate, href: "/admin/home-sections", permission: "storefront.view" },
-      { label: "Banners", icon: ImageIcon, href: "/admin/banners", permission: "storefront.view" },
-      { label: "Pages", icon: FileText, href: "/admin/pages", permission: "content.view" },
-      { label: "FAQs", icon: HelpCircle, href: "/admin/faqs", permission: "content.view" },
+      { label: "Home page", icon: LayoutTemplate, href: "/admin/home-sections" },
+      { label: "Banners", icon: ImageIcon, href: "/admin/banners" },
+      { label: "Pages", icon: FileText, href: "/admin/pages" },
+      { label: "FAQs", icon: HelpCircle, href: "/admin/faqs" },
     ],
   },
   {
     title: "Engagement",
     items: [
-      { label: "Newsletter", icon: Mail, href: "/admin/newsletter", permission: "marketing.view" },
-      { label: "Inbox", icon: Inbox, href: "/admin/messages", permission: "content.view" },
+      { label: "Newsletter", icon: Mail, href: "/admin/newsletter" },
+      { label: "Inbox", icon: Inbox, href: "/admin/messages" },
+      { label: "Business applications", icon: Briefcase, href: "/admin/business-applications" },
     ],
   },
   {
     title: "Administration",
     items: [
-      { label: "Staff", icon: UserCheck, href: "/admin/staff", permission: "staff.view" },
-      { label: "Roles & permissions", icon: ShieldCheck, href: "/admin/roles", permission: "roles.view" },
-      { label: "Activity log", icon: History, href: "/admin/activity-log", permission: "activity-log.view" },
-      { label: "Settings", icon: Settings, href: "/admin/settings", permission: "settings.view" },
+      { label: "Staff", icon: UserCheck, href: "/admin/staff" },
+      { label: "Roles & permissions", icon: ShieldCheck, href: "/admin/roles" },
+      { label: "Activity log", icon: History, href: "/admin/activity-log" },
+      { label: "Settings", icon: Settings, href: "/admin/settings" },
     ],
   },
 ];
@@ -114,13 +122,12 @@ export function AdminSidebar({
   isCollapsed,
   setIsMobileOpen,
   forceOpen = false,
-  permissions = null,
+  access = null,
 }: SidebarProps) {
   const pathname = usePathname();
   const showText = !isCollapsed || forceOpen;
 
-  const can = (perm?: string) => !perm || !permissions || permissions.includes(perm);
-  const sidebarSections = SECTIONS.map((sec) => ({ ...sec, items: sec.items.filter((i) => can(i.permission)) })).filter(
+  const sidebarSections = SECTIONS.map((sec) => ({ ...sec, items: sec.items.filter((i) => !access || canOpenPage(access, i.href)) })).filter(
     (sec) => sec.items.length > 0
   );
   const isActive = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname === href || pathname?.startsWith(`${href}/`));

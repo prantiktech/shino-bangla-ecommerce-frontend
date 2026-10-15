@@ -431,6 +431,10 @@ export function Tabs<T extends string>({
 
 const MODAL_SIZES = { sm: "max-w-md", md: "max-w-xl", lg: "max-w-3xl", xl: "max-w-5xl" } as const;
 
+/** Open modals, innermost last, so Escape closes only the one on top. */
+const openModals: number[] = [];
+let modalSeq = 0;
+
 export function Modal({
   open,
   onClose,
@@ -448,17 +452,30 @@ export function Modal({
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
+  // Callers pass inline handlers; keep the latest without re-registering (which would reorder the stack).
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const id = ++modalSeq;
+    openModals.push(id);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && openModals[openModals.length - 1] === id) onCloseRef.current();
+    };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
+      const at = openModals.indexOf(id);
+      if (at !== -1) openModals.splice(at, 1);
+      // Unlock scrolling only when the last modal closes.
+      document.body.style.overflow = openModals.length ? "hidden" : prev;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   return (

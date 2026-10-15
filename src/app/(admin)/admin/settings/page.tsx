@@ -1,12 +1,17 @@
 import React from "react";
 import { getAdminSettingsAction, StoreSettings } from "@/app/(admin)/actions/settings";
 import { SettingsForm } from "./_components/SettingsForm";
+import { guardAdminPage } from "@/app/(admin)/session";
+import { AccessDenied } from "@/app/(admin)/components/AccessDenied";
 
 export const metadata = {
   title: "Store Settings | Admin Portal",
 };
 
 export default async function AdminSettingsPage() {
+  const access = await guardAdminPage("/admin/settings");
+  if (!access.allowed) return <AccessDenied needed={access.needed} fallback={access.fallback} />;
+
   const res = await getAdminSettingsAction();
   const settings: StoreSettings = res.success && res.data ? res.data : {
     store_name: "Nogod Bazar",

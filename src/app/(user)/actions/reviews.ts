@@ -31,9 +31,9 @@ export interface CustomerReview {
   };
 }
 
+/** Any product on sale can be reviewed once; the API no longer takes an order. */
 export interface SubmitReviewPayload {
   product_id: number;
-  order_id: number;
   rating: number;
   comment?: string;
   photo_ids?: number[];
@@ -98,7 +98,6 @@ export async function submitReviewAction(payload: SubmitReviewPayload): Promise<
   try {
     const body: any = {
       product_id: Number(payload.product_id),
-      order_id: Number(payload.order_id),
       rating: Number(payload.rating),
     };
     if (payload.comment) body.comment = payload.comment.trim();
@@ -112,7 +111,8 @@ export async function submitReviewAction(payload: SubmitReviewPayload): Promise<
       success: false,
       error: {
         message: !res.success ? (res.error?.message || "Failed to submit review") : "Failed to submit review",
-        code: "SUBMIT_REVIEW_FAILED",
+        code: (!res.success && res.error?.code) || "SUBMIT_REVIEW_FAILED",
+        status: !res.success ? res.error?.status : undefined,
       },
     };
   } catch (error) {
@@ -185,6 +185,26 @@ export interface PublicReview {
   photos?: string[];
 }
 
+/** The public review shape is not spelled out in api.md; accept the field names the API uses elsewhere. */
+function toPublicReview(raw: Record<string, unknown>): PublicReview {
+  const author = raw.author as { name?: string } | null | undefined;
+  const photos = Array.isArray(raw.photos)
+    ? raw.photos
+        .map((p) => (typeof p === "string" ? p : p && typeof p === "object" ? ((p as { url?: string; sizes?: { thumb?: string } }).sizes?.thumb ?? (p as { url?: string }).url) : undefined))
+        .filter((u): u is string => typeof u === "string" && u.length > 0)
+    : [];
+  const verified = raw.verified_purchase ?? raw.is_verified_purchase ?? raw.is_verified;
+  return {
+    id: Number(raw.id),
+    rating: Number(raw.rating) || 0,
+    comment: (raw.comment as string | null | undefined) ?? null,
+    customer_name: (raw.customer_name as string) || (raw.author_name as string) || author?.name || (raw.reviewer_name as string) || undefined,
+    verified_purchase: typeof verified === "boolean" ? verified : raw.order_id != null && raw.source !== "store",
+    created_at: String(raw.created_at ?? ""),
+    photos,
+  };
+}
+
 /**
  * Fetch public approved customer reviews for a single product
  * Endpoint: GET /api/v1/products/{slug}/reviews
@@ -200,7 +220,7 @@ export async function getProductReviewsAction(
     });
 
     if (res.success && res.data) {
-      const list = Array.isArray(res.data.data) ? res.data.data : [];
+      const list: PublicReview[] = (Array.isArray(res.data.data) ? res.data.data : []).map(toPublicReview);
       const total = res.data.meta?.total || list.length;
       return {
         success: true,

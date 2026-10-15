@@ -11,6 +11,8 @@ export interface ApiSettings {
   cod_enabled: boolean;
   bank_transfer_enabled: boolean;
   bank_transfer_instructions?: string | null;
+  /** When on, orders need a 6-digit code sent to the order's mobile number (`POST /orders/phone-code`). */
+  order_phone_verification?: boolean;
   logo_url?: string | null;
   favicon_url?: string | null;
 }

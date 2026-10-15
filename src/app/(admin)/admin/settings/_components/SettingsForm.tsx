@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { Banknote, ImageIcon, Receipt, Settings, Store, Upload } from "lucide-react";
+import { Banknote, ImageIcon, Receipt, Settings, ShieldCheck, Store, Upload } from "lucide-react";
 import { StoreSettings, updateAdminSettingsAction } from "@/app/(admin)/actions/settings";
 import { StoreAsset, uploadStoreAssetAction } from "@/app/(admin)/actions/settings-assets";
 import {
@@ -99,6 +99,13 @@ export function SettingsForm({ initialSettings }: { initialSettings: StoreSettin
     bank_transfer_enabled: !!initialSettings.bank_transfer_enabled,
     bank_transfer_instructions: initialSettings.bank_transfer_instructions ?? "",
     order_payment_timeout_minutes: String(initialSettings.order_payment_timeout_minutes ?? 30),
+    order_phone_verification: !!initialSettings.order_phone_verification,
+    order_confirmation_sms: !!initialSettings.order_confirmation_sms,
+    duplicate_order_block: !!initialSettings.duplicate_order_block,
+    duplicate_order_minutes: String(initialSettings.duplicate_order_minutes ?? 15),
+    courier_protection: !!initialSettings.courier_protection,
+    courier_min_success_rate: String(initialSettings.courier_min_success_rate ?? 50),
+    courier_min_parcels: String(initialSettings.courier_min_parcels ?? 3),
   });
   const [saving, setSaving] = useState(false);
   const { notice, success, error, clear } = useNotice();
@@ -115,7 +122,13 @@ export function SettingsForm({ initialSettings }: { initialSettings: StoreSettin
     const timeout = Number(form.order_payment_timeout_minutes);
     if (!Number.isInteger(timeout) || timeout < 5 || timeout > 1440) return error("Payment timeout must be 5 to 1440 minutes.");
     const low = Number(form.low_stock_threshold);
-    if (!Number.isInteger(low) || low < 0) return error("Low stock threshold must be a whole number.");
+    if (!Number.isInteger(low) || low < 0 || low > 100000) return error("Low stock threshold must be a whole number up to 100,000.");
+    const dupMinutes = Number(form.duplicate_order_minutes);
+    if (!Number.isInteger(dupMinutes) || dupMinutes < 1 || dupMinutes > 1440) return error("The duplicate-order window must be 1 to 1440 minutes.");
+    const minRate = Number(form.courier_min_success_rate);
+    if (!Number.isInteger(minRate) || minRate < 1 || minRate > 100) return error("The minimum success rate must be 1% to 100%.");
+    const minParcels = Number(form.courier_min_parcels);
+    if (!Number.isInteger(minParcels) || minParcels < 1 || minParcels > 100) return error("The minimum number of parcels must be 1 to 100.");
     setSaving(true);
     const res = await updateAdminSettingsAction({
       store_name: form.store_name.trim(),
@@ -129,10 +142,23 @@ export function SettingsForm({ initialSettings }: { initialSettings: StoreSettin
       bank_transfer_enabled: form.bank_transfer_enabled,
       bank_transfer_instructions: form.bank_transfer_instructions.trim() || null,
       order_payment_timeout_minutes: timeout,
+      order_phone_verification: form.order_phone_verification,
+      order_confirmation_sms: form.order_confirmation_sms,
+      duplicate_order_block: form.duplicate_order_block,
+      duplicate_order_minutes: dupMinutes,
+      courier_protection: form.courier_protection,
+      courier_min_success_rate: minRate,
+      courier_min_parcels: minParcels,
     });
     setSaving(false);
     if (!res.success) return error(res.error.message);
     setSaved((s) => ({ ...s, ...res.data }));
+    // The server may refuse a switch it cannot honour (e.g. SMS not configured); show what was actually saved.
+    setForm((f) => ({
+      ...f,
+      order_phone_verification: res.data.order_phone_verification ?? f.order_phone_verification,
+      order_confirmation_sms: res.data.order_confirmation_sms ?? f.order_confirmation_sms,
+    }));
     success("Store settings saved.");
   };
 
@@ -141,7 +167,7 @@ export function SettingsForm({ initialSettings }: { initialSettings: StoreSettin
       <PageHeader
         icon={Settings}
         title="Store settings"
-        description="Store details, tax, stock alerts and the payment methods offered at checkout."
+        description="Store details, tax, stock alerts, payment methods and order protection."
         actions={
           <Button type="submit" loading={saving}>
             Save settings
@@ -248,6 +274,77 @@ export function SettingsForm({ initialSettings }: { initialSettings: StoreSettin
             onChange={(e) => set("order_payment_timeout_minutes", e.target.value)}
           />
         </Field>
+      </Card>
+
+      <Card className="space-y-5">
+        <h2 className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-slate-400" />
+          Order protection
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Toggle
+            checked={form.order_phone_verification}
+            onChange={(v) => set("order_phone_verification", v)}
+            label="Verify the mobile number"
+            description="Customers enter a 6-digit SMS code before an order is accepted. Needs SMS set up on the server."
+          />
+          <Toggle
+            checked={form.order_confirmation_sms}
+            onChange={(v) => set("order_confirmation_sms", v)}
+            label="Order confirmation SMS"
+            description="Text the customer when an order is placed. Needs SMS set up on the server."
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start pt-4 border-t border-slate-100">
+          <Toggle
+            checked={form.duplicate_order_block}
+            onChange={(v) => set("duplicate_order_block", v)}
+            label="Block duplicate orders"
+            description="Refuse a second order from the same number within a short window."
+          />
+          <Field label="Duplicate window (minutes)" hint="1 to 1440.">
+            <Input
+              type="number"
+              min={1}
+              max={1440}
+              value={form.duplicate_order_minutes}
+              disabled={!form.duplicate_order_block}
+              onChange={(e) => set("duplicate_order_minutes", e.target.value)}
+            />
+          </Field>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start pt-4 border-t border-slate-100">
+          <Toggle
+            checked={form.courier_protection}
+            onChange={(v) => set("courier_protection", v)}
+            label="Courier record protection"
+            description="Refuse cash orders from numbers that rarely accept their parcels."
+          />
+          <Field label="Minimum success rate" hint="Delivered ÷ finished parcels, 1–100%.">
+            <div className="relative">
+              <Input
+                type="number"
+                min={1}
+                max={100}
+                value={form.courier_min_success_rate}
+                disabled={!form.courier_protection}
+                onChange={(e) => set("courier_min_success_rate", e.target.value)}
+                className="pr-8"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">%</span>
+            </div>
+          </Field>
+          <Field label="Judge after" hint="Finished parcels before the rate counts (1–100).">
+            <Input
+              type="number"
+              min={1}
+              max={100}
+              value={form.courier_min_parcels}
+              disabled={!form.courier_protection}
+              onChange={(e) => set("courier_min_parcels", e.target.value)}
+            />
+          </Field>
+        </div>
       </Card>
 
       <div className="flex justify-end">

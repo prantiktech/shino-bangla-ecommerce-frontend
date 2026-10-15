@@ -8,6 +8,8 @@ import {
 import { getCategoriesAction } from "@/app/(user)/actions/categories";
 import { InventoryManagement } from "./_components/InventoryManagement";
 import { StockStatus, MovementType } from "@/types/inventory";
+import { guardAdminPage } from "@/app/(admin)/session";
+import { AccessDenied } from "@/app/(admin)/components/AccessDenied";
 
 export const metadata: Metadata = {
   title: "Inventory & Stock Control | Admin Portal",
@@ -31,6 +33,9 @@ interface InventoryPageProps {
 }
 
 export default async function AdminInventoryPage({ searchParams }: InventoryPageProps) {
+  const access = await guardAdminPage("/admin/inventory");
+  if (!access.allowed) return <AccessDenied needed={access.needed} fallback={access.fallback} />;
+
   const resolvedParams = await searchParams;
 
   const q = resolvedParams.q || "";
