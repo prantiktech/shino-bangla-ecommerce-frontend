@@ -260,6 +260,14 @@ export interface ContactRule {
   created_at: string;
 }
 
+/** One courier's parcels for a number, as the fraud-check provider counts them. */
+export interface FraudProviderCourier {
+  name: string;
+  total: number;
+  delivered: number;
+  returned: number;
+}
+
 export interface FraudCheckResult {
   phone: string;
   rule: ContactRule | { rule: ContactRuleKind; reason?: string | null } | null;
@@ -282,8 +290,17 @@ export interface FraudCheckResult {
   provider: {
     connected: boolean;
     checked: boolean;
-    /** Present once the provider has answered; its shape is the provider's own. */
-    [key: string]: unknown;
+    /** The rest is present once the provider has answered (`checked: true`). */
+    name?: string;
+    checked_at?: string;
+    total?: number;
+    delivered?: number;
+    returned?: number;
+    /** Percent (0–100), null when the number has no parcels. */
+    success_rate?: number | null;
+    /** The provider's own wording ("Low Risk"); not every provider sends one. */
+    risk?: string | null;
+    couriers?: FraudProviderCourier[];
   };
   order?: { id: number; number: string; ip_address: string | null; customer_ip: string | null };
 }
