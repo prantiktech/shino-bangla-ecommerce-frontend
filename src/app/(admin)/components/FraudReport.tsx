@@ -8,7 +8,8 @@ import React, { useState } from "react";
 import { Ban, CheckCircle2, Globe, ShieldAlert, ShieldCheck, ShieldQuestion, UserCheck } from "lucide-react";
 import { createAdminContactRuleAction } from "../actions/fraud";
 import type { ContactRuleKind, ContactRuleType, FraudCheckResult } from "@/types/admin-orders";
-import { Badge, Button, Field, InlineError, Input, Modal, Select } from "./ui";
+import { Badge, Button, Field, InlineError, Input, Modal, Select, th } from "./ui";
+import { formatDateTime } from "./format";
 import { useCan } from "./permissions";
 import { cn } from "@/lib/utils";
 
@@ -33,27 +34,71 @@ function ruleKind(rule: FraudCheckResult["rule"]): ContactRuleKind | null {
   return rule.rule === "blocked" || rule.rule === "trusted" ? rule.rule : null;
 }
 
-/** Provider answers are the provider's own shape; show their simple values and keep the rest readable. */
-function ProviderDetails({ provider }: { provider: FraudCheckResult["provider"] }) {
-  const entries = Object.entries(provider).filter(([k]) => k !== "connected" && k !== "checked");
-  if (entries.length === 0) return null;
+function percent(delivered: number, total: number): string {
+  return total > 0 ? `${Math.round((delivered / total) * 100)}%` : "—";
+}
+
+/**
+ * The provider's answer: its totals across every courier, then one row per courier.
+ * The success rate is coloured against the shop's own checkout threshold.
+ */
+function ProviderDetails({ provider, minSuccessRate }: { provider: FraudCheckResult["provider"]; minSuccessRate: number }) {
+  const total = provider.total ?? 0;
+  const delivered = provider.delivered ?? 0;
+  const returned = provider.returned ?? 0;
+  const rate = provider.success_rate ?? null;
+  const couriers = provider.couriers ?? [];
+
   return (
-    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-xs mt-2">
-      {entries.map(([k, v]) => (
-        <div key={k} className="min-w-0">
-          <dt className="text-slate-500 capitalize">{k.replace(/_/g, " ")}</dt>
-          <dd className="text-slate-800 break-words">
-            {v === null || v === undefined ? (
-              "—"
-            ) : typeof v === "object" ? (
-              <pre className="whitespace-pre-wrap font-mono text-[11px] bg-slate-50 rounded p-1.5 max-h-40 overflow-auto">{JSON.stringify(v, null, 2)}</pre>
-            ) : (
-              String(v)
-            )}
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <div className="mt-3 space-y-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="font-semibold text-slate-800">{provider.name}</span>
+        {provider.risk && <Badge tone="amber">{provider.risk}</Badge>}
+        {provider.checked_at && <span className="text-slate-500">Checked {formatDateTime(provider.checked_at)}</span>}
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <Stat label="Parcels" value={total} />
+        <Stat label="Delivered" value={delivered} tone={delivered ? "green" : undefined} />
+        <Stat label="Returned" value={returned} tone={returned ? "red" : undefined} />
+        <Stat
+          label="Success rate"
+          value={rate === null ? "—" : `${rate}%`}
+          tone={rate === null ? undefined : rate >= minSuccessRate ? "green" : "red"}
+        />
+      </div>
+
+      {total === 0 ? (
+        <p>No courier has a parcel on record for this number.</p>
+      ) : (
+        couriers.length > 0 && (
+          <div className="overflow-x-auto rounded-lg ring-1 ring-slate-200">
+            <table className="min-w-full">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className={th}>Courier</th>
+                  <th className={`${th} text-right`}>Parcels</th>
+                  <th className={`${th} text-right`}>Delivered</th>
+                  <th className={`${th} text-right`}>Returned</th>
+                  <th className={`${th} text-right`}>Success</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {couriers.map((c) => (
+                  <tr key={c.name} className={c.total === 0 ? "text-slate-400" : undefined}>
+                    <td className="px-4 py-2 font-medium">{c.name}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{c.total}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{c.delivered}</td>
+                    <td className={cn("px-4 py-2 text-right tabular-nums", c.returned > 0 && "text-rose-700 font-semibold")}>{c.returned}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{percent(c.delivered, c.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      )}
+    </div>
   );
 }
 
@@ -170,7 +215,7 @@ export function FraudReport({
         ) : !provider.checked ? (
           <p className="mt-1">Connected. Ask it for this number&apos;s record with other shops and couriers.</p>
         ) : (
-          <ProviderDetails provider={provider} />
+          <ProviderDetails provider={provider} minSuccessRate={checkout.min_success_rate} />
         )}
       </div>
 
