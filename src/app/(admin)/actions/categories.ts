@@ -60,7 +60,7 @@ export interface UpdateAdminCategoryPayload {
 }
 
 export interface MoveAdminCategoryPayload {
-  parent_id: number;
+  parent_id: number | null;
   position: number;
 }
 
@@ -124,7 +124,8 @@ export async function createAdminCategoryAction(
     const body: Record<string, any> = {
       name: payload.name.trim(),
       slug: payload.slug.trim(),
-      parent_id: payload.parent_id !== undefined && payload.parent_id !== null ? Number(payload.parent_id) : 0,
+      // The form's "None" option is 0; the API wants null for a top-level category.
+      parent_id: payload.parent_id ? Number(payload.parent_id) : null,
       description: payload.description?.trim() || "",
       vat_rate_bp: Number(payload.vat_rate_bp ?? 0),
       is_active: payload.is_active ?? true,
@@ -239,7 +240,8 @@ export async function moveAdminCategoryAction(
     const res = await serverPut<any>(
       "MOVE_ADMIN_CATEGORY",
       {
-        parent_id: Number(payload.parent_id),
+        // 0 ("None") moves it to the top level, which the API spells null.
+        parent_id: payload.parent_id ? Number(payload.parent_id) : null,
         position: Number(payload.position),
       },
       {
