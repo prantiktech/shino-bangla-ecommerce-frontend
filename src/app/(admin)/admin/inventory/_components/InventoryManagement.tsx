@@ -40,6 +40,11 @@ import { adjustAdminInventoryAction } from "@/app/(admin)/actions/inventory";
 import { formatPoisha, poishaToTaka } from "@/lib/utils/money";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import {
+  AutoPollToggle,
+  Pagination,
+  useAutoPoll,
+} from "@/app/(admin)/components/ui";
 
 interface CategoryOption {
   id: number;
@@ -261,6 +266,12 @@ export function InventoryManagement({
     adjustMode === "set" ? numInputQty : currentVariantStock + numInputQty;
   const stockDelta = projectedStock - currentVariantStock;
 
+  // 1-minute background auto-polling for warehouse stock & movements
+  const autoPoll = useAutoPoll(() => router.refresh(), {
+    intervalMs: 60000,
+    paused: isAdjustModalOpen,
+  });
+
   return (
     <div className="space-y-6">
       {/* Top Banner / Header */}
@@ -282,14 +293,7 @@ export function InventoryManagement({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.refresh()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer"
-            title="Refresh Data"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isPending ? "animate-spin" : ""}`} />
-            <span>Refresh</span>
-          </button>
+          <AutoPollToggle controller={autoPoll} loading={isPending} />
         </div>
       </div>
 
@@ -607,6 +611,7 @@ export function InventoryManagement({
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
                   <tr>
+                    <th className="px-4 py-3.5 w-12 text-center">#</th>
                     <th className="px-5 py-3.5">Variant & SKU</th>
                     <th className="px-5 py-3.5">Product Title</th>
                     <th className="px-5 py-3.5">Stock Level</th>
@@ -619,13 +624,14 @@ export function InventoryManagement({
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {inventoryData.data.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-5 py-12 text-center text-slate-400">
+                      <td colSpan={8} className="px-5 py-12 text-center text-slate-400">
                         <Boxes className="w-8 h-8 mx-auto text-slate-300 mb-2" />
                         No variant inventory items found matching your filters.
                       </td>
                     </tr>
                   ) : (
-                    inventoryData.data.map((item) => {
+                    inventoryData.data.map((item, idx) => {
+                      const rowNumber = ((inventoryData.meta?.current_page ?? 1) - 1) * (inventoryData.meta?.per_page ?? 25) + idx + 1;
                       const isOutOfStock = item.stock <= 0 || item.stock_status === "out";
                       const isLowStock = !isOutOfStock && item.stock_status === "low";
 
@@ -640,6 +646,9 @@ export function InventoryManagement({
                               : ""
                           }`}
                         >
+                          <td className="px-4 py-3.5 text-center text-xs font-semibold text-slate-400 tabular-nums">
+                            {rowNumber}
+                          </td>
                           {/* Variant & SKU */}
                           <td className="px-5 py-3.5">
                             <div className="flex flex-col">
@@ -777,33 +786,15 @@ export function InventoryManagement({
             </div>
 
             {/* Pagination Controls */}
-            {inventoryData.meta && (inventoryData.meta.last_page ?? 1) > 1 && (
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <span className="text-xs text-slate-500 font-medium">
-                  Page <strong className="text-slate-900">{inventoryData.meta.current_page ?? 1}</strong> of{" "}
-                  <strong className="text-slate-900">{inventoryData.meta.last_page ?? 1}</strong> (
-                  {inventoryData.meta.total ?? 0} total items)
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    disabled={(inventoryData.meta.current_page ?? 1) <= 1}
-                    onClick={() =>
-                      updateUrlParams({ page: (inventoryData.meta?.current_page || 2) - 1 })
-                    }
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    disabled={(inventoryData.meta.current_page ?? 1) >= (inventoryData.meta.last_page ?? 1)}
-                    onClick={() =>
-                      updateUrlParams({ page: (inventoryData.meta?.current_page || 1) + 1 })
-                    }
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+            {inventoryData.meta && (
+              <div className="pt-4">
+                <Pagination
+                  meta={inventoryData.meta}
+                  paramKey="page"
+                  syncUrl={false}
+                  disabled={isPending}
+                  onPageChange={(p) => updateUrlParams({ page: p })}
+                />
               </div>
             )}
           </div>
@@ -888,6 +879,7 @@ export function InventoryManagement({
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
                   <tr>
+                    <th className="px-4 py-3.5 w-12 text-center">#</th>
                     <th className="px-5 py-3.5">Log ID / Date</th>
                     <th className="px-5 py-3.5">SKU & Variant</th>
                     <th className="px-5 py-3.5">Movement Type</th>
@@ -900,18 +892,22 @@ export function InventoryManagement({
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {movementsData.data.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-5 py-12 text-center text-slate-400">
+                      <td colSpan={8} className="px-5 py-12 text-center text-slate-400">
                         <History className="w-8 h-8 mx-auto text-slate-300 mb-2" />
                         No stock movement logs found for this filter.
                       </td>
                     </tr>
                   ) : (
-                    movementsData.data.map((m) => {
+                    movementsData.data.map((m, idx) => {
+                      const rowNumber = ((movementsData.meta?.current_page ?? 1) - 1) * (movementsData.meta?.per_page ?? 25) + idx + 1;
                       const isPositive = m.quantity > 0;
                       const isNegative = m.quantity < 0;
 
                       return (
                         <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
+                          <td className="px-4 py-3.5 text-center text-xs font-semibold text-slate-400 tabular-nums">
+                            {rowNumber}
+                          </td>
                           {/* Log ID & Date */}
                           <td className="px-5 py-3.5">
                             <div className="flex flex-col">
@@ -1016,39 +1012,20 @@ export function InventoryManagement({
             </div>
 
             {/* Pagination Controls */}
-            {movementsData.meta && (movementsData.meta.last_page ?? 1) > 1 && (
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <span className="text-xs text-slate-500 font-medium">
-                  Page <strong className="text-slate-900">{movementsData.meta.current_page ?? 1}</strong> of{" "}
-                  <strong className="text-slate-900">{movementsData.meta.last_page ?? 1}</strong> (
-                  {movementsData.meta.total ?? 0} total movement logs)
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    disabled={(movementsData.meta.current_page ?? 1) <= 1}
-                    onClick={() =>
-                      updateUrlParams({
-                        tab: "movements",
-                        movement_page: (movementsData.meta?.current_page || 2) - 1,
-                      })
-                    }
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    disabled={(movementsData.meta.current_page ?? 1) >= (movementsData.meta.last_page ?? 1)}
-                    onClick={() =>
-                      updateUrlParams({
-                        tab: "movements",
-                        movement_page: (movementsData.meta?.current_page || 1) + 1,
-                      })
-                    }
-                    className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+            {movementsData.meta && (
+              <div className="pt-4">
+                <Pagination
+                  meta={movementsData.meta}
+                  paramKey="movement_page"
+                  syncUrl={false}
+                  disabled={isPending}
+                  onPageChange={(p) =>
+                    updateUrlParams({
+                      tab: "movements",
+                      movement_page: p,
+                    })
+                  }
+                />
               </div>
             )}
           </div>

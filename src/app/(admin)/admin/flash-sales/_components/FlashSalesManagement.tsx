@@ -197,6 +197,7 @@ export function FlashSalesManagement({ initial, initialError }: { initial: Pagin
 
       <TableShell>
         <THead>
+          <th className={`${th} w-12 text-center`}>#</th>
           <th className={th}>Sale</th>
           <th className={th}>Starts</th>
           <th className={th}>Ends</th>
@@ -206,10 +207,10 @@ export function FlashSalesManagement({ initial, initialError }: { initial: Pagin
         </THead>
         <TBody>
           {loading ? (
-            <LoadingRows cols={6} />
+            <LoadingRows cols={7} />
           ) : list.data.length === 0 ? (
             <tr>
-              <td colSpan={6}>
+              <td colSpan={7}>
                 <EmptyState
                   icon={Timer}
                   title={filter === "running" ? "No sale is running right now" : "No flash sales yet"}
@@ -219,10 +220,12 @@ export function FlashSalesManagement({ initial, initialError }: { initial: Pagin
               </td>
             </tr>
           ) : (
-            list.data.map((s) => {
+            list.data.map((s, idx) => {
+              const rowNumber = ((list.meta?.current_page ?? page) - 1) * (list.meta?.per_page ?? 25) + idx + 1;
               const st = saleState(s);
               return (
                 <tr key={s.id} className="hover:bg-slate-50/60">
+                  <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{rowNumber}</td>
                   <td className={`${td} font-semibold text-slate-900`}>{s.title}</td>
                   <td className={`${td} text-xs`}>{formatDateTime(s.starts_at)}</td>
                   <td className={`${td} text-xs`}>{formatDateTime(s.ends_at)}</td>

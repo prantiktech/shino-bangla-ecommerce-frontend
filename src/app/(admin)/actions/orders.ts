@@ -37,11 +37,27 @@ export async function updateAdminOrderStatusAction(id: number | string, status: 
   });
 }
 
-/** POST /admin/orders/{id}/payment — mark paid or unpaid, at any time; marking paid confirms a pending order. */
-export async function setAdminOrderPaymentAction(id: number | string, paymentStatus: "paid" | "unpaid", note?: string) {
+/**
+ * POST /admin/orders/{id}/payment — mark paid, partially_paid, or unpaid.
+ * When `payment_status` is `partially_paid`, `amount` (integer poisha) is required (`1` to `grand_total - 1`);
+ * omit `amount` for `paid` or `unpaid`.
+ */
+export async function setAdminOrderPaymentAction(
+  id: number | string,
+  paymentStatus: "paid" | "unpaid" | "partially_paid",
+  note?: string,
+  amount?: number
+) {
+  const body: Record<string, unknown> = {
+    payment_status: paymentStatus,
+    note: note?.trim() || null,
+  };
+  if (paymentStatus === "partially_paid" && typeof amount === "number") {
+    body.amount = Math.round(amount);
+  }
   return adminRequest<AdminOrderDetail>("POST", "UPDATE_ADMIN_ORDER_PAYMENT", "Failed to update the payment", {
     pathParams: { id },
-    body: { payment_status: paymentStatus, note: note?.trim() || null },
+    body,
   });
 }
 

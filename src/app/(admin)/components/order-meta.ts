@@ -3,6 +3,7 @@ import type { BadgeTone } from "./ui";
 import type {
   BusinessApplicationStatus,
   CourierKey,
+  IncompleteOrderStatus,
   OrderStatus,
   PaymentMethod,
   PaymentStatus,
@@ -35,15 +36,30 @@ export const ORDER_STATUS_META: Record<OrderStatus, { label: string; tone: Badge
   refunded: { label: "Refunded", tone: "slate" },
 };
 
-export const PAYMENT_STATUSES: PaymentStatus[] = ["unpaid", "pending", "paid", "failed", "partially_refunded", "refunded"];
+export const PAYMENT_STATUSES: PaymentStatus[] = [
+  "unpaid",
+  "pending",
+  "partially_paid",
+  "paid",
+  "failed",
+  "partially_refunded",
+  "refunded",
+];
 
 export const PAYMENT_STATUS_META: Record<PaymentStatus, { label: string; tone: BadgeTone }> = {
   unpaid: { label: "Unpaid", tone: "amber" },
   pending: { label: "Awaiting payment", tone: "amber" },
+  partially_paid: { label: "Partially paid", tone: "blue" },
   paid: { label: "Paid", tone: "green" },
   failed: { label: "Failed", tone: "red" },
   partially_refunded: { label: "Partly refunded", tone: "purple" },
   refunded: { label: "Refunded", tone: "slate" },
+};
+
+export const INCOMPLETE_ORDER_STATUS_META: Record<IncompleteOrderStatus, { label: string; tone: BadgeTone }> = {
+  incomplete: { label: "Incomplete", tone: "amber" },
+  recovered: { label: "Recovered", tone: "green" },
+  dismissed: { label: "Dismissed", tone: "slate" },
 };
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {

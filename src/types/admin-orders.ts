@@ -15,7 +15,14 @@ export type OrderStatus =
   | "returned"
   | "refunded";
 
-export type PaymentStatus = "unpaid" | "pending" | "paid" | "failed" | "partially_refunded" | "refunded";
+export type PaymentStatus =
+  | "unpaid"
+  | "pending"
+  | "partially_paid"
+  | "paid"
+  | "failed"
+  | "partially_refunded"
+  | "refunded";
 
 export type PaymentMethod = "cod" | "bank_transfer" | "sslcommerz";
 
@@ -73,6 +80,8 @@ export interface AdminOrderRow {
   district: string | null;
   item_count: number;
   grand_total: number;
+  amount_paid?: number;
+  amount_due?: number;
   shipment: Shipment | null;
   placed_at: string;
 }
@@ -134,6 +143,8 @@ export interface AdminOrderDetail {
     shipping: number;
     shipping_vat?: number;
     grand_total: number;
+    amount_paid?: number;
+    amount_due?: number;
     cost?: number;
   };
   coupon_code: string | null;
@@ -362,5 +373,46 @@ export interface BusinessApplication {
   reviewed_by: string | null;
   reviewed_at: string | null;
   customer_id: number | null;
+  created_at: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* Incomplete orders (abandoned carts & buy-now drafts)               */
+/* ------------------------------------------------------------------ */
+
+export type IncompleteOrderStatus = "incomplete" | "recovered" | "dismissed";
+
+export interface IncompleteOrderItem {
+  variant_id: number;
+  product_id: number | null;
+  name: string;
+  label: string | null;
+  sku: string | null;
+  image_url: string | null;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+}
+
+export interface IncompleteOrder {
+  id: number;
+  source: OrderSource;
+  status: IncompleteOrderStatus;
+  contact: {
+    name: string | null;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+  };
+  items: IncompleteOrderItem[];
+  item_count: number;
+  subtotal: number;
+  note: string | null;
+  staff_note: string | null;
+  recovered_order: {
+    id: number;
+    number: string;
+  } | null;
+  last_activity_at: string;
   created_at: string;
 }

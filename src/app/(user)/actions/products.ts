@@ -2,7 +2,9 @@
 
 import { serverGet, serverPost } from "@/lib/api-client/server";
 import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
+import { ImageLike } from "@/lib/utils/image";
 import { ApiCategory } from "./categories";
+import { ApiBrand } from "./brands";
 
 export interface ApiProductPrice {
   min: number; // in integer poisha
@@ -17,7 +19,7 @@ export interface ApiProductVariant {
   is_default: boolean;
   value: string;
   label: string;
-  image?: string | null;
+  image?: ImageLike;
   price: number; // integer poisha
   compare_at?: number | null;
   discount_percent?: number | null;
@@ -31,10 +33,10 @@ export interface ApiProduct {
   id: number;
   name: string;
   slug: string;
-  image?: string | null;
-  main_image?: string | null;
-  gallery?: string[];
-  brand?: { id: number; name: string; slug: string } | null;
+  image?: ImageLike;
+  main_image?: ImageLike;
+  gallery?: ImageLike[];
+  brand?: { id: number; name: string; slug: string; logo?: ImageLike } | null;
   category?: { id: number; name: string; slug: string } | null;
   breadcrumbs?: Array<{ id: number; name: string; slug: string }>;
   price: ApiProductPrice;
@@ -63,13 +65,54 @@ export interface ProductsPaginationData {
   perPage: number;
 }
 
+export interface HomeBanner {
+  id: number;
+  title?: string | null;
+  subtitle?: string | null;
+  button_label?: string | null;
+  link_url?: string | null;
+  image?: ImageLike;
+  mobile_image?: ImageLike;
+}
+
+export interface HomeReview {
+  id: number;
+  rating: number;
+  title?: string | null;
+  body: string;
+  customer_name: string;
+  product?: { name: string; slug: string } | null;
+  created_at: string;
+}
+
 export interface HomeSection {
   id: number;
-  type: "categories" | "featured" | "best_sellers" | "new_arrivals" | "custom" | string;
+  type:
+    | "slider"
+    | "offer_banners"
+    | "categories"
+    | "brands"
+    | "flash_sale"
+    | "featured"
+    | "trending"
+    | "new_arrivals"
+    | "popular"
+    | "best_sellers"
+    | "custom"
+    | "category"
+    | "featured_reviews"
+    | "newsletter"
+    | string;
   title: string;
   subtitle?: string | null;
+  layout?: "carousel" | "grid" | string;
+  view_all_url?: string | null;
+  ends_at?: string | null;
+  banners?: HomeBanner[];
   categories?: ApiCategory[];
+  brands?: ApiBrand[];
   products?: ApiProduct[];
+  reviews?: HomeReview[];
 }
 
 export interface HomeData {
@@ -279,6 +322,10 @@ export interface ReviewItem {
   title?: string;
   body: string;
   customer_name: string;
+  is_verified_purchase?: boolean;
+  photos?: ImageLike[];
+  admin_reply?: string | null;
+  admin_replied_at?: string | null;
   created_at: string;
 }
 

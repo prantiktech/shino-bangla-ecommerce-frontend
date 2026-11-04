@@ -6,6 +6,7 @@ import { getProductBySlugAction, getProductsAction, getRelatedProductsAction } f
 import { ProductDetailClient } from "./_components/ProductDetailClient";
 import { DeliveryInfo } from "@/components/products/DeliveryInfo";
 import { poishaToTaka } from "@/lib/utils/money";
+import { imageSrc } from "@/lib/utils/image";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `${product.name}`;
   const priceTaka = poishaToTaka(product.price.min);
   const description = product.short_description || `Buy ${product.name} online for ৳${priceTaka.toFixed(2)}. 100% genuine products with fast delivery in Bangladesh.`;
-  const imageUrl = product.image || product.main_image || `${baseUrl}/placeholder.svg`;
+  const imageUrl = imageSrc(product.image) || imageSrc(product.main_image) || `${baseUrl}/placeholder.svg`;
 
   return {
     title,

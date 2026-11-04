@@ -171,6 +171,7 @@ export function ReportsWorkspace({
           ) : (
             <TableShell>
               <THead>
+                <th className={`${th} w-12 text-center`}>#</th>
                 {result.columns.map((c) => (
                   <th key={c.key} className={cn(th, isNumeric(c) && "text-right")}>
                     {c.label}
@@ -180,6 +181,7 @@ export function ReportsWorkspace({
               <TBody>
                 {result.rows.map((row, i) => (
                   <tr key={i} className="hover:bg-slate-50/60">
+                    <td className={`${td} text-center font-mono text-xs text-slate-400`}>{i + 1}</td>
                     {result.columns.map((c) => (
                       <td key={c.key} className={cn(td, isNumeric(c) && "text-right tabular-nums")}>
                         {formatCell(row[c.key], c)}
@@ -191,6 +193,7 @@ export function ReportsWorkspace({
               {result.totals && Object.keys(result.totals).length > 0 && (
                 <tfoot className="bg-slate-50 border-t-2 border-slate-200">
                   <tr>
+                    <td className={td} />
                     {result.columns.map((c, i) => (
                       <td key={c.key} className={cn(td, "font-bold text-slate-900", isNumeric(c) && "text-right tabular-nums")}>
                         {result.totals && c.key in result.totals ? formatCell(result.totals[c.key], c) : i === 0 ? "Total" : ""}
@@ -217,6 +220,7 @@ export function ReportsWorkspace({
         </div>
         <TableShell>
           <THead>
+            <th className={`${th} w-12 text-center`}>#</th>
             <th className={th}>Report</th>
             <th className={th}>Format</th>
             <th className={th}>Status</th>
@@ -229,13 +233,14 @@ export function ReportsWorkspace({
           <TBody>
             {exports.length === 0 ? (
               <tr>
-                <td colSpan={8}>
+                <td colSpan={9}>
                   <EmptyState icon={FileSpreadsheet} title="No exports yet" description="Run a report and choose a format to export it." />
                 </td>
               </tr>
             ) : (
-              exports.map((x) => (
+              exports.map((x, idx) => (
                 <tr key={x.id} className="hover:bg-slate-50/60">
+                  <td className={`${td} text-center font-mono text-xs text-slate-400`}>{idx + 1}</td>
                   <td className={`${td} font-medium text-slate-900`}>{label(x.type)}</td>
                   <td className={`${td} uppercase text-xs font-semibold`}>{x.format}</td>
                   <td className={td}>

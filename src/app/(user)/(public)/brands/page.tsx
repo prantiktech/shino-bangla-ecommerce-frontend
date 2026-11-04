@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Breadcrumb } from "@/components/common/Breadcrumb";
 import { Sparkles, Package } from "lucide-react";
 import { getBrandsAction } from "@/app/(user)/actions/brands";
+import { imageAlt, imageSrc } from "@/lib/utils/image";
 
 export const metadata = {
   title: "All Brands",
@@ -54,23 +55,35 @@ export default async function AllBrandsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {brands.map((brand) => (
-              <Link
-                key={brand.id}
-                href={`/brand/${brand.slug}`}
-                className="group p-5 bg-white rounded-2xl border border-gray-200/90 shadow-2xs hover:border-primary/40 hover:shadow-md transition-all text-center flex flex-col items-center justify-center"
-              >
-                <div className="w-14 h-14 rounded-xl bg-slate-50 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform text-primary">
-                  <Package className="w-6 h-6" />
-                </div>
-                <h3 className="text-xs font-bold text-gray-800 group-hover:text-primary transition-colors">
-                  {brand.name}
-                </h3>
-                <span className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                  {brand.product_count ?? 0} Products
-                </span>
-              </Link>
-            ))}
+            {brands.map((brand) => {
+              const logoUrl = imageSrc(brand.logo, "thumb", "");
+              return (
+                <Link
+                  key={brand.id}
+                  href={`/brand/${brand.slug}`}
+                  className="group p-5 bg-white rounded-2xl border border-gray-200/90 shadow-2xs hover:border-primary/40 hover:shadow-md transition-all text-center flex flex-col items-center justify-center"
+                >
+                  <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform text-primary overflow-hidden p-2">
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt={imageAlt(brand.logo, brand.name)}
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <Package className="w-6 h-6" />
+                    )}
+                  </div>
+                  <h3 className="text-xs font-bold text-gray-800 group-hover:text-primary transition-colors">
+                    {brand.name}
+                  </h3>
+                  <span className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                    {brand.product_count ?? 0} Products
+                  </span>
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

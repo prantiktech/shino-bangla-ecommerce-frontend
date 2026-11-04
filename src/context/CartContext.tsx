@@ -9,7 +9,9 @@ import {
   apiRemoveCartItemAction,
 } from "@/app/(user)/actions/cart";
 import { getProductBySlugAction } from "@/app/(user)/actions/products";
+import { saveIncompleteOrderAction } from "@/app/(user)/actions/checkout";
 import { poishaToTaka } from "@/lib/utils/money";
+import { imageSrc } from "@/lib/utils/image";
 
 interface CartContextType {
   cart: CartItem[];
@@ -51,7 +53,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
             : item.product.name
           : "Product",
         slug: item.product?.slug || "",
-        image: item.product?.image || "/images/placeholder.svg",
+        image: imageSrc(
+          item.image ?? item.product?.image ?? item.product?.thumbnail_url,
+          "thumb",
+          "/placeholder.svg"
+        ),
         price: poishaToTaka(item.unit_price),
         originalPrice: item.compare_at ? poishaToTaka(item.compare_at) : undefined,
         rating: 5,
@@ -165,7 +171,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
             try {
               localStorage.setItem(LOCAL_KEY, JSON.stringify(serverItems));
             } catch {}
+            saveIncompleteOrderAction({
+              source: "cart",
+              items: serverItems
+                .filter((i) => i.product.variantId)
+                .map((i) => ({ variant_id: Number(i.product.variantId), quantity: i.quantity })),
+            }).catch(() => {});
           } else {
+            saveIncompleteOrderAction({
+              source: "cart",
+              items: [{ variant_id: Number(variantId), quantity }],
+            }).catch(() => {});
             const apiItemId =
               apiCart?.item?.id ||
               apiCart?.data?.item?.id ||

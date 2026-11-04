@@ -402,6 +402,7 @@ export function CategoriesManagement({ initialCategories }: CategoriesManagement
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
               <tr>
+                <th className="px-4 py-3.5 w-12 text-center">#</th>
                 <th className="px-5 py-3.5">Category & Visuals</th>
                 <th className="px-5 py-3.5">Slug / Hierarchy</th>
                 <th className="px-5 py-3.5">VAT Rate</th>
@@ -414,20 +415,23 @@ export function CategoriesManagement({ initialCategories }: CategoriesManagement
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {filteredCategories.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-slate-400">
+                  <td colSpan={8} className="px-5 py-12 text-center text-slate-400">
                     <FolderTree className="w-8 h-8 mx-auto text-slate-300 mb-2" />
                     No categories found.
                   </td>
                 </tr>
               ) : (
-                filteredCategories.map((cat) => (
+                filteredCategories.map((cat, idx) => (
                   <tr key={cat.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="px-4 py-3.5 text-center text-xs font-semibold text-slate-400 tabular-nums">
+                      {idx + 1}
+                    </td>
                     {/* Visuals & Name */}
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-3">
                         {cat.icon?.url ? (
                           <img
-                            src={cat.icon.url}
+                            src={(cat.icon as any)?.sizes?.thumb || cat.icon.url}
                             alt={cat.name}
                             className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0 bg-slate-50"
                           />

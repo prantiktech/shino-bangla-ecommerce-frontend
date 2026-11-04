@@ -9,7 +9,9 @@ import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { getProductSuggestAction } from "@/app/(user)/actions/products";
+import { getSettingsAction } from "@/app/(user)/actions/settings";
 import { poishaToTaka } from "@/lib/utils/money";
+import { imageSrc } from "@/lib/utils/image";
 
 export const TopHeader: React.FC = () => {
   const router = useRouter();
@@ -20,6 +22,19 @@ export const TopHeader: React.FC = () => {
   const [productSuggestions, setProductSuggestions] = useState<any[]>([]);
   const [categorySuggestions, setCategorySuggestions] = useState<any[]>([]);
   const [brandSuggestions, setBrandSuggestions] = useState<any[]>([]);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [storeName, setStoreName] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSettingsAction()
+      .then((res) => {
+        if (res.success && res.data) {
+          if (res.data.logo_url) setLogoUrl(res.data.logo_url);
+          if (res.data.store_name) setStoreName(res.data.store_name);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -57,7 +72,7 @@ export const TopHeader: React.FC = () => {
     <div className="bg-white text-slate-900 border-b border-slate-100 relative z-40">
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-2.5 md:py-3 flex flex-wrap md:flex-nowrap items-center justify-between gap-x-4 gap-y-2.5 md:gap-8">
 
-        <Logo showTagline />
+        <Logo showTagline logoUrl={logoUrl} storeName={storeName} />
 
         {/* Search: full-width second row on mobile, inline on desktop */}
         <div className="order-last md:order-none w-full md:w-auto md:flex-1 md:max-w-2xl relative">
@@ -154,6 +169,7 @@ export const TopHeader: React.FC = () => {
                   </div>
                   {productSuggestions.map((p: any) => {
                     const priceTaka = p.price ? (p.price.min ? poishaToTaka(p.price.min) : poishaToTaka(p.price)) : 0;
+                    const thumb = imageSrc(p.image, "thumb", "/placeholder.svg");
                     return (
                       <Link
                         key={p.id}
@@ -162,10 +178,14 @@ export const TopHeader: React.FC = () => {
                           setIsSearchFocused(false);
                           router.push(`/products/${p.slug}`);
                         }}
-                        className="px-4 py-2.5 hover:bg-slate-50 cursor-pointer flex items-center justify-between gap-3 text-sm transition-colors"
+                        className="px-4 py-2 hover:bg-slate-50 cursor-pointer flex items-center justify-between gap-3 text-sm transition-colors"
                       >
-                        <span className="flex items-center gap-2 min-w-0">
-                          <Search className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                        <span className="flex items-center gap-2.5 min-w-0">
+                          <img
+                            src={thumb}
+                            alt={p.name}
+                            className="w-8 h-8 rounded-lg object-cover border border-slate-200 bg-white shrink-0"
+                          />
                           <span className="font-medium text-slate-700 truncate">{p.name}</span>
                         </span>
                         {priceTaka > 0 && (

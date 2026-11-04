@@ -8,14 +8,30 @@ import { useCountdown } from "@/hooks/useCountdown";
 
 interface FlashDealsProps {
   products?: Product[];
+  title?: string;
+  subtitle?: string | null;
+  endsAt?: string | null;
+  viewAllUrl?: string | null;
 }
 
-export const FlashDeals: React.FC<FlashDealsProps> = ({ products = [] }) => {
+export const FlashDeals: React.FC<FlashDealsProps> = ({
+  products = [],
+  title = "Flash Deals",
+  subtitle = "Special limited-time offers on featured products",
+  endsAt,
+  viewAllUrl = "/deals",
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const targetTimestamp = useMemo(() => {
+    if (endsAt) {
+      const parsed = Date.parse(endsAt);
+      if (!Number.isNaN(parsed) && parsed > Date.now()) {
+        return parsed;
+      }
+    }
     return Date.now() + (11 * 3600 + 51 * 60 + 35) * 1000;
-  }, []);
+  }, [endsAt]);
 
   const { days, hours, minutes, seconds } = useCountdown(targetTimestamp);
 
@@ -35,7 +51,7 @@ export const FlashDeals: React.FC<FlashDealsProps> = ({ products = [] }) => {
     return null;
   }
 
-  const CountdownBadge = (
+  const CountdownBadge = endsAt ? (
     <div className="flex items-center gap-1.5 sm:gap-2">
       <div className="flex flex-col items-center">
         <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary text-white flex items-center justify-center font-black text-sm sm:text-base shadow-xs">
@@ -71,20 +87,20 @@ export const FlashDeals: React.FC<FlashDealsProps> = ({ products = [] }) => {
         <span className="text-[10px] text-gray-500 font-semibold mt-0.5">Sec</span>
       </div>
     </div>
-  );
+  ) : undefined;
 
   return (
     <section className="py-6 sm:py-8">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <SectionHeader
-          title="Flash Deals"
-          subtitle="Special limited-time offers on genuine safety equipment and hardware"
+          title={title}
+          subtitle={subtitle || undefined}
           countdown={CountdownBadge}
           showArrows={true}
           onPrev={scrollPrev}
           onNext={scrollNext}
-          actionText="View All Deals"
-          actionHref="/deals"
+          actionText="View All"
+          actionHref={viewAllUrl || "/deals"}
         />
 
         <div

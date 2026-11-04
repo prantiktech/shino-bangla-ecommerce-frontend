@@ -3,7 +3,16 @@
 import { serverPost, serverDelete } from "@/lib/api-client/server";
 import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
 
-export async function uploadAdminMediaAction(formData: FormData): Promise<ActionResponse<{ id: number; url: string }>> {
+export async function uploadAdminMediaAction(formData: FormData): Promise<
+  ActionResponse<{
+    id: number;
+    url: string;
+    sizes?: { thumb?: string; card?: string; full?: string };
+    alt?: string;
+    width?: number | null;
+    height?: number | null;
+  }>
+> {
   try {
     const res = await serverPost<any>("UPLOAD_ADMIN_MEDIA", formData);
     if (res.success && res.data) {

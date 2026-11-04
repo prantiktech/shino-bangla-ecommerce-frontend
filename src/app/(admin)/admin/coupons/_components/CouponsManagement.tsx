@@ -263,6 +263,7 @@ export function CouponsManagement({ initial, initialError }: { initial: Paginate
 
       <TableShell>
         <THead>
+          <th className={`${th} w-12 text-center`}>#</th>
           <th className={th}>Code</th>
           <th className={th}>Discount</th>
           <th className={th}>Min. order</th>
@@ -273,10 +274,10 @@ export function CouponsManagement({ initial, initialError }: { initial: Paginate
         </THead>
         <TBody>
           {loading ? (
-            <LoadingRows cols={7} />
+            <LoadingRows cols={8} />
           ) : list.data.length === 0 ? (
             <tr>
-              <td colSpan={7}>
+              <td colSpan={8}>
                 <EmptyState
                   icon={Ticket}
                   title="No coupons found"
@@ -286,8 +287,11 @@ export function CouponsManagement({ initial, initialError }: { initial: Paginate
               </td>
             </tr>
           ) : (
-            list.data.map((c) => (
+            list.data.map((c, idx) => {
+              const rowNumber = ((list.meta?.current_page ?? page) - 1) * (list.meta?.per_page ?? 25) + idx + 1;
+              return (
               <tr key={c.id} className="hover:bg-slate-50/60">
+                <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{rowNumber}</td>
                 <td className={td}>
                   <button
                     type="button"
@@ -331,7 +335,8 @@ export function CouponsManagement({ initial, initialError }: { initial: Paginate
                   </span>
                 </td>
               </tr>
-            ))
+              );
+            })
           )}
         </TBody>
       </TableShell>

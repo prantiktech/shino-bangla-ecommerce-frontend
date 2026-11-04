@@ -214,6 +214,7 @@ export function BrandsManagement({
 
       <TableShell>
         <THead>
+          <th className={`${th} w-12 text-center`}>#</th>
           <th className={th}>Brand</th>
           <th className={th}>Slug</th>
           <th className={th}>Products</th>
@@ -223,10 +224,10 @@ export function BrandsManagement({
         </THead>
         <TBody>
           {loading ? (
-            <LoadingRows cols={6} />
+            <LoadingRows cols={7} />
           ) : brands.length === 0 ? (
             <tr>
-              <td colSpan={6}>
+              <td colSpan={7}>
                 <EmptyState
                   icon={Award}
                   title={q ? "No brands match your search" : "No brands yet"}
@@ -236,14 +237,17 @@ export function BrandsManagement({
               </td>
             </tr>
           ) : (
-            brands.map((b) => (
+            brands.map((b, idx) => {
+              const rowNumber = ((list.meta?.current_page ?? page) - 1) * (list.meta?.per_page ?? 25) + idx + 1;
+              return (
               <tr key={b.id} className="hover:bg-slate-50/60">
+                <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{rowNumber}</td>
                 <td className={td}>
                   <div className="flex items-center gap-3">
                     <span className="w-10 h-10 rounded-lg bg-slate-100 ring-1 ring-slate-200 overflow-hidden flex items-center justify-center shrink-0">
                       {b.logo?.url ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={b.logo.url} alt="" className="w-full h-full object-contain" />
+                        <img src={(b.logo as any)?.sizes?.thumb || b.logo.url} alt="" className="w-full h-full object-contain" />
                       ) : (
                         <span className="text-sm font-bold text-slate-400">{b.name[0]}</span>
                       )}
@@ -273,7 +277,8 @@ export function BrandsManagement({
                   </div>
                 </td>
               </tr>
-            ))
+              );
+            })
           )}
         </TBody>
       </TableShell>

@@ -32,6 +32,7 @@ import { ReviewFormDialog } from "@/components/reviews/ReviewFormDialog";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { poishaToTaka, formatVatRate } from "@/lib/utils/money";
+import { imageAlt, imageSrc } from "@/lib/utils/image";
 import { mapApiProductToProduct } from "@/lib/utils/product-mapper";
 import { Product } from "@/types";
 
@@ -89,14 +90,38 @@ export function ProductDetailClient({ product, similarProducts, crossSellProduct
     }
   }, [product?.id, product?.slug]);
 
-  // Main Image Active State
-  const allImages = [
-    product.image || product.main_image || "/placeholder.svg",
-    ...(product.gallery || []),
-  ].filter(Boolean);
-  const [activeImage, setActiveImage] = useState<string>(
-    selectedVariant?.image || allImages[0] || "/placeholder.svg"
+  // Main Image Active State (IMAGES_API.md Section 4.1)
+  const rawMainImage = product.main_image ?? product.image;
+  const galleryItems = React.useMemo(() => {
+    const rawList = [rawMainImage, ...(product.gallery || [])].filter(Boolean);
+    const seen = new Set<string>();
+    const items: Array<{ full: string; thumb: string; alt: string }> = [];
+    for (const img of rawList) {
+      const full = imageSrc(img, "full", "");
+      if (!full || seen.has(full)) continue;
+      seen.add(full);
+      items.push({
+        full,
+        thumb: imageSrc(img, "thumb", full),
+        alt: imageAlt(img, product.name),
+      });
+    }
+    if (items.length === 0) {
+      items.push({
+        full: "/placeholder.svg",
+        thumb: "/placeholder.svg",
+        alt: product.name,
+      });
+    }
+    return items;
+  }, [rawMainImage, product.gallery, product.name]);
+
+  const defaultHeroUrl = imageSrc(
+    selectedVariant?.image ?? rawMainImage,
+    "full",
+    galleryItems[0]?.full || "/placeholder.svg"
   );
+  const [activeImage, setActiveImage] = useState<string>(defaultHeroUrl);
 
   // Compute Active Pricing from Variant or Product Root
   const activePricePoisha = selectedVariant ? selectedVariant.price : product.price.min;
@@ -112,12 +137,11 @@ export function ProductDetailClient({ product, similarProducts, crossSellProduct
 
   const isCurrentlyInStock = selectedVariant ? selectedVariant.in_stock : product.in_stock;
 
-  // Handle Variant Selection
+  // Handle Variant Selection (falls back to main_image when variant.image is null per IMAGES_API.md)
   const handleSelectVariant = (v: ApiProductVariant) => {
     setSelectedVariant(v);
-    if (v.image) {
-      setActiveImage(v.image);
-    }
+    const nextHero = imageSrc(v.image ?? rawMainImage, "full", galleryItems[0]?.full || "/placeholder.svg");
+    setActiveImage(nextHero);
   };
 
   // Convert current state into Cart UI Product model
@@ -278,21 +302,21 @@ export function ProductDetailClient({ product, similarProducts, crossSellProduct
             </div>
 
             {/* Thumbnail Strip */}
-            {allImages.length > 1 && (
+            {galleryItems.length > 1 && (
               <div className="flex gap-2.5 overflow-x-auto no-scrollbar py-1">
-                {allImages.map((img, idx) => (
+                {galleryItems.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setActiveImage(img)}
+                    onClick={() => setActiveImage(img.full)}
                     className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 shrink-0 transition-all bg-gray-50 ${
-                      activeImage === img
+                      activeImage === img.full
                         ? "border-primary shadow-sm scale-95"
                         : "border-gray-200/80 hover:border-gray-300"
                     }`}
                   >
                     <Image
-                      src={img}
-                      alt={`Thumbnail ${idx + 1}`}
+                      src={img.thumb}
+                      alt={img.alt || `Thumbnail ${idx + 1}`}
                       fill
                       sizes="80px"
                       className="object-contain p-1.5"
@@ -319,9 +343,21 @@ export function ProductDetailClient({ product, similarProducts, crossSellProduct
                     </Link>
                   )}
                   {product.brand && (
-                    <span className="text-xs text-gray-500 font-semibold">
-                      Brand: <span className="text-gray-900 font-bold">{product.brand.name}</span>
-                    </span>
+                    <Link
+                      href={`/brand/${product.brand.slug}`}
+                      className="inline-flex items-center gap-1.5 text-xs text-gray-500 font-semibold hover:text-primary transition-colors"
+                    >
+                      {imageSrc(product.brand.logo, "thumb", "") ? (
+                        <img
+                          src={imageSrc(product.brand.logo, "thumb", "")}
+                          alt={product.brand.name}
+                          className="w-4 h-4 rounded object-contain bg-white border border-gray-200"
+                        />
+                      ) : null}
+                      <span>
+                        Brand: <span className="text-gray-900 font-bold">{product.brand.name}</span>
+                      </span>
+                    </Link>
                   )}
                 </div>
 
@@ -773,7 +809,7 @@ export function ProductDetailClient({ product, similarProducts, crossSellProduct
             variantId={selectedVariant?.id || product.variants?.[0]?.id}
             productSlug={product.slug}
             productTitle={product.name}
-            productImage={selectedVariant?.image || activeImage || product.image || product.main_image}
+            productImage={imageSrc(selectedVariant?.image ?? activeImage ?? rawMainImage, "thumb", "/placeholder.svg")}
             initialQuantity={quantity}
             initialPrice={currentPriceTaka}
             variantLabel={selectedVariant?.label || selectedVariant?.value}

@@ -217,6 +217,7 @@ function RulesTab({ initial, initialError }: { initial: Paginated<ContactRule>; 
 
       <TableShell>
         <THead>
+          <th className={`${th} w-12 text-center`}>#</th>
           <th className={th}>Contact</th>
           <th className={th}>Rule</th>
           <th className={th}>Reason</th>
@@ -227,16 +228,19 @@ function RulesTab({ initial, initialError }: { initial: Paginated<ContactRule>; 
         </THead>
         <TBody>
           {loading ? (
-            <LoadingRows cols={5} />
+            <LoadingRows cols={6} />
           ) : list.data.length === 0 ? (
             <tr>
-              <td colSpan={5}>
+              <td colSpan={6}>
                 <EmptyState icon={ShieldAlert} title="No rules" description="Blocked numbers and IPs cannot order; trusted numbers skip checkout protection." />
               </td>
             </tr>
           ) : (
-            list.data.map((r) => (
+            list.data.map((r, idx) => {
+              const rowNumber = ((list.meta?.current_page ?? page) - 1) * (list.meta?.per_page ?? 25) + idx + 1;
+              return (
               <tr key={r.id}>
+                <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{rowNumber}</td>
                 <td className={td}>
                   <span className="font-mono font-semibold text-slate-900">{r.value}</span>
                   <span className="block text-[11px] text-slate-500">{r.type === "ip" ? "IP address" : "Phone"}</span>
@@ -261,7 +265,8 @@ function RulesTab({ initial, initialError }: { initial: Paginated<ContactRule>; 
                   {editable && <IconButton label={`Remove rule for ${r.value}`} icon={Trash2} tone="danger" onClick={() => setDeleting(r)} />}
                 </td>
               </tr>
-            ))
+              );
+            })
           )}
         </TBody>
       </TableShell>

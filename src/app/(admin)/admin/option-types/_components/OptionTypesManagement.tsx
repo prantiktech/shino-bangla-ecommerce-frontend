@@ -102,7 +102,7 @@ export function OptionTypesManagement({ initial, initialError }: { initial: Opti
           <EmptyState icon={SlidersHorizontal} title="No options yet" description="Add an option to create products with variants." />
         ) : (
           <ul className="divide-y divide-slate-100">
-            {items.map((o) => (
+            {items.map((o, idx) => (
               <li key={o.id} className="flex items-center justify-between gap-3 px-5 py-3">
                 {editId === o.id ? (
                   <form
@@ -112,13 +112,17 @@ export function OptionTypesManagement({ initial, initialError }: { initial: Opti
                       rename(o.id);
                     }}
                   >
+                    <span className="w-6 text-xs font-semibold text-slate-400 tabular-nums">{idx + 1}.</span>
                     <Input value={editName} onChange={(e) => setEditName(e.target.value)} maxLength={64} autoFocus aria-label="Option name" />
                     <IconButton label="Save" icon={Check} tone="primary" type="submit" disabled={savingId === o.id} />
                     <IconButton label="Cancel" icon={X} onClick={() => setEditId(null)} />
                   </form>
                 ) : (
                   <>
-                    <span className="text-sm font-medium text-slate-800">{o.name}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="w-6 text-xs font-semibold text-slate-400 tabular-nums">{idx + 1}.</span>
+                      <span className="text-sm font-medium text-slate-800">{o.name}</span>
+                    </div>
                     <span className="inline-flex gap-1">
                       <IconButton
                         label="Rename"

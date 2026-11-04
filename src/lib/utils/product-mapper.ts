@@ -1,6 +1,7 @@
 import { Product } from "@/types";
 import { ApiProduct } from "@/app/(user)/actions/products";
 import { poishaToTaka } from "@/lib/utils/money";
+import { imageAlt, imageSrc } from "@/lib/utils/image";
 
 export function mapApiProductToProduct(apiProd: ApiProduct): Product {
   const minTaka = poishaToTaka(apiProd.price?.min || 0);
@@ -16,12 +17,16 @@ export function mapApiProductToProduct(apiProd: ApiProduct): Product {
   // Use the default variant's ID (or first variant) for API cart sync
   const variants = apiProd.variants || [];
   const defaultVariant = variants.find((v) => v.is_default) || variants[0];
+  const rawImg = apiProd.image ?? apiProd.main_image;
 
   return {
     id: String(apiProd.id),
     title: apiProd.name,
     slug: apiProd.slug,
-    image: apiProd.image || apiProd.main_image || "/placeholder.svg",
+    image: imageSrc(rawImg, "card", "/placeholder.svg"),
+    thumbImage: imageSrc(rawImg, "thumb", "/placeholder.svg"),
+    fullImage: imageSrc(rawImg, "full", "/placeholder.svg"),
+    imageAlt: imageAlt(rawImg, apiProd.name),
     price: minTaka,
     originalPrice: compareTaka,
     discountBadge,

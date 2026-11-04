@@ -18,6 +18,7 @@ export const SUPER_ADMIN_ROLE = "super-admin";
 /** In sidebar order, which is also the order used to pick a landing page. */
 export const ADMIN_PAGES: readonly { href: string; permission: PagePermission }[] = [
   { href: "/admin", permission: "dashboard.view" },
+  { href: "/admin/accounting", permission: "accounting.view" },
   { href: "/admin/reports", permission: "reports.view" },
   { href: "/admin/products", permission: "products.view" },
   { href: "/admin/categories", permission: "categories.view" },
@@ -26,6 +27,7 @@ export const ADMIN_PAGES: readonly { href: string; permission: PagePermission }[
   { href: "/admin/inventory", permission: "inventory.view" },
   { href: "/admin/purchases", permission: "inventory.view" },
   { href: "/admin/orders", permission: "orders.view" },
+  { href: "/admin/incomplete-orders", permission: "incomplete-orders.view" },
   // Shipping by scan needs orders.fulfil; the return tab needs orders.refund.
   { href: "/admin/shipments", permission: ["orders.fulfil", "orders.refund"] },
   { href: "/admin/couriers", permission: "couriers.view" },

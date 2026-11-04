@@ -6,7 +6,7 @@ import { ActionResponse, handleActionError } from "@/lib/api-client/status-handl
 export interface BannerImageResource {
   id: number;
   url: string;
-  sizes?: any[] | null;
+  sizes?: Partial<Record<string, string>> | null;
   width?: number;
   height?: number;
   alt?: string | null;

@@ -3,6 +3,7 @@ export interface SubCategory {
   name: string;
   slug: string;
   icon?: string;
+  banner?: string;
   itemCount?: number;
 }
 
@@ -10,7 +11,9 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
-  icon: string; // Lucide icon identifier or custom SVG representation
+  icon: string; // Image URL or Lucide icon identifier
+  banner?: string;
+  productCount?: number;
   subCategories?: SubCategory[];
   isSpecial?: boolean;
 }
@@ -20,6 +23,9 @@ export interface Product {
   title: string;
   slug: string;
   image: string;
+  thumbImage?: string;
+  fullImage?: string;
+  imageAlt?: string;
   price: number;
   originalPrice?: number;
   discountBadge?: string; // e.g. "৳ 6,300 off", "৳ 950 off"

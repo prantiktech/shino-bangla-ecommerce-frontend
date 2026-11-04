@@ -25,10 +25,12 @@ import {
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { formatPoisha, takaToPoisha } from "@/lib/utils/money";
+import { imageSrc } from "@/lib/utils/image";
 import { formatPrice } from "@/lib/utils";
 import {
   placeOrderAction,
   getCheckoutQuoteAction,
+  saveIncompleteOrderAction,
   PlaceOrderPayload,
   OrderPlacedResponse,
   CheckoutQuoteResponse,
@@ -208,6 +210,39 @@ export function CheckoutClient({ initialAddresses, locations, phoneVerification 
   const selectedAddress = initialAddresses.find((a) => a.id === selectedAddressId) ?? null;
   const orderPhone = normaliseBdMobile(!useNewAddress && selectedAddress ? selectedAddress.phone || "" : phone);
   const currentCode = phoneCode.phone === orderPhone ? phoneCode.code : "";
+
+  // Quietly record incomplete order as shopper fills checkout details
+  useEffect(() => {
+    if (placedOrder) return;
+    const items = (quote?.items && quote.items.length > 0
+      ? quote.items.map((it) => ({ variant_id: it.variant_id, quantity: it.quantity }))
+      : cart
+          .filter((i) => i.product.variantId)
+          .map((i) => ({ variant_id: Number(i.product.variantId), quantity: i.quantity }))
+    ).filter((i) => i.variant_id > 0 && i.quantity > 0);
+
+    if (items.length === 0) return;
+
+    const contactName = (!useNewAddress && selectedAddress ? selectedAddress.name : name) || user?.name || "";
+    const contactPhone = (!useNewAddress && selectedAddress ? selectedAddress.phone : phone) || user?.phone || "";
+    const contactAddress = !useNewAddress && selectedAddress
+      ? [selectedAddress.line1, selectedAddress.area, selectedAddress.district].filter(Boolean).join(", ")
+      : [line1, area].filter(Boolean).join(", ");
+
+    const timer = setTimeout(() => {
+      saveIncompleteOrderAction({
+        source: "cart",
+        name: contactName || null,
+        phone: contactPhone || null,
+        email: user?.email || null,
+        address: contactAddress || null,
+        note: note || null,
+        items,
+      }).catch(() => {});
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [placedOrder, quote?.items, cart, useNewAddress, selectedAddress, name, phone, line1, area, note, user]);
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -759,7 +794,7 @@ export function CheckoutClient({ initialAddresses, locations, phoneVerification 
             <div className="divide-y divide-slate-100 max-h-64 overflow-y-auto pr-1 space-y-3">
               {(quote?.items && quote.items.length > 0 ? quote.items : cart).map((item: any, idx: number) => {
                 const title = item.name || item.product?.title || "Product";
-                const img = item.image || item.product?.image || "/placeholder.svg";
+                const img = imageSrc(item.image ?? item.product?.image, "thumb", "/placeholder.svg");
                 const unitPrice = item.unit_price ? item.unit_price : takaToPoisha(item.product?.price || 0);
                 const quantity = item.quantity || 1;
                 const lineTotal = item.line_total ? item.line_total : unitPrice * quantity;

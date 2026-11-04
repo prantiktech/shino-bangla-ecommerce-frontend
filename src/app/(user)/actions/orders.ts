@@ -47,6 +47,8 @@ export interface OrderTotals {
   vat: number;
   shipping: number | string;
   grand_total: number;
+  amount_paid?: number;
+  amount_due?: number;
 }
 
 /** The parcel's courier and tracking link, once the order is shipped with a courier. */
@@ -88,6 +90,8 @@ export interface OrderDetail {
   // Fallbacks
   total_amount?: number;
   grand_total?: number;
+  amount_paid?: number;
+  amount_due?: number;
   item_count?: number;
   shipping_fee?: number;
   discount_amount?: number;

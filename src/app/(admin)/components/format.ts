@@ -18,6 +18,14 @@ export function poishaToTaka(poisha: number | null | undefined): string {
   return String(Number(poisha) / 100);
 }
 
+export const poishaToTakaString = poishaToTaka;
+
+export function formatNumber(value: number | string | null | undefined): string {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n)) return "0";
+  return takaFormatter.format(n);
+}
+
 /** Taka string from an input -> integer poisha, or null when empty. */
 export function takaToPoisha(taka: string | number | null | undefined): number | null {
   if (taka === null || taka === undefined || taka === "") return null;

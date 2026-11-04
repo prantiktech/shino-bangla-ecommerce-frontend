@@ -66,12 +66,15 @@ export interface LoginResponseData {
   user: User;
 }
 
+import type { ImageLike } from "@/lib/utils/image";
+
 // 3. Categories & Brands
 export interface ApiCategory {
   id: number;
   name: string;
   slug: string;
-  icon: string | null;
+  icon: ImageLike;
+  banner?: ImageLike;
   product_count: number;
   vat_rate?: number; // basis points (1500 = 15%)
   children?: ApiCategory[];
@@ -81,7 +84,8 @@ export interface ApiBrand {
   id: number;
   name: string;
   slug: string;
-  logo: string | null;
+  logo: ImageLike;
+  banner?: ImageLike;
   product_count?: number;
 }
 
@@ -98,9 +102,10 @@ export interface ApiProduct {
   name: string;
   slug: string;
   sku?: string;
-  image: string | null;
-  gallery?: string[];
-  brand: { id: number; name: string; slug: string } | null;
+  image: ImageLike;
+  main_image?: ImageLike;
+  gallery?: ImageLike[];
+  brand: { id: number; name: string; slug: string; logo?: ImageLike } | null;
   category?: { id: number; name: string; slug: string } | null;
   price: ApiProductPrice;
   has_options: boolean;
@@ -148,11 +153,11 @@ export interface ApiCartItem {
     name: string;
     slug: string;
     thumbnail_url?: string | null;
-    image?: string | null;
+    image?: ImageLike;
   };
   product_name?: string;
   product_slug?: string;
-  image?: string | null;
+  image?: ImageLike;
   sku?: string;
   label?: string | null;
   unit_price: number; // in poisha
@@ -259,7 +264,7 @@ export interface Order {
   number?: string;
   order_number?: string;
   status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled" | "refunded" | string;
-  payment_status: "pending" | "unpaid" | "paid" | "failed" | string;
+  payment_status: "pending" | "unpaid" | "partially_paid" | "paid" | "failed" | "refunded" | string;
   payment_method: string;
   payment_method_label?: string;
   source?: string;
@@ -272,7 +277,7 @@ export interface Order {
   preview?: Array<{
     name: string;
     label?: string | null;
-    image?: string | null;
+    image?: ImageLike;
     quantity: number;
   }>;
   subtotal?: number; // in poisha
@@ -281,7 +286,12 @@ export interface Order {
   shipping_total?: number; // in poisha
   grand_total?: number; // in poisha
   total_amount?: number; // in poisha
-  totals?: ApiCartTotals;
+  amount_paid?: number; // in poisha
+  amount_due?: number; // in poisha
+  totals?: ApiCartTotals & {
+    amount_paid?: number;
+    amount_due?: number;
+  };
   shipping_address?: Record<string, any>;
   billing_address?: Record<string, any>;
   can_cancel?: boolean;

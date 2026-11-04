@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getCategoryBySlugAction, getCategoriesAction } from "@/app/(user)/actions/categories";
 import { getProductsAction } from "@/app/(user)/actions/products";
 import { mapApiProductToProduct } from "@/lib/utils/product-mapper";
+import { imageSrc } from "@/lib/utils/image";
 import { ProductsView } from "@/app/(user)/(public)/products/_components/products-view";
 
 interface SubCategoryPageProps {
@@ -39,6 +40,7 @@ export default async function SubCategoryPage({ params, searchParams }: SubCateg
     getCategoriesAction(),
   ]);
 
+  const category = categoryRes.success ? categoryRes.data : null;
   const rawProducts = productsRes.success ? productsRes.data.items : [];
   const products = rawProducts.map(mapApiProductToProduct);
   const totalCount = productsRes.success ? productsRes.data.total : 0;
@@ -53,6 +55,16 @@ export default async function SubCategoryPage({ params, searchParams }: SubCateg
       currentPage={currentPage}
       lastPage={lastPage}
       categories={categories}
+      heading={
+        category
+          ? {
+              title: category.name,
+              subtitle: category.description || undefined,
+              iconUrl: imageSrc(category.icon, "thumb", "") || undefined,
+              bannerUrl: imageSrc(category.banner, "full", "") || undefined,
+            }
+          : undefined
+      }
       initialFilters={{
         category: slug,
         subCategory: subSlug,

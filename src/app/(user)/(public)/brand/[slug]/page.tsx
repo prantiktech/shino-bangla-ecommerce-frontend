@@ -5,6 +5,7 @@ import { getBrandBySlugAction } from "@/app/(user)/actions/brands";
 import { getProductsAction } from "@/app/(user)/actions/products";
 import { getCategoriesAction } from "@/app/(user)/actions/categories";
 import { mapApiProductToProduct } from "@/lib/utils/product-mapper";
+import { imageSrc } from "@/lib/utils/image";
 import { ProductsView } from "@/app/(user)/(public)/products/_components/products-view";
 
 interface BrandPageProps {
@@ -44,6 +45,7 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
     notFound();
   }
 
+  const brand = brandRes.data;
   const rawProducts = productsRes.success ? productsRes.data.items : [];
   const products = rawProducts.map(mapApiProductToProduct);
   const totalCount = productsRes.success ? productsRes.data.total : 0;
@@ -58,6 +60,12 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
       currentPage={currentPage}
       lastPage={lastPage}
       categories={categories}
+      heading={{
+        title: brand.name,
+        subtitle: brand.description || undefined,
+        iconUrl: imageSrc(brand.logo, "thumb", "") || undefined,
+        bannerUrl: imageSrc(brand.banner, "full", "") || undefined,
+      }}
       initialFilters={{
         sort,
       }}

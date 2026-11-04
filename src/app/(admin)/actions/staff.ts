@@ -184,3 +184,56 @@ export async function deleteAdminStaffAction(id: number | string): Promise<Actio
     return handleActionError(error);
   }
 }
+
+export interface StaffActivityLogEntry {
+  id: number;
+  log_name: string | null;
+  description: string;
+  event: string | null;
+  subject_type: string | null;
+  subject_id: number | null;
+  properties?: Record<string, any> | null;
+  created_at: string;
+}
+
+/**
+ * Fetch activity log entries for a specific staff member
+ * GET /api/v1/staff/{id}/activity-log
+ * Requires: activity-log.view
+ */
+export async function getAdminStaffActivityLogAction(
+  id: number | string,
+  params?: { page?: number; per_page?: number }
+): Promise<ActionResponse<{ data: StaffActivityLogEntry[]; meta?: any }>> {
+  try {
+    const res = await serverGet<any>("GET_ADMIN_STAFF_ACTIVITY_LOG", {
+      pathParams: { id },
+      params,
+    });
+    if (res.success && res.data) {
+      const items = Array.isArray(res.data.data)
+        ? res.data.data
+        : Array.isArray(res.data)
+        ? res.data
+        : [];
+      return {
+        success: true,
+        data: {
+          data: items,
+          meta: res.data.meta,
+        },
+      };
+    }
+    return {
+      success: false,
+      error: {
+        message: !res.success
+          ? res.error?.message || "Failed to load staff activity log"
+          : "Failed to load staff activity log",
+        code: "GET_STAFF_ACTIVITY_LOG_FAILED",
+      },
+    };
+  } catch (error) {
+    return handleActionError(error);
+  }
+}

@@ -10,6 +10,7 @@ const ALLOWED: { pattern: RegExp; query: string[]; fallbackName: string; inline?
   { pattern: /^\/admin\/products\/export$/, query: ["format", "status", "brand_id", "category_id"], fallbackName: "products.xlsx" },
   { pattern: /^\/admin\/product-imports\/template$/, query: ["format"], fallbackName: "product-import-template.xlsx" },
   { pattern: /^\/admin\/report-exports\/\d+\/download$/, query: [], fallbackName: "report" },
+  { pattern: /^\/admin\/accounting\/profit-and-loss$/, query: ["preset", "from", "to", "basis", "format"], fallbackName: "profit-and-loss.pdf" },
   { pattern: /^\/admin\/business-applications\/\d+\/documents\/\d+$/, query: [], fallbackName: "document", inline: true },
 ];
 

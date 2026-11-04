@@ -54,6 +54,7 @@ export function CustomersManagement({ initial, initialError }: { initial: Pagina
   const [active, setActive] = useState("");
   const [hasOrders, setHasOrders] = useState("");
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(initial.meta?.per_page || 25);
   const [loading, setLoading] = useState(false);
   const { notice, success, error, clear } = useNotice();
 
@@ -67,13 +68,14 @@ export function CustomersManagement({ initial, initialError }: { initial: Pagina
   const [deleting, setDeleting] = useState<AdminCustomer | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
 
-  const load = async (opts: { q?: string; active?: string; hasOrders?: string; page?: number } = {}) => {
+  const load = async (opts: { q?: string; active?: string; hasOrders?: string; page?: number; perPage?: number } = {}) => {
     setLoading(true);
     const res = await getAdminCustomersAction({
       q: opts.q ?? q,
       is_active: opts.active ?? active,
       has_orders: opts.hasOrders ?? hasOrders,
       page: opts.page ?? page,
+      per_page: opts.perPage ?? perPage,
     });
     setLoading(false);
     if (res.success) setList(res.data);
@@ -180,6 +182,7 @@ export function CustomersManagement({ initial, initialError }: { initial: Pagina
 
       <TableShell>
         <THead>
+          <th className={`${th} w-12 text-center`}>#</th>
           <th className={th}>Customer</th>
           <th className={th}>Contact</th>
           <th className={`${th} text-right`}>Orders</th>
@@ -190,16 +193,19 @@ export function CustomersManagement({ initial, initialError }: { initial: Pagina
         </THead>
         <TBody>
           {loading ? (
-            <LoadingRows cols={7} />
+            <LoadingRows cols={8} />
           ) : list.data.length === 0 ? (
             <tr>
-              <td colSpan={7}>
+              <td colSpan={8}>
                 <EmptyState icon={Users} title="No customers found" />
               </td>
             </tr>
           ) : (
-            list.data.map((c) => (
+            list.data.map((c, idx) => {
+              const rowNumber = ((list.meta?.current_page ?? page) - 1) * (list.meta?.per_page ?? 25) + idx + 1;
+              return (
               <tr key={c.id} className="hover:bg-slate-50/60">
+                <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{rowNumber}</td>
                 <td className={td}>
                   <button type="button" onClick={() => open(c)} className="flex items-center gap-3 text-left cursor-pointer">
                     <span className="w-9 h-9 rounded-full bg-brand-50 text-brand-700 ring-1 ring-brand-100 flex items-center justify-center text-sm font-bold shrink-0">
@@ -228,7 +234,8 @@ export function CustomersManagement({ initial, initialError }: { initial: Pagina
                   </span>
                 </td>
               </tr>
-            ))
+              );
+            })
           )}
         </TBody>
       </TableShell>
@@ -238,7 +245,12 @@ export function CustomersManagement({ initial, initialError }: { initial: Pagina
         disabled={loading}
         onPageChange={(p) => {
           setPage(p);
-          load({ page: p });
+          void load({ page: p });
+        }}
+        onPerPageChange={(pp) => {
+          setPerPage(pp);
+          setPage(1);
+          void load({ page: 1, perPage: pp });
         }}
       />
 

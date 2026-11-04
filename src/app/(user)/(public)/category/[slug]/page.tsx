@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getCategoryBySlugAction, getCategoriesAction } from "@/app/(user)/actions/categories";
 import { getProductsAction } from "@/app/(user)/actions/products";
 import { mapApiProductToProduct } from "@/lib/utils/product-mapper";
+import { imageSrc } from "@/lib/utils/image";
 import { ProductsView } from "@/app/(user)/(public)/products/_components/products-view";
 
 interface CategoryPageProps {
@@ -43,6 +44,7 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
     notFound();
   }
 
+  const category = categoryRes.data;
   const rawProducts = productsRes.success ? productsRes.data.items : [];
   const products = rawProducts.map(mapApiProductToProduct);
   const totalCount = productsRes.success ? productsRes.data.total : 0;
@@ -57,6 +59,12 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
       currentPage={currentPage}
       lastPage={lastPage}
       categories={categories}
+      heading={{
+        title: category.name,
+        subtitle: category.description || undefined,
+        iconUrl: imageSrc(category.icon, "thumb", "") || undefined,
+        bannerUrl: imageSrc(category.banner, "full", "") || undefined,
+      }}
       initialFilters={{
         category: slug,
         sort,

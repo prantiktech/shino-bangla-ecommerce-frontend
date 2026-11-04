@@ -523,3 +523,60 @@ export async function requestOrderPhoneCodeAction(phone: string): Promise<Action
     return handleActionError(error);
   }
 }
+
+export interface SaveIncompleteOrderPayload {
+  source: "cart" | "buy_now";
+  name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  note?: string | null;
+  items: Array<{ variant_id: number; quantity: number }>;
+}
+
+/**
+ * Save or update an incomplete order (abandoned cart / buy-now draft).
+ * Endpoint: POST /api/v1/incomplete-orders
+ */
+export async function saveIncompleteOrderAction(
+  payload: SaveIncompleteOrderPayload
+): Promise<ActionResponse<{ id: number; status: string }>> {
+  try {
+    const validItems = (payload.items || []).filter(
+      (i) => Number(i.variant_id) > 0 && Number(i.quantity) > 0
+    );
+    if (validItems.length === 0) {
+      return {
+        success: false,
+        error: { message: "No valid items to record.", code: "EMPTY_ITEMS" },
+      };
+    }
+
+    const body: Record<string, unknown> = {
+      source: payload.source,
+      items: validItems.map((i) => ({
+        variant_id: Number(i.variant_id),
+        quantity: Number(i.quantity),
+      })),
+    };
+    if (payload.name?.trim()) body.name = payload.name.trim();
+    if (payload.phone?.trim()) body.phone = payload.phone.trim();
+    if (payload.email?.trim()) body.email = payload.email.trim();
+    if (payload.address?.trim()) body.address = payload.address.trim();
+    if (payload.note?.trim()) body.note = payload.note.trim();
+
+    const res = await serverPost<any>("SAVE_INCOMPLETE_ORDER", body, { retries: 0 });
+    if (res.success && res.data) {
+      return { success: true, data: res.data.data || res.data };
+    }
+    return {
+      success: false,
+      error: {
+        message: !res.success ? res.error?.message || "Failed to save incomplete order" : "Failed to save incomplete order",
+        code: "INCOMPLETE_ORDER_FAILED",
+      },
+    };
+  } catch (error) {
+    return handleActionError(error);
+  }
+}

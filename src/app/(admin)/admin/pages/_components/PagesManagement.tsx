@@ -136,6 +136,7 @@ export function PagesManagement({ initial, initialError }: { initial: AdminPage[
 
       <TableShell>
         <THead>
+          <th className={`${th} w-12 text-center`}>#</th>
           <th className={th}>Title</th>
           <th className={th}>URL</th>
           <th className={th}>Status</th>
@@ -145,13 +146,14 @@ export function PagesManagement({ initial, initialError }: { initial: AdminPage[
         <TBody>
           {pages.length === 0 ? (
             <tr>
-              <td colSpan={5}>
+              <td colSpan={6}>
                 <EmptyState icon={FileText} title="No pages yet" action={<Button icon={Plus} onClick={openCreate}>New page</Button>} />
               </td>
             </tr>
           ) : (
-            pages.map((p) => (
+            pages.map((p, idx) => (
               <tr key={p.id} className="hover:bg-slate-50/60">
+                <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{idx + 1}</td>
                 <td className={`${td} font-semibold text-slate-900`}>{p.title}</td>
                 <td className={`${td} font-mono text-xs text-slate-500`}>/pages/{p.slug}</td>
                 <td className={td}>

@@ -357,22 +357,24 @@ export function ScanStation({ initialPacked, initialError }: { initialPacked: Ad
             {packedError && <p className="text-xs text-rose-600">{packedError}</p>}
             <TableShell className="[&_table]:min-w-0">
               <THead>
+                <th className={`${th} w-10 text-center`}>#</th>
                 <th className={th}>Order</th>
                 <th className={th}>Customer</th>
                 <th className={`${th} text-right`}>Total</th>
               </THead>
               <TBody>
                 {packedLoading ? (
-                  <LoadingRows cols={3} rows={4} />
+                  <LoadingRows cols={4} rows={4} />
                 ) : packed.length === 0 ? (
                   <tr>
-                    <td colSpan={3}>
+                    <td colSpan={4}>
                       <EmptyState icon={Undo2} title="Nothing waiting" description="Packed orders show up here." />
                     </td>
                   </tr>
                 ) : (
-                  packed.map((o) => (
+                  packed.map((o, idx) => (
                     <tr key={o.id}>
+                      <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{idx + 1}</td>
                       <td className={`${td} font-mono text-xs font-semibold`}>
                         <Link href={`/admin/orders?order=${o.id}`} className="hover:text-primary">
                           {o.number}

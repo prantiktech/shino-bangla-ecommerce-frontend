@@ -26,10 +26,12 @@ import {
 import confetti from "canvas-confetti";
 import { useAuth } from "@/context/AuthContext";
 import { formatPoisha, takaToPoisha, poishaToTaka } from "@/lib/utils/money";
+import { ImageLike, imageSrc } from "@/lib/utils/image";
 import {
   buyNowQuoteAction,
   buyNowAction,
   getCheckoutLocationsAction,
+  saveIncompleteOrderAction,
   CheckoutQuoteResponse,
   OrderPlacedResponse,
   BuyNowPayload,
@@ -45,7 +47,7 @@ export interface BuyNowModalProps {
   variantId?: number;
   productSlug?: string;
   productTitle: string;
-  productImage?: string | null;
+  productImage?: ImageLike;
   initialQuantity?: number;
   initialPrice?: number;
   variantLabel?: string | null;
@@ -246,6 +248,32 @@ export function BuyNowModal({
       setEmail((prev) => prev || user.email || "");
     }
   }, [user]);
+
+  // Quietly record incomplete order as shopper opens Buy Now or fills fields
+  useEffect(() => {
+    if (!isOpen || placedOrder || !activeVariantId || activeVariantId <= 0) return;
+    const selAddr = savedAddresses.find((a) => a.id === selectedAddressId) ?? null;
+    const contactName = (!useNewAddress && selAddr ? selAddr.name : name) || user?.name || "";
+    const contactPhone = (!useNewAddress && selAddr ? selAddr.phone : phone) || user?.phone || "";
+    const contactEmail = email || user?.email || "";
+    const contactAddress = !useNewAddress && selAddr
+      ? [selAddr.line1, selAddr.area].filter(Boolean).join(", ")
+      : line1;
+
+    const timer = setTimeout(() => {
+      saveIncompleteOrderAction({
+        source: "buy_now",
+        name: contactName || null,
+        phone: contactPhone || null,
+        email: contactEmail || null,
+        address: contactAddress || null,
+        note: note || null,
+        items: [{ variant_id: activeVariantId, quantity: Math.max(1, quantity) }],
+      }).catch(() => {});
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, placedOrder, activeVariantId, quantity, useNewAddress, savedAddresses, selectedAddressId, name, phone, email, line1, note, user]);
 
   // Update district when a saved address is chosen
   const handleSelectSavedAddress = (addrId: number) => {
@@ -571,7 +599,7 @@ export function BuyNowModal({
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-14 h-14 rounded-xl bg-white border border-slate-200 relative overflow-hidden shrink-0">
                     <Image
-                      src={selectedVariant?.image || productImage || "/placeholder.svg"}
+                      src={imageSrc(selectedVariant?.image ?? productImage, "thumb", "/placeholder.svg")}
                       alt={productTitle}
                       fill
                       className="object-cover"

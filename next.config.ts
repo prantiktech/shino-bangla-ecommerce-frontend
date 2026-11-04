@@ -16,6 +16,7 @@ const apiOrigin = apiUrl.origin;
 
 /** Google Identity Services (the "Continue with Google" button). */
 const google = "https://accounts.google.com";
+const isDev = process.env.NODE_ENV !== "production";
 
 const nextConfig: NextConfig = {
   // Standalone server bundle (only the deps actually used, not the full
@@ -47,16 +48,19 @@ const nextConfig: NextConfig = {
 
 
   images: {
+    // Backend already generates optimized WebP sizes (thumb, card, full).
+    // Setting unoptimized avoids SSR proxy crashes for private IPs/CDNs while preserving <Image> ergonomics.
+    unoptimized: true,
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 2678400, // cache optimized images 31 days instead of the new 4h default
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "images.unsplash.com",
+        hostname: "**",
       },
       {
-        protocol: "https",
-        hostname: "api.nogodbazar.com",
+        protocol: "http",
+        hostname: "**",
       },
       // Media uploaded through the admin panel is served from the API host.
       {
@@ -82,9 +86,9 @@ const nextConfig: NextConfig = {
           {
             key: 'Content-Security-Policy', value: [
               "default-src 'self'",
-              `script-src 'self' 'unsafe-inline' ${google}/gsi/client`,
+              `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval' " : ""}${google}/gsi/client`,
               `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com ${google}/gsi/style`,
-              `img-src 'self' data: blob: https: ${apiOrigin}`,
+              `img-src 'self' data: blob: https: http: ${apiOrigin}`,
               "media-src 'self' blob: data:",
               "font-src 'self' data: https://fonts.gstatic.com",
               "worker-src 'self' blob:",

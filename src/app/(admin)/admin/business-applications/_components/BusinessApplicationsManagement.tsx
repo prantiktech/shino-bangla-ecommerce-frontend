@@ -31,8 +31,10 @@ import {
   THead,
   Tabs,
   Textarea,
+  AutoPollToggle,
   td,
   th,
+  useAutoPoll,
   useDebouncedCallback,
   useNotice,
 } from "@/app/(admin)/components/ui";
@@ -303,27 +305,46 @@ export function BusinessApplicationsManagement({
   const [status, setStatus] = useState<StatusTab>("");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(initial.meta?.per_page || 25);
   const [loading, setLoading] = useState(false);
   const [viewing, setViewing] = useState<number | null>(null);
   const { notice, success, error, clear } = useNotice();
 
-  const load = async (opts: { status?: StatusTab; q?: string; page?: number } = {}) => {
-    setLoading(true);
-    const res = await getAdminBusinessApplicationsAction({ status: opts.status ?? status, q: opts.q ?? q, page: opts.page ?? page });
-    setLoading(false);
+  const load = async (opts: { status?: StatusTab; q?: string; page?: number; perPage?: number; silent?: boolean } = {}) => {
+    if (!opts.silent) setLoading(true);
+    const res = await getAdminBusinessApplicationsAction({
+      status: opts.status ?? status,
+      q: opts.q ?? q,
+      page: opts.page ?? page,
+      per_page: opts.perPage ?? perPage,
+    });
+    if (!opts.silent) setLoading(false);
     if (res.success) setList(res.data);
-    else error(res.error.message);
+    else if (!opts.silent) error(res.error.message);
   };
+
+  const autoPoll = useAutoPoll(
+    async () => {
+      await load({ silent: true });
+    },
+    { intervalMs: 60000, paused: viewing !== null }
+  );
+
   const debounced = useDebouncedCallback((term: string) => {
     setPage(1);
-    load({ q: term, page: 1 });
+    void load({ q: term, page: 1 });
   });
 
   const newCount = list.meta.counts?.new;
 
   return (
     <div className="space-y-5">
-      <PageHeader icon={Briefcase} title="Business applications" description="Wholesale requests from businesses, with their trade licence and NID." />
+      <PageHeader
+        icon={Briefcase}
+        title="Business applications"
+        description="Wholesale requests from businesses, with their trade licence and NID."
+        actions={<AutoPollToggle controller={autoPoll} loading={loading} label="Live 1m" />}
+      />
       <NoticeBanner notice={notice ?? (initialError ? { type: "error", message: initialError } : null)} onClose={clear} />
 
       <div className="flex flex-col lg:flex-row gap-3 lg:items-center justify-between">
@@ -356,6 +377,7 @@ export function BusinessApplicationsManagement({
 
       <TableShell>
         <THead>
+          <th className={`${th} w-12 text-center`}>#</th>
           <th className={th}>Business</th>
           <th className={th}>Contact</th>
           <th className={th}>District</th>
@@ -367,18 +389,20 @@ export function BusinessApplicationsManagement({
         </THead>
         <TBody>
           {loading ? (
-            <LoadingRows cols={6} />
+            <LoadingRows cols={7} />
           ) : list.data.length === 0 ? (
             <tr>
-              <td colSpan={6}>
+              <td colSpan={7}>
                 <EmptyState icon={Briefcase} title="No applications" description={status || q ? "Try another filter." : "Applications from the wholesale form appear here."} />
               </td>
             </tr>
           ) : (
-            list.data.map((a) => {
+            list.data.map((a, idx) => {
+              const rowNumber = ((list.meta?.current_page ?? page) - 1) * (list.meta?.per_page ?? 25) + idx + 1;
               const st = metaFor(BUSINESS_STATUS_META, a.status);
               return (
                 <tr key={a.id} className="hover:bg-slate-50/60 cursor-pointer" onClick={() => setViewing(a.id)}>
+                  <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{rowNumber}</td>
                   <td className={td}>
                     <div className="font-medium text-slate-900">{a.business.name}</div>
                     <div className="text-xs text-slate-500">
@@ -418,7 +442,12 @@ export function BusinessApplicationsManagement({
         disabled={loading}
         onPageChange={(p) => {
           setPage(p);
-          load({ page: p });
+          void load({ page: p });
+        }}
+        onPerPageChange={(pp) => {
+          setPerPage(pp);
+          setPage(1);
+          void load({ page: 1, perPage: pp });
         }}
       />
 

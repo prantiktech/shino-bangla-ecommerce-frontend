@@ -3,13 +3,16 @@
 import React, { useState } from "react";
 import {
   StaffMember,
+  StaffActivityLogEntry,
   createAdminStaffAction,
   updateAdminStaffAction,
   deleteAdminStaffAction,
   getAdminStaffAction,
   getAdminStaffDetailAction,
+  getAdminStaffActivityLogAction,
 } from "@/app/(admin)/actions/staff";
 import { RoleResource } from "@/app/(admin)/actions/roles";
+import { useCan } from "@/app/(admin)/components/permissions";
 import {
   Users,
   UserCheck,
@@ -30,6 +33,8 @@ import {
   Lock,
   RefreshCw,
   Eye,
+  History,
+  Loader2,
 } from "lucide-react";
 
 /** API rule for staff passwords: 12+ characters with upper and lower case, a number and a symbol. */
@@ -44,6 +49,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   initialStaff,
   initialRoles,
 }) => {
+  const can = useCan();
   const [staffList, setStaffList] = useState<StaffMember[]>(initialStaff);
   const [roles, setRoles] = useState<RoleResource[]>(initialRoles);
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,8 +72,32 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
   // Modal State for Inspect Privileges
   const [inspectStaff, setInspectStaff] = useState<StaffMember | null>(null);
 
+  // Modal State for Staff Activity Log (GET /api/v1/staff/{staff}/activity-log)
+  const [activityLogStaff, setActivityLogStaff] = useState<StaffMember | null>(null);
+  const [activityLogs, setActivityLogs] = useState<StaffActivityLogEntry[]>([]);
+  const [activityLogLoading, setActivityLogLoading] = useState(false);
+  const [activityLogPage, setActivityLogPage] = useState(1);
+  const [activityLogMeta, setActivityLogMeta] = useState<{ current_page: number; last_page: number; total: number } | null>(null);
+
   // Deleting State
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const loadStaffActivityLog = async (member: StaffMember, page = 1) => {
+    setActivityLogStaff(member);
+    setActivityLogLoading(true);
+    setActivityLogPage(page);
+    try {
+      const res = await getAdminStaffActivityLogAction(member.id, { page, per_page: 20 });
+      if (res.success && res.data) {
+        setActivityLogs(res.data.data);
+        setActivityLogMeta(res.data.meta || null);
+      } else {
+        setActivityLogs([]);
+      }
+    } finally {
+      setActivityLogLoading(false);
+    }
+  };
 
   const refreshStaff = async () => {
     setIsRefreshing(true);
@@ -318,6 +348,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <th className="py-3.5 px-4 w-12 text-center">#</th>
                   <th className="py-3.5 px-6">Member Details</th>
                   <th className="py-3.5 px-6">Assigned Role</th>
                   <th className="py-3.5 px-6">Status</th>
@@ -327,13 +358,16 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredStaff.map((member) => {
+                {filteredStaff.map((member, idx) => {
                   const roleName = member.roles?.[0] || "No Role";
                   const isSuperAdmin = roleName === "super-admin";
                   const permCount = member.permissions?.length || 0;
 
                   return (
                     <tr key={member.id} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="py-4 px-4 text-center text-xs font-semibold text-slate-400 tabular-nums">
+                        {idx + 1}
+                      </td>
                       {/* Name & Contact */}
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
@@ -409,6 +443,15 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
                       {/* Actions */}
                       <td className="py-4 px-6 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {can("activity-log.view") && (
+                            <button
+                              onClick={() => loadStaffActivityLog(member, 1)}
+                              title="View Activity Log"
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-[#FF5B00] hover:bg-orange-50 transition-colors"
+                            >
+                              <History className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => openEditModal(member)}
                             title="Edit Staff Member"
@@ -632,6 +675,140 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({
             <div className="pt-3 border-t border-slate-100 flex items-center justify-end">
               <button
                 onClick={() => setInspectStaff(null)}
+                className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL 3: STAFF ACTIVITY LOG                                         */}
+      {/* =================================================================== */}
+      {activityLogStaff && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 space-y-5 max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-orange-50 text-[#FF5B00]">
+                  <History className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Activity Log: {activityLogStaff.name}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Audit trail of actions performed by {activityLogStaff.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActivityLogStaff(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto min-h-[240px]">
+              {activityLogLoading ? (
+                <div className="py-16 flex flex-col items-center justify-center gap-2 text-slate-400">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#FF5B00]" />
+                  <span className="text-xs font-medium">Loading staff activity log...</span>
+                </div>
+              ) : activityLogs.length === 0 ? (
+                <div className="py-14 text-center space-y-2">
+                  <History className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="text-sm font-semibold text-slate-700">No activity recorded yet</p>
+                  <p className="text-xs text-slate-500">
+                    Administrative actions performed by this staff member will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-slate-200 overflow-hidden">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        <th className="py-2.5 px-3 w-10 text-center">#</th>
+                        <th className="py-2.5 px-3">Event</th>
+                        <th className="py-2.5 px-3">Description</th>
+                        <th className="py-2.5 px-3">Subject</th>
+                        <th className="py-2.5 px-3">Timestamp</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {activityLogs.map((entry, idx) => {
+                        const rowNum = (activityLogPage - 1) * 20 + idx + 1;
+                        const shortSubject = entry.subject_type
+                          ? entry.subject_type.split("\\").pop()
+                          : null;
+                        return (
+                          <tr key={entry.id} className="hover:bg-slate-50/70">
+                            <td className="py-2.5 px-3 text-center text-slate-400 font-semibold tabular-nums">
+                              {rowNum}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
+                                {entry.event || entry.log_name || "action"}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 font-medium text-slate-800">
+                              {entry.description}
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-500 font-mono text-[11px]">
+                              {shortSubject
+                                ? `${shortSubject}${entry.subject_id ? ` #${entry.subject_id}` : ""}`
+                                : "—"}
+                            </td>
+                            <td className="py-2.5 px-3 text-slate-500 whitespace-nowrap">
+                              {new Date(entry.created_at).toLocaleString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+              {activityLogMeta && activityLogMeta.last_page > 1 ? (
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span>
+                    Page <strong>{activityLogMeta.current_page}</strong> of{" "}
+                    {activityLogMeta.last_page} ({activityLogMeta.total} entries)
+                  </span>
+                  <button
+                    disabled={activityLogLoading || activityLogPage <= 1}
+                    onClick={() => loadStaffActivityLog(activityLogStaff, activityLogPage - 1)}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 font-semibold text-slate-700"
+                  >
+                    Prev
+                  </button>
+                  <button
+                    disabled={activityLogLoading || activityLogPage >= activityLogMeta.last_page}
+                    onClick={() => loadStaffActivityLog(activityLogStaff, activityLogPage + 1)}
+                    className="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 font-semibold text-slate-700"
+                  >
+                    Next
+                  </button>
+                </div>
+              ) : (
+                <span className="text-xs text-slate-400">
+                  {activityLogs.length} {activityLogs.length === 1 ? "entry" : "entries"}
+                </span>
+              )}
+              <button
+                onClick={() => setActivityLogStaff(null)}
                 className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors"
               >
                 Close

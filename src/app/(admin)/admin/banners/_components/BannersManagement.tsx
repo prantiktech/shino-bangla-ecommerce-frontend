@@ -554,7 +554,7 @@ export function BannersManagement({ initialBanners }: BannersManagementProps) {
               <div className="relative aspect-[16/8] bg-slate-100 overflow-hidden border-b border-slate-100">
                 {banner.image?.url ? (
                   <img
-                    src={banner.image.url}
+                    src={banner.image.sizes?.card || banner.image.url}
                     alt={banner.image.alt || banner.title}
                     className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
                   />

@@ -293,6 +293,29 @@ export const ApiEndpoints = {
   GET_ADMIN_MEMBER: '/staff/:id',
   UPDATE_ADMIN_MEMBER: '/staff/:id',
   DELETE_ADMIN_MEMBER: '/staff/:id',
+  GET_ADMIN_STAFF_ACTIVITY_LOG: '/staff/:id/activity-log',
+
+  // 25 · Storefront & Back Office: Incomplete Orders (Abandoned Carts)
+  SAVE_INCOMPLETE_ORDER: '/incomplete-orders',
+  GET_ADMIN_INCOMPLETE_ORDERS: '/admin/incomplete-orders',
+  GET_ADMIN_INCOMPLETE_ORDER: '/admin/incomplete-orders/:id',
+  UPDATE_ADMIN_INCOMPLETE_ORDER: '/admin/incomplete-orders/:id',
+
+  // 26 · Back Office: Accounting & Profit/Loss
+  GET_ADMIN_ACCOUNTING_SUMMARY: '/admin/accounting/summary',
+  GET_ADMIN_ACCOUNTING_TIMELINE: '/admin/accounting/timeline',
+  GET_ADMIN_ACCOUNTING_BREAKDOWN: '/admin/accounting/breakdown',
+  GET_ADMIN_ACCOUNTING_COLLECTION: '/admin/accounting/collection',
+  GET_ADMIN_ACCOUNTING_STOCK: '/admin/accounting/stock',
+  GET_ADMIN_ACCOUNTING_PROFIT_AND_LOSS: '/admin/accounting/profit-and-loss',
+  GET_ADMIN_EXPENSE_CATEGORIES: '/admin/accounting/expense-categories',
+  CREATE_ADMIN_EXPENSE_CATEGORY: '/admin/accounting/expense-categories',
+  UPDATE_ADMIN_EXPENSE_CATEGORY: '/admin/accounting/expense-categories/:id',
+  DELETE_ADMIN_EXPENSE_CATEGORY: '/admin/accounting/expense-categories/:id',
+  GET_ADMIN_EXPENSES: '/admin/accounting/expenses',
+  CREATE_ADMIN_EXPENSE: '/admin/accounting/expenses',
+  UPDATE_ADMIN_EXPENSE: '/admin/accounting/expenses/:id',
+  DELETE_ADMIN_EXPENSE: '/admin/accounting/expenses/:id',
 } as const;
 
 export type EndpointKey = keyof typeof ApiEndpoints;

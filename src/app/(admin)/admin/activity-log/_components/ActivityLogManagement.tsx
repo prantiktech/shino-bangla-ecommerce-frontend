@@ -35,6 +35,8 @@ import {
   getActivityLogsAction,
   getRecordActivityLogAction,
 } from "@/app/(admin)/actions/activity-log";
+import { AutoPollToggle, Pagination, useAutoPoll } from "@/app/(admin)/components/ui";
+import { timeAgo } from "@/app/(admin)/components/order-meta";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
 
@@ -173,6 +175,31 @@ export function ActivityLogManagement({
     setIsLoading(false);
   };
 
+  // 1-Minute Background Auto-Polling for live audit trail updates
+  const autoPoll = useAutoPoll(
+    async () => {
+      const currentPage = logsData.meta?.current_page ?? 1;
+      const filters: ActivityLogFilters = {
+        log: logFilter !== "all" ? logFilter : undefined,
+        event: eventFilter !== "all" ? eventFilter : undefined,
+        subject_type: subjectType.trim() || undefined,
+        subject_id: subjectId ? Number(subjectId) : undefined,
+        from: fromDate || undefined,
+        to: toDate || undefined,
+        q: searchQuery.trim() || undefined,
+        page: currentPage,
+      };
+      const res = await getActivityLogsAction(filters);
+      if (res.success) {
+        setLogsData(res.data);
+      }
+    },
+    {
+      intervalMs: 60000,
+      paused: Boolean(selectedLog) || isRecordModalOpen,
+    }
+  );
+
   // Open Record Audit History Modal
   const openRecordAudit = async (type: string, id: number | string) => {
     setRecordType(type);
@@ -272,15 +299,8 @@ export function ActivityLogManagement({
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => handleFilterSubmit()}
-            disabled={isLoading || isPending}
-            className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer disabled:opacity-50"
-            title="Refresh logs"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <AutoPollToggle controller={autoPoll} loading={isLoading || isPending} label="Live 1m" />
 
           <button
             onClick={() => {
@@ -565,6 +585,7 @@ export function ActivityLogManagement({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                  <th className="py-3.5 px-4 w-12 text-center">#</th>
                   <th className="py-3.5 px-4">Timestamp</th>
                   <th className="py-3.5 px-3">Channel</th>
                   <th className="py-3.5 px-3">Event</th>
@@ -575,19 +596,27 @@ export function ActivityLogManagement({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
-                {logs.map((item) => (
+                {logs.map((item, idx) => (
                   <tr
                     key={item.id}
                     className="hover:bg-slate-50/60 transition-colors group"
                   >
+                    <td className="py-3.5 px-4 text-center font-mono text-xs text-slate-400">
+                      {((meta?.current_page ?? 1) - 1) * (meta?.per_page ?? 20) + idx + 1}
+                    </td>
                     {/* Timestamp */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <div className="font-semibold text-slate-900">
-                        {new Date(item.created_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-slate-900">
+                          {new Date(item.created_at).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                          {timeAgo(item.created_at)}
+                        </span>
                       </div>
                       <div className="text-[11px] text-slate-400 font-mono">
                         {new Date(item.created_at).toLocaleTimeString("en-US", {
@@ -695,37 +724,20 @@ export function ActivityLogManagement({
         )}
 
         {/* Pagination Footer */}
-        {meta && meta.last_page > 1 && (
-          <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
-            <div>
-              Showing items <span className="font-bold text-slate-800">{meta.from ?? 0}</span> to{" "}
-              <span className="font-bold text-slate-800">{meta.to ?? 0}</span> of{" "}
-              <span className="font-bold text-slate-800">{meta.total}</span>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <button
-                disabled={meta.current_page <= 1 || isLoading}
-                onClick={() => handlePageChange(meta.current_page - 1)}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                title="Previous Page"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <span className="px-3 py-1 font-bold text-slate-800 bg-slate-100 rounded-lg">
-                Page {meta.current_page} of {meta.last_page}
-              </span>
-
-              <button
-                disabled={meta.current_page >= meta.last_page || isLoading}
-                onClick={() => handlePageChange(meta.current_page + 1)}
-                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                title="Next Page"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+        {meta && (
+          <div className="p-4 border-t border-slate-100 bg-slate-50/40">
+            <Pagination
+              meta={{
+                current_page: meta.current_page,
+                last_page: meta.last_page,
+                per_page: meta.per_page,
+                total: meta.total,
+                from: meta.from,
+                to: meta.to,
+              }}
+              disabled={isLoading}
+              onPageChange={(p) => void handlePageChange(p)}
+            />
           </div>
         )}
       </div>

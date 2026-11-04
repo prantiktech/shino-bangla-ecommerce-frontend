@@ -99,6 +99,7 @@ export function ProductsManagement({
   const [list, setList] = useState(initial);
   const [filters, setFilters] = useState<Filters>({ ...emptyFilters, q: initialQuery });
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(initial.meta?.per_page || 25);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
   const { notice, success, error, clear } = useNotice();
@@ -118,10 +119,10 @@ export function ProductsManagement({
   const [busy, setBusy] = useState(false);
   const [rowBusy, setRowBusy] = useState<number | null>(null);
 
-  const load = async (next: Partial<Filters> = {}, nextPage = page) => {
+  const load = async (next: Partial<Filters> = {}, nextPage = page, nextPerPage = perPage) => {
     const f = { ...filters, ...next };
     setLoading(true);
-    const res = await getAdminProductsAction({ ...f, page: nextPage, per_page: 25 });
+    const res = await getAdminProductsAction({ ...f, page: nextPage, per_page: nextPerPage });
     setLoading(false);
     if (res.success) {
       setList(res.data);
@@ -382,6 +383,7 @@ export function ProductsManagement({
               }
             />
           </th>
+          <th className={`${th} w-12 text-center`}>#</th>
           <th className={th}>Product</th>
           <th className={th}>Category</th>
           <th className={`${th} text-right`}>Price</th>
@@ -392,10 +394,10 @@ export function ProductsManagement({
         </THead>
         <TBody>
           {loading ? (
-            <LoadingRows cols={8} />
+            <LoadingRows cols={9} />
           ) : list.data.length === 0 ? (
             <tr>
-              <td colSpan={8}>
+              <td colSpan={9}>
                 <EmptyState
                   icon={Package}
                   title={filtersActive ? "No products match these filters" : "No products yet"}
@@ -404,7 +406,8 @@ export function ProductsManagement({
               </td>
             </tr>
           ) : (
-            list.data.map((p) => {
+            list.data.map((p, idx) => {
+              const rowNumber = ((list.meta?.current_page ?? page) - 1) * (list.meta?.per_page ?? 25) + idx + 1;
               const flags = (
                 [
                   p.is_featured && "Featured",
@@ -424,6 +427,7 @@ export function ProductsManagement({
                       onChange={() => setSelected((s) => (s.includes(p.id) ? s.filter((x) => x !== p.id) : [...s, p.id]))}
                     />
                   </td>
+                  <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{rowNumber}</td>
                   <td className={td}>
                     <button
                       type="button"
@@ -436,7 +440,7 @@ export function ProductsManagement({
                       <span className="w-11 h-11 rounded-lg bg-slate-100 ring-1 ring-slate-200 overflow-hidden flex items-center justify-center shrink-0">
                         {p.image?.url ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.image.url} alt="" className="w-full h-full object-cover" />
+                          <img src={(p.image as any)?.sizes?.thumb || p.image.url} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <Package className="w-5 h-5 text-slate-300" />
                         )}
@@ -520,7 +524,12 @@ export function ProductsManagement({
         disabled={loading}
         onPageChange={(p) => {
           setPage(p);
-          load({}, p);
+          void load({}, p, perPage);
+        }}
+        onPerPageChange={(pp) => {
+          setPerPage(pp);
+          setPage(1);
+          void load({}, 1, pp);
         }}
       />
 

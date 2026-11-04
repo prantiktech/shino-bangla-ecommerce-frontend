@@ -309,11 +309,14 @@ export function ReviewsManagement({ initial, initialError }: { initial: Paginate
         </Card>
       ) : (
         <div className="space-y-3">
-          {list.data.map((r) => (
+          {list.data.map((r, idx) => (
             <Card key={r.id} className="space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-mono text-slate-400">
+                      #{((list.meta?.current_page ?? 1) - 1) * (list.meta?.per_page ?? 20) + idx + 1}
+                    </span>
                     <Stars value={r.rating} />
                     <Badge tone={r.status === "approved" ? "green" : r.status === "rejected" ? "red" : "amber"}>{r.status}</Badge>
                     {r.is_hidden && <Badge tone="slate">Hidden</Badge>}
@@ -343,7 +346,7 @@ export function ReviewsManagement({ initial, initialError }: { initial: Paginate
                   {r.photos.map((p) => (
                     <a key={p.id} href={p.url} target="_blank" rel="noreferrer" className="w-16 h-16 rounded-lg overflow-hidden ring-1 ring-slate-200">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p.url} alt="Review photo" className="w-full h-full object-cover" />
+                      <img src={p.sizes?.thumb || p.url} alt="Review photo" className="w-full h-full object-cover" />
                     </a>
                   ))}
                 </div>

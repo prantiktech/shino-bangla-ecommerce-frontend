@@ -10,14 +10,47 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   ImagePlus,
   Loader2,
+  Pause,
+  Play,
+  RefreshCw,
   Search,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PaginationMeta } from "../actions/_request";
 import { deleteAdminMediaAction, uploadAdminMediaAction } from "../actions/media";
+
+/**
+ * Synchronise filter & pagination state with the browser URL query string (`?page=2&status=pending`)
+ * without causing a full page reload.
+ */
+export function syncUrlParams(
+  updates: Record<string, string | number | boolean | null | undefined>
+) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  for (const [key, value] of Object.entries(updates)) {
+    if (
+      value === undefined ||
+      value === null ||
+      value === "" ||
+      (key === "page" && Number(value) <= 1)
+    ) {
+      url.searchParams.delete(key);
+    } else {
+      url.searchParams.set(key, String(value));
+    }
+  }
+  const next = `${url.pathname}${url.search}${url.hash}`;
+  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (next !== current) {
+    window.history.replaceState(window.history.state, "", next);
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /* Buttons                                                            */
@@ -353,43 +386,259 @@ export function TBody({ children }: { children: React.ReactNode }) {
   return <tbody className="divide-y divide-slate-100">{children}</tbody>;
 }
 
+/** Build a compact list of page numbers and ellipsis markers: `[1, '...', 4, 5, 6, '...', 20]`. */
+function buildPageItems(current: number, last: number): (number | "ellipsis-start" | "ellipsis-end")[] {
+  if (last <= 7) {
+    return Array.from({ length: last }, (_, i) => i + 1);
+  }
+  const items: (number | "ellipsis-start" | "ellipsis-end")[] = [1];
+  const left = Math.max(2, current - 1);
+  const right = Math.min(last - 1, current + 1);
+
+  if (left > 2) items.push("ellipsis-start");
+  for (let p = left; p <= right; p++) {
+    items.push(p);
+  }
+  if (right < last - 1) items.push("ellipsis-end");
+  items.push(last);
+  return items;
+}
+
 export function Pagination({
   meta,
   onPageChange,
+  onPerPageChange,
+  perPageOptions = [15, 20, 25, 50, 100],
+  paramKey = "page",
+  perPageParamKey = "per_page",
+  syncUrl = true,
   disabled,
 }: {
-  meta: PaginationMeta | null | undefined;
+  meta: Partial<PaginationMeta> | null | undefined;
   onPageChange: (page: number) => void;
+  onPerPageChange?: (perPage: number) => void;
+  perPageOptions?: number[];
+  paramKey?: string;
+  perPageParamKey?: string;
+  syncUrl?: boolean;
   disabled?: boolean;
 }) {
-  if (!meta || meta.last_page <= 1) {
-    return meta && meta.total > 0 ? (
-      <p className="text-xs text-slate-500 px-1">
-        {meta.total} {meta.total === 1 ? "record" : "records"}
-      </p>
+  const [jumpValue, setJumpValue] = useState("");
+  const didInitFromUrl = useRef(false);
+
+  // If the user opened a bookmarked URL with `?page=N`, jump to that page on mount
+  useEffect(() => {
+    if (!syncUrl || didInitFromUrl.current || !meta) return;
+    didInitFromUrl.current = true;
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    const urlPage = Number(sp.get(paramKey));
+    const currentPage = meta.current_page ?? 1;
+    const lastPage = meta.last_page ?? 1;
+    if (
+      Number.isInteger(urlPage) &&
+      urlPage >= 1 &&
+      urlPage !== currentPage &&
+      (lastPage <= 1 || urlPage <= lastPage)
+    ) {
+      onPageChange(urlPage);
+    }
+  }, [syncUrl, paramKey, meta, onPageChange]);
+
+  if (!meta) return null;
+
+  const page = meta.current_page ?? 1;
+  const last = meta.last_page ?? 1;
+  const perPage = meta.per_page ?? 20;
+  const total = meta.total ?? 0;
+  const from =
+    meta.from ?? (total === 0 ? 0 : Math.min(total, (page - 1) * (perPage || 20) + 1));
+  const to = meta.to ?? Math.min(total, page * (perPage || 20));
+
+  const go = (target: number) => {
+    const clamped = Math.max(1, Math.min(last, target));
+    if (clamped === page || disabled) return;
+    if (syncUrl) {
+      syncUrlParams({ [paramKey]: clamped });
+    }
+    onPageChange(clamped);
+  };
+
+  const changePerPage = (nextPerPage: number) => {
+    if (!onPerPageChange || disabled) return;
+    if (syncUrl) {
+      syncUrlParams({ [perPageParamKey]: nextPerPage, [paramKey]: 1 });
+    }
+    onPerPageChange(nextPerPage);
+  };
+
+  if (last <= 1 && !onPerPageChange) {
+    return total > 0 ? (
+      <div className="flex items-center justify-between px-1 py-1 text-xs text-slate-500">
+        <span>
+          Showing <strong className="font-semibold text-slate-800">{from}</strong>–
+          <strong className="font-semibold text-slate-800">{to}</strong> of{" "}
+          <strong className="font-semibold text-slate-800">{total.toLocaleString()}</strong>{" "}
+          {total === 1 ? "record" : "records"}
+        </span>
+      </div>
     ) : null;
   }
-  const { current_page: page, last_page: last, total } = meta;
+
+  const pageItems = buildPageItems(page, Math.max(1, last));
+
   return (
-    <div className="flex items-center justify-between gap-3 px-1">
-      <p className="text-xs text-slate-500">
-        Page <span className="font-semibold text-slate-700">{page}</span> of {last} · {total} records
-      </p>
-      <div className="flex items-center gap-1.5">
-        <Button
-          variant="secondary"
-          size="sm"
-          icon={ChevronLeft}
-          disabled={disabled || page <= 1}
-          onClick={() => onPageChange(page - 1)}
-        >
-          Previous
-        </Button>
-        <Button variant="secondary" size="sm" disabled={disabled || page >= last} onClick={() => onPageChange(page + 1)}>
-          Next
-          <ChevronRight className="w-4 h-4" />
-        </Button>
+    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 rounded-2xl bg-white ring-1 ring-slate-200/80 px-4 py-3 shadow-2xs">
+      {/* Left: Record range & Per-Page selector */}
+      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+        <span>
+          Showing <strong className="font-bold text-slate-800 tabular-nums">{from}</strong>–
+          <strong className="font-bold text-slate-800 tabular-nums">{to}</strong> of{" "}
+          <strong className="font-bold text-slate-900 tabular-nums">
+            {total.toLocaleString()}
+          </strong>{" "}
+          {total === 1 ? "record" : "records"}
+          <span className="text-slate-400 ml-1.5">
+            (Page {page} of {last})
+          </span>
+        </span>
+
+        {onPerPageChange && (
+          <label className="inline-flex items-center gap-1.5 text-xs text-slate-600">
+            <span className="text-slate-400">·</span>
+            <span>Rows:</span>
+            <select
+              value={perPage}
+              disabled={disabled}
+              onChange={(e) => changePerPage(Number(e.target.value))}
+              className="h-7 rounded-lg border border-slate-200 bg-slate-50 px-2 text-xs font-semibold text-slate-800 focus:border-primary focus:bg-white focus:outline-none cursor-pointer"
+            >
+              {Array.from(new Set([...perPageOptions, perPage]))
+                .sort((a, b) => a - b)
+                .map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt} / page
+                  </option>
+                ))}
+            </select>
+          </label>
+        )}
       </div>
+
+      {/* Right: Numbered controls + Jump to page */}
+      {last > 1 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {/* First Page */}
+          <button
+            type="button"
+            disabled={disabled || page <= 1}
+            onClick={() => go(1)}
+            title="First page"
+            aria-label="First page"
+            className="h-8 w-8 rounded-lg ring-1 ring-inset ring-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <ChevronsLeft className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Previous Page */}
+          <button
+            type="button"
+            disabled={disabled || page <= 1}
+            onClick={() => go(page - 1)}
+            title="Previous page"
+            aria-label="Previous page"
+            className="h-8 px-2.5 rounded-lg ring-1 ring-inset ring-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1 transition-colors cursor-pointer"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Prev</span>
+          </button>
+
+          {/* Page Numbers */}
+          <div className="flex items-center gap-1">
+            {pageItems.map((item) => {
+              if (item === "ellipsis-start" || item === "ellipsis-end") {
+                return (
+                  <span
+                    key={item}
+                    className="h-8 px-1.5 inline-flex items-center justify-center text-xs font-semibold text-slate-400 select-none"
+                  >
+                    …
+                  </span>
+                );
+              }
+              const active = item === page;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => go(item)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "h-8 min-w-[32px] px-2 rounded-lg text-xs font-bold tabular-nums transition-all cursor-pointer disabled:opacity-50",
+                    active
+                      ? "bg-[#FF5B00] text-white shadow-xs ring-1 ring-[#FF5B00]"
+                      : "bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                  )}
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Next Page */}
+          <button
+            type="button"
+            disabled={disabled || page >= last}
+            onClick={() => go(page + 1)}
+            title="Next page"
+            aria-label="Next page"
+            className="h-8 px-2.5 rounded-lg ring-1 ring-inset ring-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1 transition-colors cursor-pointer"
+          >
+            <span className="hidden sm:inline">Next</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Last Page */}
+          <button
+            type="button"
+            disabled={disabled || page >= last}
+            onClick={() => go(last)}
+            title="Last page"
+            aria-label="Last page"
+            className="h-8 w-8 rounded-lg ring-1 ring-inset ring-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center transition-colors cursor-pointer"
+          >
+            <ChevronsRight className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Jump to page input when > 5 pages */}
+          {last > 5 && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const num = Number(jumpValue);
+                if (Number.isInteger(num) && num >= 1 && num <= last) {
+                  go(num);
+                  setJumpValue("");
+                }
+              }}
+              className="hidden md:flex items-center gap-1 ml-1.5 pl-2 border-l border-slate-200"
+            >
+              <span className="text-[11px] text-slate-500">Go to</span>
+              <input
+                type="number"
+                min={1}
+                max={last}
+                value={jumpValue}
+                onChange={(e) => setJumpValue(e.target.value)}
+                placeholder="#"
+                className="h-8 w-14 rounded-lg border border-slate-200 bg-slate-50 px-2 text-center text-xs font-semibold text-slate-800 focus:border-primary focus:bg-white focus:outline-none tabular-nums"
+              />
+            </form>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -733,6 +982,12 @@ export function useDebouncedCallback<A extends unknown[]>(fn: (...args: A) => vo
 export interface MediaValue {
   id: number;
   url: string;
+  sizes?: {
+    thumb?: string;
+    card?: string;
+    full?: string;
+  };
+  alt?: string;
 }
 
 async function uploadFile(file: File): Promise<{ ok: true; media: MediaValue } | { ok: false; message: string }> {
@@ -741,7 +996,15 @@ async function uploadFile(file: File): Promise<{ ok: true; media: MediaValue } |
   fd.append("file", file);
   const res = await uploadAdminMediaAction(fd);
   if (!res.success) return { ok: false, message: res.error.message || "Upload failed." };
-  return { ok: true, media: { id: res.data.id, url: res.data.url } };
+  return {
+    ok: true,
+    media: {
+      id: res.data.id,
+      url: res.data.url,
+      sizes: res.data.sizes,
+      alt: res.data.alt,
+    },
+  };
 }
 
 /** Single image upload with preview. Value is a media id + url. */
@@ -796,7 +1059,7 @@ export function ImageUpload({
         {value?.url ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={value.url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <img src={value.sizes?.thumb || value.url} alt={value.alt || ""} className="absolute inset-0 w-full h-full object-cover" />
             <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
               <Button size="sm" variant="secondary" onClick={() => inputRef.current?.click()}>
                 Replace
@@ -879,7 +1142,7 @@ export function GalleryUpload({
         {value.map((m, i) => (
           <div key={m.id} className="relative aspect-square rounded-lg overflow-hidden ring-1 ring-slate-200 group">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={m.url} alt="" className="w-full h-full object-cover" />
+            <img src={m.sizes?.thumb || m.url} alt={m.alt || ""} className="w-full h-full object-cover" />
             <button
               type="button"
               onClick={() => {
@@ -971,6 +1234,157 @@ export function HtmlEditor({
           dangerouslySetInnerHTML={{ __html: value || "<p class='text-slate-400'>Nothing to preview.</p>" }}
         />
       )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Background Auto-Polling (60s interval, visibility-aware)           */
+/* ------------------------------------------------------------------ */
+
+export interface AutoPollController {
+  enabled: boolean;
+  setEnabled: (v: boolean | ((prev: boolean) => boolean)) => void;
+  secondsLeft: number;
+  lastSyncedAt: Date | null;
+  polling: boolean;
+  triggerNow: () => Promise<void>;
+}
+
+/**
+ * Polls `onPoll` in the background every `intervalMs` (default 60_000 ms = 1 minute).
+ * Automatically pauses when the browser tab is hidden or when `paused` is true (e.g. a modal is open).
+ */
+export function useAutoPoll(
+  onPoll: () => Promise<void> | void,
+  opts: {
+    intervalMs?: number;
+    paused?: boolean;
+    defaultEnabled?: boolean;
+  } = {}
+): AutoPollController {
+  const intervalSec = Math.max(10, Math.round((opts.intervalMs ?? 60000) / 1000));
+  const [enabled, setEnabled] = useState(opts.defaultEnabled ?? true);
+  const [secondsLeft, setSecondsLeft] = useState(intervalSec);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(() => new Date());
+  const [polling, setPolling] = useState(false);
+
+  const callbackRef = useRef(onPoll);
+  useEffect(() => {
+    callbackRef.current = onPoll;
+  }, [onPoll]);
+
+  const busyRef = useRef(false);
+
+  const triggerNow = useCallback(async () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
+    setPolling(true);
+    try {
+      await callbackRef.current();
+      setLastSyncedAt(new Date());
+    } finally {
+      busyRef.current = false;
+      setPolling(false);
+      setSecondsLeft(intervalSec);
+    }
+  }, [intervalSec]);
+
+  useEffect(() => {
+    if (!enabled || opts.paused) return;
+
+    const timer = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+        return;
+      }
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          void triggerNow();
+          return intervalSec;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [enabled, opts.paused, intervalSec, triggerNow]);
+
+  return {
+    enabled,
+    setEnabled,
+    secondsLeft,
+    lastSyncedAt,
+    polling,
+    triggerNow,
+  };
+}
+
+/**
+ * Compact header widget displaying live 1-minute auto-polling status, countdown,
+ * pause/resume toggle, and manual refresh button.
+ */
+export function AutoPollToggle({
+  controller,
+  loading,
+  label = "Auto-sync",
+}: {
+  controller: AutoPollController;
+  loading?: boolean;
+  label?: string;
+}) {
+  const isBusy = loading || controller.polling;
+  return (
+    <div className="inline-flex items-center rounded-xl bg-white ring-1 ring-slate-200 shadow-2xs p-0.5 text-xs">
+      <button
+        type="button"
+        onClick={() => controller.setEnabled((v) => !v)}
+        title={
+          controller.enabled
+            ? "Background auto-polling is active (every 1 min). Click to pause."
+            : "Background auto-polling is paused. Click to resume."
+        }
+        className={cn(
+          "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg font-semibold transition-colors cursor-pointer",
+          controller.enabled
+            ? "text-slate-700 hover:bg-slate-50"
+            : "text-slate-400 hover:bg-slate-50"
+        )}
+      >
+        <span
+          className={cn(
+            "w-2 h-2 rounded-full shrink-0",
+            controller.enabled
+              ? "bg-emerald-500 animate-pulse"
+              : "bg-slate-300"
+          )}
+        />
+        <span>{label}</span>
+        <span className="font-mono text-[11px] text-slate-400 tabular-nums">
+          {controller.enabled ? `${controller.secondsLeft}s` : "off"}
+        </span>
+        {controller.enabled ? (
+          <Pause className="w-3 h-3 text-slate-400" />
+        ) : (
+          <Play className="w-3 h-3 text-slate-400" />
+        )}
+      </button>
+
+      <div className="w-px h-5 bg-slate-200 mx-0.5" />
+
+      <button
+        type="button"
+        disabled={isBusy}
+        onClick={() => void controller.triggerNow()}
+        title={
+          controller.lastSyncedAt
+            ? `Refresh now (last synced ${controller.lastSyncedAt.toLocaleTimeString()})`
+            : "Refresh now"
+        }
+        className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+      >
+        <RefreshCw className={cn("w-3.5 h-3.5 text-slate-500", isBusy && "animate-spin text-[#FF5B00]")} />
+        <span className="hidden sm:inline">Sync</span>
+      </button>
     </div>
   );
 }

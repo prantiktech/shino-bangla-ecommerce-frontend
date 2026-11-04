@@ -199,6 +199,7 @@ export function NewsletterManagement({
         <>
           <TableShell>
             <THead>
+              <th className={`${th} w-12 text-center`}>#</th>
               <th className={th}>Subject</th>
               <th className={th}>Status</th>
               <th className={th}>Recipients</th>
@@ -208,16 +209,19 @@ export function NewsletterManagement({
             </THead>
             <TBody>
               {cLoading ? (
-                <LoadingRows cols={6} />
+                <LoadingRows cols={7} />
               ) : campaigns.data.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={7}>
                     <EmptyState icon={Send} title="No campaigns yet" action={<Button icon={Plus} onClick={openCreate}>New campaign</Button>} />
                   </td>
                 </tr>
               ) : (
-                campaigns.data.map((c) => (
+                campaigns.data.map((c, idx) => {
+                  const rowNumber = ((campaigns.meta?.current_page ?? cPage) - 1) * (campaigns.meta?.per_page ?? 25) + idx + 1;
+                  return (
                   <tr key={c.id} className="hover:bg-slate-50/60">
+                    <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{rowNumber}</td>
                     <td className={`${td} font-semibold text-slate-900 max-w-xs truncate`}>{c.subject}</td>
                     <td className={td}>
                       <Badge tone={CAMPAIGN_TONE[c.status] ?? "slate"}>{c.status}</Badge>
@@ -241,7 +245,8 @@ export function NewsletterManagement({
                       </span>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </TBody>
           </TableShell>
@@ -283,6 +288,7 @@ export function NewsletterManagement({
           </div>
           <TableShell>
             <THead>
+              <th className={`${th} w-12 text-center`}>#</th>
               <th className={th}>Email</th>
               <th className={th}>Source</th>
               <th className={th}>Status</th>
@@ -291,16 +297,19 @@ export function NewsletterManagement({
             </THead>
             <TBody>
               {subLoading ? (
-                <LoadingRows cols={5} />
+                <LoadingRows cols={6} />
               ) : subs.data.length === 0 ? (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={6}>
                     <EmptyState icon={Users} title="No subscribers found" />
                   </td>
                 </tr>
               ) : (
-                subs.data.map((s) => (
+                subs.data.map((s, idx) => {
+                  const rowNumber = ((subs.meta?.current_page ?? subPage) - 1) * (subs.meta?.per_page ?? 25) + idx + 1;
+                  return (
                   <tr key={s.id} className="hover:bg-slate-50/60">
+                    <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{rowNumber}</td>
                     <td className={`${td} font-medium text-slate-900`}>{s.email}</td>
                     <td className={`${td} text-xs capitalize`}>{s.source ?? "—"}</td>
                     <td className={td}>
@@ -309,7 +318,8 @@ export function NewsletterManagement({
                     <td className={`${td} text-xs`}>{formatDateTime(s.subscribed_at)}</td>
                     <td className={`${td} text-xs`}>{s.unsubscribed_at ? formatDateTime(s.unsubscribed_at) : "—"}</td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </TBody>
           </TableShell>

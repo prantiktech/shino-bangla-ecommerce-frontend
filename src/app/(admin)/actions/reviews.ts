@@ -20,7 +20,7 @@ export interface AdminReview {
   author: { id: number; name: string } | null;
   product: { id: number; name: string; slug: string } | null;
   order_id: number | null;
-  photos: { id: number; url: string }[];
+  photos: { id: number; url: string; sizes?: Partial<Record<string, string>> | null }[];
   moderated_by: string | null;
   approved_at: string | null;
   created_at: string;

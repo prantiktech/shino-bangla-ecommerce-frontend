@@ -34,6 +34,8 @@ import {
   Bike,
   ShieldAlert,
   Briefcase,
+  Calculator,
+  ShoppingCart,
 } from "lucide-react";
 import { StaffAccess, canOpenPage } from "../access";
 
@@ -62,6 +64,7 @@ const SECTIONS: SidebarSection[] = [
     title: "Overview",
     items: [
       { label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
+      { label: "Accounting", icon: Calculator, href: "/admin/accounting" },
       { label: "Reports", icon: BarChart3, href: "/admin/reports" },
     ],
   },
@@ -80,6 +83,7 @@ const SECTIONS: SidebarSection[] = [
     title: "Sales",
     items: [
       { label: "Orders", icon: ShoppingBag, href: "/admin/orders" },
+      { label: "Incomplete orders", icon: ShoppingCart, href: "/admin/incomplete-orders" },
       { label: "Scan station", icon: ScanBarcode, href: "/admin/shipments" },
       { label: "Couriers", icon: Bike, href: "/admin/couriers" },
       { label: "Fraud check", icon: ShieldAlert, href: "/admin/fraud" },

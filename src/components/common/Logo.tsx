@@ -11,6 +11,10 @@ interface LogoProps {
   showTagline?: boolean;
   /** Render as a link to the home page. */
   href?: string | null;
+  /** Optional custom logo URL from Store Settings (`logo_url`). */
+  logoUrl?: string | null;
+  /** Optional custom store name from Store Settings (`store_name`). */
+  storeName?: string | null;
   className?: string;
 }
 
@@ -29,21 +33,34 @@ export const Logo: React.FC<LogoProps> = ({
   variant = "default",
   showTagline = false,
   href = "/",
+  logoUrl,
+  storeName,
   className,
 }) => {
   const s = SIZES[size];
 
   const content = (
     <>
-      <span
-        aria-hidden="true"
-        className={cn(
-          "flex items-center justify-center shrink-0 bg-gradient-to-br from-brand-400 to-brand-600 text-white font-extrabold shadow-sm shadow-brand-500/25 transition-transform group-hover:scale-105",
-          s.mark
-        )}
-      >
-        N
-      </span>
+      {logoUrl ? (
+        <img
+          src={logoUrl}
+          alt={storeName || "Nogod Bazar"}
+          className={cn(
+            "object-contain shrink-0 transition-transform group-hover:scale-105",
+            s.mark
+          )}
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "flex items-center justify-center shrink-0 bg-gradient-to-br from-brand-400 to-brand-600 text-white font-extrabold shadow-sm shadow-brand-500/25 transition-transform group-hover:scale-105",
+            s.mark
+          )}
+        >
+          N
+        </span>
+      )}
       <span className="flex flex-col">
         <span className={cn("flex items-baseline leading-none font-extrabold tracking-tight", s.word)}>
           <span className={variant === "light" ? "text-white" : "text-ink"}>nogod</span>

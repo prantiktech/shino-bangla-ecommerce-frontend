@@ -2,14 +2,20 @@
 
 import { serverGet } from "@/lib/api-client/server";
 import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
+import { ImageLike } from "@/lib/utils/image";
 
 export interface ApiBrand {
   id: number;
   name: string;
   slug: string;
-  logo?: string | null;
+  logo?: ImageLike;
+  banner?: ImageLike;
   product_count?: number;
   description?: string | null;
+  seo?: {
+    title?: string;
+    description?: string;
+  };
 }
 
 export async function getBrandsAction(): Promise<ActionResponse<ApiBrand[]>> {

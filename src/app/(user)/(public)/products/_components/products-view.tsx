@@ -31,7 +31,12 @@ interface ProductsViewProps {
   };
   /** Path that filter changes navigate to; defaults to the current page. */
   basePath?: string;
-  heading?: { title: string; subtitle?: string };
+  heading?: {
+    title: string;
+    subtitle?: string;
+    iconUrl?: string;
+    bannerUrl?: string;
+  };
   facets?: {
     brands: { slug: string; name: string; count?: number }[];
     ratings: { min: number; count?: number }[];
@@ -170,9 +175,31 @@ export function ProductsView({
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 md:py-6">
         {heading && (
-          <header className="mb-5">
-            <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight">{heading.title}</h1>
-            {heading.subtitle && <p className="mt-1 text-sm text-slate-500">{heading.subtitle}</p>}
+          <header className="mb-6">
+            {heading.bannerUrl && (
+              <div className="relative w-full h-36 sm:h-48 md:h-56 rounded-2xl overflow-hidden mb-4 border border-slate-200/80 bg-slate-100">
+                <img
+                  src={heading.bannerUrl}
+                  alt={heading.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+            <div className="flex items-center gap-3.5">
+              {heading.iconUrl && (
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-white border border-slate-200 p-2 flex items-center justify-center shrink-0 shadow-2xs">
+                  <img
+                    src={heading.iconUrl}
+                    alt={heading.title}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+              )}
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-ink tracking-tight">{heading.title}</h1>
+                {heading.subtitle && <p className="mt-1 text-sm text-slate-500">{heading.subtitle}</p>}
+              </div>
+            </div>
           </header>
         )}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6 xl:gap-8">

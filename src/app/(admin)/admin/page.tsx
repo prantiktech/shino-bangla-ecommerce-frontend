@@ -309,6 +309,7 @@ export default async function AdminDashboardPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
                 <tr>
+                  <th className="px-4 py-3 w-10 text-center">#</th>
                   <th className="px-5 py-3">Product Name</th>
                   <th className="px-5 py-3">Price (Taka)</th>
                   <th className="px-5 py-3">Stock Status</th>
@@ -318,13 +319,14 @@ export default async function AdminDashboardPage() {
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                 {recentProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-5 py-8 text-center text-slate-400">
+                    <td colSpan={5} className="px-5 py-8 text-center text-slate-400">
                       No products found.
                     </td>
                   </tr>
                 ) : (
-                  recentProducts.map((p) => (
+                  recentProducts.map((p, idx) => (
                     <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="px-4 py-3 text-center text-slate-400 font-semibold tabular-nums">{idx + 1}</td>
                       <td className="px-5 py-3 font-semibold text-slate-900">{p.name}</td>
                       <td className="px-5 py-3">৳ {poishaToTaka(p.price.min).toFixed(2)}</td>
                       <td className="px-5 py-3">

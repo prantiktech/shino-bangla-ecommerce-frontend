@@ -30,6 +30,7 @@ import { OrderDetail, cancelOrderAction } from "@/app/(user)/actions/orders";
 import { PayOrderButton } from "@/components/orders/PayOrderButton";
 import { ParcelTracking } from "@/components/orders/ParcelTracking";
 import { formatPoisha } from "@/lib/utils/money";
+import { imageSrc } from "@/lib/utils/image";
 
 interface OrderDetailViewProps {
   order: OrderDetail;
@@ -224,8 +225,8 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
                   <span className="flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5 text-slate-400" />
                     Placed on{" "}
-                    <strong className="text-slate-700">
-                      {new Date(currentOrder.placed_at).toLocaleDateString("en-BD", {
+                    <strong className="text-slate-700" suppressHydrationWarning>
+                      {new Date(currentOrder.placed_at).toLocaleString("en-BD", {
                         dateStyle: "medium",
                         timeStyle: "short",
                       })}
@@ -337,7 +338,7 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
                           <div className="text-xs text-slate-500 mt-0.5">{step.note}</div>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-400 font-mono shrink-0">
+                      <div className="text-[11px] text-slate-400 font-mono shrink-0" suppressHydrationWarning>
                         {step.at ? new Date(step.at).toLocaleString("en-BD", { dateStyle: "short", timeStyle: "short" }) : ""}
                       </div>
                     </div>
@@ -366,11 +367,13 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
 
               <div className="divide-y divide-slate-100">
                 {currentOrder.items && currentOrder.items.length > 0 ? (
-                  currentOrder.items.map((item, idx) => (
+                  currentOrder.items.map((item, idx) => {
+                    const imgUrl = imageSrc(item.image, "thumb", "");
+                    return (
                     <div key={idx} className="py-4 flex items-center gap-4 first:pt-0 last:pb-0">
-                      {item.image ? (
+                      {imgUrl ? (
                         <img
-                          src={item.image}
+                          src={imgUrl}
                           alt={item.name || "Product"}
                           className="w-16 h-16 rounded-2xl object-cover border border-slate-200 shrink-0 bg-white"
                         />
@@ -424,7 +427,8 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
                         ) : null}
                       </div>
                     </div>
-                  ))
+                  );
+                  })
                 ) : (
                   <div className="py-8 text-center text-slate-400 text-xs">
                     No item details available for this order.
@@ -503,6 +507,23 @@ export function OrderDetailView({ order: initialOrder }: OrderDetailViewProps) {
                     {formatPoisha(grandTotal)}
                   </span>
                 </div>
+
+                {(currentOrder.totals?.amount_paid !== undefined || currentOrder.amount_paid !== undefined) && (
+                  <>
+                    <div className="flex items-center justify-between text-emerald-700 pt-1">
+                      <span className="font-medium">Amount Paid</span>
+                      <span className="font-bold font-mono">
+                        {formatPoisha(currentOrder.totals?.amount_paid ?? currentOrder.amount_paid ?? 0)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-amber-700">
+                      <span className="font-medium">Amount Due</span>
+                      <span className="font-bold font-mono">
+                        {formatPoisha(currentOrder.totals?.amount_due ?? currentOrder.amount_due ?? 0)}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 

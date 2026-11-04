@@ -149,6 +149,7 @@ export function PurchasesManagement({ initial, initialError }: { initial: Pagina
 
       <TableShell>
         <THead>
+          <th className={`${th} w-12 text-center`}>#</th>
           <th className={th}>Received</th>
           <th className={th}>Reference</th>
           <th className={th}>Supplier</th>
@@ -158,10 +159,10 @@ export function PurchasesManagement({ initial, initialError }: { initial: Pagina
         </THead>
         <TBody>
           {loading ? (
-            <LoadingRows cols={6} />
+            <LoadingRows cols={7} />
           ) : list.data.length === 0 ? (
             <tr>
-              <td colSpan={6}>
+              <td colSpan={7}>
                 <EmptyState
                   icon={PackagePlus}
                   title="No deliveries recorded"
@@ -171,8 +172,11 @@ export function PurchasesManagement({ initial, initialError }: { initial: Pagina
               </td>
             </tr>
           ) : (
-            list.data.map((p) => (
+            list.data.map((p, idx) => {
+              const rowNumber = ((list.meta?.current_page ?? page) - 1) * (list.meta?.per_page ?? 25) + idx + 1;
+              return (
               <tr key={p.id} className="hover:bg-slate-50/60">
+                <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{rowNumber}</td>
                 <td className={td}>{formatDate(p.received_on)}</td>
                 <td className={`${td} font-mono text-xs`}>{p.reference_no ?? "—"}</td>
                 <td className={td}>{p.supplier_name ?? "—"}</td>
@@ -182,7 +186,8 @@ export function PurchasesManagement({ initial, initialError }: { initial: Pagina
                   <IconButton label="View delivery" icon={Eye} tone="primary" onClick={() => view(p)} />
                 </td>
               </tr>
-            ))
+              );
+            })
           )}
         </TBody>
       </TableShell>
@@ -306,6 +311,7 @@ export function PurchasesManagement({ initial, initialError }: { initial: Pagina
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-200">
+                  <th className={`${th} w-10 text-center`}>#</th>
                   <th className={th}>Product</th>
                   <th className={`${th} text-right`}>Qty</th>
                   <th className={`${th} text-right`}>Unit cost</th>
@@ -313,8 +319,9 @@ export function PurchasesManagement({ initial, initialError }: { initial: Pagina
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {viewing.items.map((it) => (
+                {viewing.items.map((it, idx) => (
                   <tr key={it.variant_id}>
+                    <td className={`${td} text-center text-xs font-semibold text-slate-400 tabular-nums`}>{idx + 1}</td>
                     <td className={td}>
                       <span className="block font-medium text-slate-800">{it.product}</span>
                       <span className="block text-xs font-mono text-slate-500">{it.sku}</span>
@@ -327,7 +334,7 @@ export function PurchasesManagement({ initial, initialError }: { initial: Pagina
               </tbody>
               <tfoot>
                 <tr className="border-t-2 border-slate-200">
-                  <td className={`${td} font-bold`} colSpan={3}>
+                  <td className={`${td} font-bold`} colSpan={4}>
                     Total
                   </td>
                   <td className={`${td} text-right font-bold tabular-nums`}>{formatTaka(viewing.total_cost)}</td>

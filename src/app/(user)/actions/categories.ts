@@ -2,12 +2,15 @@
 
 import { serverGet } from "@/lib/api-client/server";
 import { ActionResponse, handleActionError } from "@/lib/api-client/status-handler";
+import { ImageLike } from "@/lib/utils/image";
 
 export interface ApiCategory {
   id: number;
   name: string;
   slug: string;
-  icon?: string | null;
+  description?: string | null;
+  icon?: ImageLike;
+  banner?: ImageLike;
   product_count?: number;
   children?: ApiCategory[];
 }
