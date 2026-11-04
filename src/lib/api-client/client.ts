@@ -235,7 +235,15 @@ export class HttpClient {
     try {
       if (responseType === 'json') {
         const text = await response.text();
-        responseData = text ? JSON.parse(text) : null;
+        // Rewrite any raw backend IP or insecure http://api.nogodbazar.com media URLs in the JSON payload to HTTPS
+        const normalizedText = text
+          ? text
+              .replace(/https?:\\\/\\\/13\.140\.181\.253(?::\d+)?(?=\\\/|")/gi, 'https:\\/\\/api.nogodbazar.com')
+              .replace(/https?:\/\/13\.140\.181\.253(?::\d+)?(?=\/|")/gi, 'https://api.nogodbazar.com')
+              .replace(/http:\\\/\\\/api\.nogodbazar\.com(?::\d+)?(?=\\\/|")/gi, 'https:\\/\\/api.nogodbazar.com')
+              .replace(/http:\/\/api\.nogodbazar\.com(?::\d+)?(?=\/|")/gi, 'https://api.nogodbazar.com')
+          : text;
+        responseData = normalizedText ? JSON.parse(normalizedText) : null;
       } else if (responseType === 'text') {
         responseData = await response.text();
       } else if (responseType === 'blob') {

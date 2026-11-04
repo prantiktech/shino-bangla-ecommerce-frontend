@@ -14,6 +14,21 @@ export interface ApiImage {
 export type ImageLike = ApiImage | string | null | undefined;
 
 /**
+ * Rewrites legacy/raw-IP backend storage URLs (`http://13.140.181.253/...`,
+ * `http://api.nogodbazar.com/...`, `http://nogodbazar.com/...`) to HTTPS on
+ * `https://api.nogodbazar.com` / `https://nogodbazar.com` so browsers never
+ * block images as Mixed Content in production.
+ */
+export function normalizeMediaUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  return trimmed
+    .replace(/^https?:\/\/13\.140\.181\.253(?::\d+)?(?=\/|$)/i, "https://api.nogodbazar.com")
+    .replace(/^http:\/\/api\.nogodbazar\.com(?::\d+)?(?=\/|$)/i, "https://api.nogodbazar.com")
+    .replace(/^http:\/\/(www\.)?nogodbazar\.com(?::\d+)?(?=\/|$)/i, "https://$1nogodbazar.com");
+}
+
+/**
  * Safely extracts an image URL from an ApiImage object or plain URL string,
  * falling back through `sizes[size]` -> `url` -> `fallback`.
  * Matches IMAGES_API.md Section 4.1.
@@ -27,12 +42,12 @@ export function imageSrc(
   if (typeof image === "string") {
     const trimmed = image.trim();
     if (!trimmed || trimmed === "[object Object]") return fallback;
-    return trimmed;
+    return normalizeMediaUrl(trimmed);
   }
   if (typeof image === "object") {
     const candidate = image.sizes?.[size] ?? image.url;
     if (typeof candidate === "string" && candidate.trim()) {
-      return candidate.trim();
+      return normalizeMediaUrl(candidate);
     }
   }
   return fallback;

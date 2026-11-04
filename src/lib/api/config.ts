@@ -11,11 +11,11 @@ export const API_BASE_URL = (
   process.env.API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
-  "http://13.140.181.253/api/v1"
+  "https://api.nogodbazar.com/api/v1"
 ).replace(/\/+$/, "");
 
 /** Public address of this storefront, used for absolute links (sitemap, robots). */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/+$/, "");
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://nogodbazar.com").replace(/\/+$/, "");
 
 export const API_ENDPOINTS = {
   // 00 · Health & Settings
