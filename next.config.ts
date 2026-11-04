@@ -56,11 +56,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "api.nogodbazar.com",
       },
       {
-        protocol: "http",
-        hostname: "**",
+        protocol: "https",
+        hostname: "nogodbazar.com",
       },
       // Media uploaded through the admin panel is served from the API host.
       {
