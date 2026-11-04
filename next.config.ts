@@ -10,7 +10,7 @@ const deploymentVersion = process.env.DEPLOYMENT_VERSION || process.env.GIT_SHA 
 
 /** Backend origin, so product media served by the API passes next/image and the CSP. */
 const apiUrl = new URL(
-  process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "http://13.140.181.253/api/v1"
+  process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || "https://api.nogodbazar.com/api/v1"
 );
 const apiOrigin = apiUrl.origin;
 
